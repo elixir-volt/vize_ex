@@ -159,7 +159,8 @@ defmodule Vize do
       iex> result.code =~ "msg"
       true
   """
-  @spec compile_template(String.t(), keyword()) :: {:ok, template_result()} | {:error, [String.t()]}
+  @spec compile_template(String.t(), keyword()) ::
+          {:ok, template_result()} | {:error, [String.t()]}
   def compile_template(source, opts \\ []) do
     mode = opts |> Keyword.get(:mode, "function") |> to_string()
     ssr = Keyword.get(opts, :ssr, false)

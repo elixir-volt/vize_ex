@@ -4,9 +4,7 @@ use vize_atelier_core::parser::{parse, parse_with_options};
 use vize_atelier_core::transform::transform;
 use vize_atelier_sfc::{compile_sfc, parse_sfc, SfcCompileOptions, SfcParseOptions};
 use vize_atelier_ssr::compile_ssr;
-use vize_atelier_vapor::{
-    compile_vapor, ir::*, transform_to_ir, VaporCompilerOptions,
-};
+use vize_atelier_vapor::{compile_vapor, ir::*, transform_to_ir, VaporCompilerOptions};
 use vize_carton::Bump;
 
 mod atoms {
@@ -298,12 +296,7 @@ fn encode_script_block<'a>(
 // ── SFC Compilation ──
 
 #[rustler::nif(schedule = "DirtyCpu")]
-fn compile_sfc_nif<'a>(
-    env: Env<'a>,
-    source: &str,
-    vapor: bool,
-    ssr: bool,
-) -> NifResult<Term<'a>> {
+fn compile_sfc_nif<'a>(env: Env<'a>, source: &str, vapor: bool, ssr: bool) -> NifResult<Term<'a>> {
     let opts = SfcParseOptions::default();
     let descriptor = match parse_sfc(source, opts) {
         Ok(d) => d,
@@ -324,10 +317,16 @@ fn compile_sfc_nif<'a>(
 
     match compile_sfc(&descriptor, compile_opts) {
         Ok(result) => {
-            let errors_term: Vec<Term<'a>> =
-                result.errors.iter().map(|e| sfc_error_to_term(env, e)).collect();
-            let warnings_term: Vec<Term<'a>> =
-                result.warnings.iter().map(|e| sfc_error_to_term(env, e)).collect();
+            let errors_term: Vec<Term<'a>> = result
+                .errors
+                .iter()
+                .map(|e| sfc_error_to_term(env, e))
+                .collect();
+            let warnings_term: Vec<Term<'a>> = result
+                .warnings
+                .iter()
+                .map(|e| sfc_error_to_term(env, e))
+                .collect();
 
             let map = Term::map_from_arrays(
                 env,
@@ -425,10 +424,7 @@ fn compile_ssr_nif<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
 
     let map = Term::map_from_arrays(
         env,
-        &[
-            atoms::code().encode(env),
-            atoms::preamble().encode(env),
-        ],
+        &[atoms::code().encode(env), atoms::preamble().encode(env)],
         &[
             result.code.as_str().encode(env),
             result.preamble.as_str().encode(env),
@@ -459,14 +455,8 @@ fn compile_vapor_nif<'a>(env: Env<'a>, source: &str, ssr: bool) -> NifResult<Ter
 
     let map = Term::map_from_arrays(
         env,
-        &[
-            atoms::code().encode(env),
-            atoms::templates().encode(env),
-        ],
-        &[
-            result.code.as_str().encode(env),
-            templates.encode(env),
-        ],
+        &[atoms::code().encode(env), atoms::templates().encode(env)],
+        &[result.code.as_str().encode(env), templates.encode(env)],
     )
     .unwrap();
 
@@ -572,31 +562,29 @@ fn encode_operation<'a>(env: Env<'a>, op: &OperationNode) -> Term<'a> {
             )
             .unwrap()
         }
-        OperationNode::SetEvent(node) => {
-            Term::map_from_arrays(
-                env,
-                &[
-                    atoms::kind().encode(env),
-                    atoms::element().encode(env),
-                    atoms::key().encode(env),
-                    atoms::value().encode(env),
-                    atoms::delegate().encode(env),
-                    atoms::effect().encode(env),
-                ],
-                &[
-                    atoms::set_event().encode(env),
-                    node.element.encode(env),
-                    encode_simple_expr(env, &node.key),
-                    node.value
-                        .as_ref()
-                        .map(|v| encode_simple_expr(env, v))
-                        .unwrap_or_else(|| rustler::types::atom::nil().encode(env)),
-                    node.delegate.encode(env),
-                    node.effect.encode(env),
-                ],
-            )
-            .unwrap()
-        }
+        OperationNode::SetEvent(node) => Term::map_from_arrays(
+            env,
+            &[
+                atoms::kind().encode(env),
+                atoms::element().encode(env),
+                atoms::key().encode(env),
+                atoms::value().encode(env),
+                atoms::delegate().encode(env),
+                atoms::effect().encode(env),
+            ],
+            &[
+                atoms::set_event().encode(env),
+                node.element.encode(env),
+                encode_simple_expr(env, &node.key),
+                node.value
+                    .as_ref()
+                    .map(|v| encode_simple_expr(env, v))
+                    .unwrap_or_else(|| rustler::types::atom::nil().encode(env)),
+                node.delegate.encode(env),
+                node.effect.encode(env),
+            ],
+        )
+        .unwrap(),
         OperationNode::SetHtml(node) => Term::map_from_arrays(
             env,
             &[
@@ -735,14 +723,8 @@ fn encode_operation<'a>(env: Env<'a>, op: &OperationNode) -> Term<'a> {
         .unwrap(),
         OperationNode::GetTextChild(node) => Term::map_from_arrays(
             env,
-            &[
-                atoms::kind().encode(env),
-                atoms::parent().encode(env),
-            ],
-            &[
-                atoms::get_text_child().encode(env),
-                node.parent.encode(env),
-            ],
+            &[atoms::kind().encode(env), atoms::parent().encode(env)],
+            &[atoms::get_text_child().encode(env), node.parent.encode(env)],
         )
         .unwrap(),
         OperationNode::ChildRef(node) => Term::map_from_arrays(
@@ -947,14 +929,8 @@ fn lint_nif<'a>(env: Env<'a>, source: &str, filename: &str) -> NifResult<Term<'a
         .diagnostics
         .iter()
         .map(|d| {
-            let keys = vec![
-                atoms::message().encode(env),
-                atoms::name().encode(env),
-            ];
-            let vals: Vec<Term<'a>> = vec![
-                d.message.as_str().encode(env),
-                d.rule_name.encode(env),
-            ];
+            let keys = vec![atoms::message().encode(env), atoms::name().encode(env)];
+            let vals: Vec<Term<'a>> = vec![d.message.as_str().encode(env), d.rule_name.encode(env)];
 
             Term::map_from_arrays(env, &keys, &vals).unwrap()
         })

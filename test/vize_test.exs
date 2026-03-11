@@ -251,7 +251,10 @@ defmodule VizeTest do
         |> Enum.filter(&is_map/1)
 
       has_set_prop = Enum.any?(all_ops, &(&1[:kind] == :set_prop))
-      has_set_class = Enum.any?(all_ops, fn op -> op[:kind] in [:set_prop, :set_dynamic_props] end)
+
+      has_set_class =
+        Enum.any?(all_ops, fn op -> op[:kind] in [:set_prop, :set_dynamic_props] end)
+
       assert has_set_prop or has_set_class
     end
 
