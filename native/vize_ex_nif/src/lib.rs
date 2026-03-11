@@ -82,6 +82,10 @@ mod atoms {
         parent_id,
         offset,
 
+        // Expression tags
+        static_,
+        element_template_map,
+
         // IR node type atoms
         set_prop,
         set_dynamic_props,
@@ -469,7 +473,17 @@ fn encode_simple_expr<'a>(
     env: Env<'a>,
     expr: &vize_atelier_core::SimpleExpressionNode,
 ) -> Term<'a> {
-    expr.content.as_str().encode(env)
+    if expr.is_static {
+        rustler::types::tuple::make_tuple(
+            env,
+            &[
+                atoms::static_().encode(env),
+                expr.content.as_str().encode(env),
+            ],
+        )
+    } else {
+        expr.content.as_str().encode(env)
+    }
 }
 
 fn encode_ir_prop<'a>(env: Env<'a>, prop: &IRProp) -> Term<'a> {
@@ -897,6 +911,12 @@ fn vapor_ir_nif<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
     let components: Vec<&str> = ir.component.iter().map(|s| s.as_str()).collect();
     let directives: Vec<&str> = ir.directive.iter().map(|s| s.as_str()).collect();
 
+    // Element ID → template index mapping
+    let etm_keys: Vec<usize> = ir.element_template_map.keys().copied().collect();
+    let etm_vals: Vec<usize> = etm_keys.iter().map(|k| ir.element_template_map[k]).collect();
+    let element_template_map: Vec<(usize, usize)> =
+        etm_keys.into_iter().zip(etm_vals.into_iter()).collect();
+
     let map = Term::map_from_arrays(
         env,
         &[
@@ -904,12 +924,14 @@ fn vapor_ir_nif<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
             atoms::components().encode(env),
             atoms::directives().encode(env),
             atoms::block().encode(env),
+            atoms::element_template_map().encode(env),
         ],
         &[
             templates.encode(env),
             components.encode(env),
             directives.encode(env),
             encode_block(env, &ir.block),
+            element_template_map.encode(env),
         ],
     )
     .unwrap();
