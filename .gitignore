@@ -7,3 +7,4 @@ erl_crash.dump
 vize-*.tar
 /target/
 priv/native/
+.scout-context.md
