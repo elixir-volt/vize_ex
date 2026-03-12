@@ -12,13 +12,14 @@ including Vapor mode IR for BEAM-native SSR.
 - **Vapor IR** — get the intermediate representation as Elixir maps for BEAM-native rendering
 - **SSR** — server-side rendering compilation with `_push()` codegen
 - **Lint** Vue SFCs with built-in rules
+- **Content hashes** — template, script, and style hashes for HMR change detection
 
 ## Installation
 
 ```elixir
 def deps do
   [
-    {:vize, "~> 0.2.0"}
+    {:vize, "~> 0.3.0"}
   ]
 end
 ```
@@ -48,6 +49,16 @@ button { color: blue; }
 result.code     # Generated JavaScript
 result.css      # Compiled CSS
 result.errors   # []
+```
+
+Pass a filename for stable scoped CSS `data-v-xxxx` attributes and content hashes:
+
+```elixir
+{:ok, result} = Vize.compile_sfc(source, filename: "App.vue")
+
+result.template_hash  # "de5ddf78a0f8d31a"
+result.style_hash     # "3efafd39ec9747f9"
+result.script_hash    # "1a8dae0fef50c189"
 ```
 
 ### Vapor Mode
