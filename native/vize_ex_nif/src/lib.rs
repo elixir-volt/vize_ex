@@ -2,7 +2,10 @@ use rustler::{Encoder, Env, NifResult, Term};
 use vize_atelier_core::options::{CodegenMode, CodegenOptions, ParserOptions, TransformOptions};
 use vize_atelier_core::parser::{parse, parse_with_options};
 use vize_atelier_core::transform::transform;
-use vize_atelier_sfc::{compile_sfc, parse_sfc, SfcCompileOptions, SfcParseOptions};
+use vize_atelier_sfc::{
+    compile_css, compile_sfc, parse_sfc, CssCompileOptions, CssTargets, SfcCompileOptions,
+    SfcParseOptions,
+};
 use vize_atelier_ssr::compile_ssr;
 use vize_atelier_vapor::{compile_vapor, ir::*, transform_to_ir, VaporCompilerOptions};
 use vize_carton::Bump;
@@ -85,6 +88,15 @@ mod atoms {
         child_id,
         parent_id,
         offset,
+
+        // CSS result fields
+        map,
+        css_vars,
+        minify,
+        targets,
+        scope_id,
+        filename_opt,
+        custom_media,
 
         // Expression tags
         static_,
@@ -1029,6 +1041,88 @@ fn lint_nif<'a>(env: Env<'a>, source: &str, filename: &str) -> NifResult<Term<'a
         .collect();
 
     Ok((atoms::ok(), diagnostics).encode(env))
+}
+
+// ── CSS Compilation ──
+
+#[rustler::nif(schedule = "DirtyCpu")]
+#[allow(clippy::too_many_arguments)]
+fn compile_css_nif<'a>(
+    env: Env<'a>,
+    source: &str,
+    minify: bool,
+    scoped: bool,
+    scope_id_str: &str,
+    filename: &str,
+    chrome: i64,
+    firefox: i64,
+    safari: i64,
+) -> NifResult<Term<'a>> {
+    let targets = if chrome >= 0 || firefox >= 0 || safari >= 0 {
+        Some(CssTargets {
+            chrome: if chrome >= 0 {
+                Some(chrome as u32)
+            } else {
+                None
+            },
+            firefox: if firefox >= 0 {
+                Some(firefox as u32)
+            } else {
+                None
+            },
+            safari: if safari >= 0 {
+                Some(safari as u32)
+            } else {
+                None
+            },
+            ..Default::default()
+        })
+    } else {
+        None
+    };
+
+    let options = CssCompileOptions {
+        scope_id: if scope_id_str.is_empty() {
+            None
+        } else {
+            Some(scope_id_str.into())
+        },
+        scoped,
+        minify,
+        source_map: false,
+        targets,
+        filename: if filename.is_empty() {
+            None
+        } else {
+            Some(filename.into())
+        },
+        custom_media: false,
+    };
+
+    let result = compile_css(source, &options);
+
+    let css_vars: Vec<&str> = result.css_vars.iter().map(|s| s.as_str()).collect();
+    let error_strs: Vec<&str> = result.errors.iter().map(|s| s.as_str()).collect();
+    let warning_strs: Vec<&str> = result.warnings.iter().map(|s| s.as_str()).collect();
+
+    let map = Term::map_from_arrays(
+        env,
+        &[
+            atoms::code().encode(env),
+            atoms::css_vars().encode(env),
+            atoms::errors().encode(env),
+            atoms::warnings().encode(env),
+        ],
+        &[
+            result.code.as_str().encode(env),
+            css_vars.encode(env),
+            error_strs.encode(env),
+            warning_strs.encode(env),
+        ],
+    )
+    .unwrap();
+
+    Ok((atoms::ok(), map).encode(env))
 }
 
 rustler::init!("Elixir.Vize.Native");

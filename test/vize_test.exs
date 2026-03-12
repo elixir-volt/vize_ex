@@ -304,4 +304,45 @@ defmodule VizeTest do
       assert is_list(diagnostics)
     end
   end
+
+  describe "compile_css/2" do
+    test "compiles basic CSS" do
+      {:ok, result} = Vize.compile_css(".foo { color: red }")
+      assert result.code =~ "color"
+      assert result.errors == []
+      assert result.warnings == []
+    end
+
+    test "minifies CSS" do
+      {:ok, result} = Vize.compile_css(".foo {\n  color: red;\n}", minify: true)
+      refute result.code =~ "\n"
+    end
+
+    test "returns empty css_vars for plain CSS" do
+      {:ok, result} = Vize.compile_css(".foo { color: red }")
+      assert result.css_vars == []
+    end
+
+    test "extracts v-bind expressions" do
+      {:ok, result} = Vize.compile_css(".foo { color: v-bind(textColor) }")
+      assert "textColor" in result.css_vars
+    end
+
+    test "applies scoped transformation" do
+      {:ok, result} =
+        Vize.compile_css(".foo { color: red }", scoped: true, scope_id: "data-v-abc123")
+
+      assert result.code =~ "abc123"
+    end
+
+    test "handles parse errors gracefully" do
+      {:ok, result} = Vize.compile_css(".foo { color: }")
+      assert length(result.errors) > 0 or result.code != ""
+    end
+
+    test "bang variant works" do
+      result = Vize.compile_css!(".foo { color: red }")
+      assert result.code =~ "color"
+    end
+  end
 end

@@ -24,4 +24,26 @@ defmodule Vize.Native do
 
   @spec lint_nif(String.t(), String.t()) :: {:ok, list()}
   def lint_nif(_source, _filename), do: :erlang.nif_error(:nif_not_loaded)
+
+  @spec compile_css_nif(
+          String.t(),
+          boolean(),
+          boolean(),
+          String.t(),
+          String.t(),
+          integer(),
+          integer(),
+          integer()
+        ) :: {:ok, map()}
+  def compile_css_nif(
+        _source,
+        _minify,
+        _scoped,
+        _scope_id,
+        _filename,
+        _chrome,
+        _firefox,
+        _safari
+      ),
+      do: :erlang.nif_error(:nif_not_loaded)
 end

@@ -325,4 +325,72 @@ defmodule Vize do
   def lint(source, filename \\ "component.vue") do
     Vize.Native.lint_nif(source, filename)
   end
+
+  # ── CSS Compilation ──
+
+  @type css_result :: %{
+          code: String.t(),
+          css_vars: [String.t()],
+          errors: [String.t()],
+          warnings: [String.t()]
+        }
+
+  @doc """
+  Compile CSS using LightningCSS.
+
+  Parses, autoprefixes, and optionally minifies CSS. Also handles
+  Vue scoped CSS transformation and `v-bind()` extraction.
+
+  ## Options
+
+    * `:minify` — minify the output (default: `false`)
+    * `:scoped` — apply Vue scoped CSS transformation (default: `false`)
+    * `:scope_id` — scope ID for scoped CSS (e.g. `"data-v-abc123"`)
+    * `:filename` — filename for error reporting
+    * `:targets` — browser targets for autoprefixing, map with optional
+      `:chrome`, `:firefox`, `:safari` keys as major version integers
+
+  ## Examples
+
+      iex> {:ok, result} = Vize.compile_css(".foo { color: red }")
+      iex> result.code =~ "color"
+      true
+      iex> result.errors
+      []
+  """
+  @spec compile_css(String.t(), keyword()) :: {:ok, css_result()}
+  def compile_css(source, opts \\ []) do
+    minify = Keyword.get(opts, :minify, false)
+    scoped = Keyword.get(opts, :scoped, false)
+    scope_id = Keyword.get(opts, :scope_id, "")
+    filename = Keyword.get(opts, :filename, "")
+    targets = Keyword.get(opts, :targets, %{})
+    chrome = Map.get(targets, :chrome, -1)
+    firefox = Map.get(targets, :firefox, -1)
+    safari = Map.get(targets, :safari, -1)
+
+    Vize.Native.compile_css_nif(
+      source,
+      minify,
+      scoped,
+      scope_id,
+      filename,
+      chrome,
+      firefox,
+      safari
+    )
+  end
+
+  @doc "Like `compile_css/2` but raises on errors."
+  @spec compile_css!(String.t(), keyword()) :: css_result()
+  def compile_css!(source, opts \\ []) do
+    case compile_css(source, opts) do
+      {:ok, result} ->
+        if result.errors != [] do
+          raise "Vize CSS compile error: #{inspect(result.errors)}"
+        end
+
+        result
+    end
+  end
 end
