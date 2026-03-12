@@ -110,7 +110,7 @@ Produces a statics/slots split ready for `%Phoenix.LiveView.Rendered{}`.
 All HTML manipulation (tag tree parsing, marker injection, splitting) happens
 in the NIF. Sub-blocks for `v-if` / `v-for` are recursively split.
 
-Used by [PhoenixVapor](https://github.com/dannote/phoenix_vapor) to render
+Used by [PhoenixVapor](https://github.com/elixir-volt/phoenix_vapor) to render
 Vue templates as native LiveView output.
 
 ### SSR Compilation

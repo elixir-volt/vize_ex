@@ -2,7 +2,7 @@ defmodule Vize.MixProject do
   use Mix.Project
 
   @version "0.6.0"
-  @source_url "https://github.com/dannote/vize_ex"
+  @source_url "https://github.com/elixir-volt/vize_ex"
 
   def project do
     [
