@@ -13,13 +13,14 @@ including Vapor mode IR for BEAM-native SSR.
 - **SSR** — server-side rendering compilation with `_push()` codegen
 - **Lint** Vue SFCs with built-in rules
 - **Content hashes** — template, script, and style hashes for HMR change detection
+- **CSS compilation** — standalone LightningCSS pipeline with autoprefixing, minification, and Vue scoped styles
 
 ## Installation
 
 ```elixir
 def deps do
   [
-    {:vize, "~> 0.3.0"}
+    {:vize, "~> 0.4.0"}
   ]
 end
 ```
@@ -125,6 +126,31 @@ result.helpers  # ["createElementVNode", "toDisplayString", ...]
 descriptor.template      # %{content: "...", lang: nil, ...}
 descriptor.script_setup  # %{content: "...", setup: true, ...}
 descriptor.styles        # [%{content: "...", scoped: true, ...}]
+```
+
+### CSS Compilation
+
+Standalone CSS compilation via LightningCSS — parse, autoprefix, and minify CSS
+independently of SFC compilation:
+
+```elixir
+{:ok, result} = Vize.compile_css(".foo { color: red; user-select: none }", minify: true)
+result.code
+# ".foo{color:red;-webkit-user-select:none;user-select:none}"
+```
+
+With Vue scoped styles:
+
+```elixir
+{:ok, result} = Vize.compile_css(".foo { color: red }", scoped: true, scope_id: "data-v-abc123")
+result.code
+# ".foo[data-v-abc123] { color: red }"
+```
+
+Browser targeting:
+
+```elixir
+{:ok, result} = Vize.compile_css(css, targets: %{chrome: 80, firefox: 78, safari: 14})
 ```
 
 ## License
