@@ -65,4 +65,15 @@ defmodule Vize.Native do
         _css_modules
       ),
       do: :erlang.nif_error(:nif_not_loaded)
+
+  @spec bundle_css_nif(
+          String.t(),
+          boolean(),
+          integer(),
+          integer(),
+          integer(),
+          boolean()
+        ) :: {:ok, map()}
+  def bundle_css_nif(_entry_path, _minify, _chrome, _firefox, _safari, _css_modules),
+    do: :erlang.nif_error(:nif_not_loaded)
 end

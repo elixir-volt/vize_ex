@@ -3,7 +3,7 @@ use vize_atelier_core::options::{CodegenMode, CodegenOptions, ParserOptions, Tra
 use vize_atelier_core::parser::{parse, parse_with_options};
 use vize_atelier_core::transform::transform;
 use vize_atelier_sfc::{
-    compile_css, compile_sfc, parse_sfc, CssCompileOptions, CssTargets, SfcCompileOptions,
+    bundle_css, compile_css, compile_sfc, parse_sfc, CssCompileOptions, CssTargets, SfcCompileOptions,
     SfcParseOptions,
 };
 use vize_atelier_ssr::compile_ssr;
@@ -1140,6 +1140,74 @@ fn compile_css_nif<'a>(
         &[
             result.code.as_str().encode(env),
             css_vars.encode(env),
+            error_strs.encode(env),
+            warning_strs.encode(env),
+            exports_term,
+        ],
+    )
+    .unwrap();
+
+    Ok((atoms::ok(), map).encode(env))
+}
+
+// ── CSS Bundling ──
+
+#[rustler::nif(schedule = "DirtyCpu")]
+fn bundle_css_nif<'a>(
+    env: Env<'a>,
+    entry_path: &str,
+    minify: bool,
+    chrome: i64,
+    firefox: i64,
+    safari: i64,
+    css_modules: bool,
+) -> NifResult<Term<'a>> {
+    let targets = if chrome >= 0 || firefox >= 0 || safari >= 0 {
+        Some(CssTargets {
+            chrome: if chrome >= 0 { Some(chrome as u32) } else { None },
+            firefox: if firefox >= 0 { Some(firefox as u32) } else { None },
+            safari: if safari >= 0 { Some(safari as u32) } else { None },
+            ..Default::default()
+        })
+    } else {
+        None
+    };
+
+    let options = CssCompileOptions {
+        minify,
+        targets,
+        css_modules,
+        ..Default::default()
+    };
+
+    let result = bundle_css(entry_path, &options);
+
+    let error_strs: Vec<&str> = result.errors.iter().map(|s| s.as_str()).collect();
+    let warning_strs: Vec<&str> = result.warnings.iter().map(|s| s.as_str()).collect();
+
+    let exports_term = match &result.exports {
+        Some(exports) => {
+            let keys: Vec<Term<'a>> = exports.keys().map(|k| k.as_str().encode(env)).collect();
+            let vals: Vec<Term<'a>> = exports.values().map(|v| v.name.as_str().encode(env)).collect();
+            if keys.is_empty() {
+                rustler::types::atom::nil().encode(env)
+            } else {
+                Term::map_from_arrays(env, &keys, &vals).unwrap()
+            }
+        }
+        None => rustler::types::atom::nil().encode(env),
+    };
+
+    let map = Term::map_from_arrays(
+        env,
+        &[
+            atoms::code().encode(env),
+            atoms::errors().encode(env),
+            atoms::warnings().encode(env),
+            atoms::exports().encode(env),
+        ],
+        &[
+            result.code.as_str().encode(env),
             error_strs.encode(env),
             warning_strs.encode(env),
             exports_term,

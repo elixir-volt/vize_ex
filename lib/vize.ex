@@ -427,4 +427,54 @@ defmodule Vize do
         result
     end
   end
+
+  @doc """
+  Bundle a CSS file and all its `@import` dependencies into a single stylesheet.
+
+  Reads the entry file and all imported files from disk, resolving `@import` rules
+  recursively. The result is a single merged stylesheet with all imports inlined,
+  wrapped in the appropriate `@media`, `@supports`, and `@layer` rules.
+
+  ## Options
+
+    * `:minify` — minify the output (default: `false`)
+    * `:css_modules` — enable CSS Modules scoping (default: `false`)
+    * `:targets` — browser targets for autoprefixing
+
+  ## Examples
+
+      {:ok, result} = Vize.bundle_css("assets/css/app.css")
+      result.code  #=> merged CSS with all @imports inlined
+  """
+  @spec bundle_css(String.t(), keyword()) :: {:ok, css_result()}
+  def bundle_css(entry_path, opts \\ []) do
+    minify = Keyword.get(opts, :minify, false)
+    css_modules = Keyword.get(opts, :css_modules, false)
+    targets = Keyword.get(opts, :targets, %{})
+    chrome = Map.get(targets, :chrome, -1)
+    firefox = Map.get(targets, :firefox, -1)
+    safari = Map.get(targets, :safari, -1)
+
+    Vize.Native.bundle_css_nif(
+      Path.expand(entry_path),
+      minify,
+      chrome,
+      firefox,
+      safari,
+      css_modules
+    )
+  end
+
+  @doc "Like `bundle_css/2` but raises on errors."
+  @spec bundle_css!(String.t(), keyword()) :: css_result()
+  def bundle_css!(entry_path, opts \\ []) do
+    case bundle_css(entry_path, opts) do
+      {:ok, result} ->
+        if result.errors != [] do
+          raise "Vize CSS bundle error: #{inspect(result.errors)}"
+        end
+
+        result
+    end
+  end
 end

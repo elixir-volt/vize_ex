@@ -20,6 +20,7 @@ vize_atelier_dom = "0.28"
 vize_atelier_vapor = "0.28"
 vize_atelier_ssr = "0.28"
 # TODO: switch back to crates.io once ubugeeei/vize#123 is merged and released
-vize_atelier_sfc = { git = "https://github.com/dannote/vize.git", branch = "css-modules", features = ["native"] }
+# TODO: switch back to crates.io once ubugeeei/vize#123 and #124 are merged and released
+vize_atelier_sfc = { git = "https://github.com/dannote/vize.git", branch = "combined", features = ["native"] }
 vize_patina = "0.28"
 vize_croquis = "0.28"

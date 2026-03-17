@@ -2011,13 +2011,13 @@ dependencies = [
 [[package]]
 name = "vize_armature"
 version = "0.28.0"
-source = "git+https://github.com/dannote/vize.git?branch=css-modules#54a2acbcdb3b0bcf1892b9e21545458014f9f5f9"
+source = "git+https://github.com/dannote/vize.git?branch=combined#957ff4428d50bcde3463e58c4ffed37db9245186"
 dependencies = [
  "compact_str 0.8.1",
  "serde",
  "thiserror",
- "vize_carton 0.28.0 (git+https://github.com/dannote/vize.git?branch=css-modules)",
- "vize_relief 0.28.0 (git+https://github.com/dannote/vize.git?branch=css-modules)",
+ "vize_carton 0.28.0 (git+https://github.com/dannote/vize.git?branch=combined)",
+ "vize_relief 0.28.0 (git+https://github.com/dannote/vize.git?branch=combined)",
 ]
 
 [[package]]
@@ -2051,7 +2051,7 @@ dependencies = [
 [[package]]
 name = "vize_atelier_core"
 version = "0.28.0"
-source = "git+https://github.com/dannote/vize.git?branch=css-modules#54a2acbcdb3b0bcf1892b9e21545458014f9f5f9"
+source = "git+https://github.com/dannote/vize.git?branch=combined#957ff4428d50bcde3463e58c4ffed37db9245186"
 dependencies = [
  "bumpalo",
  "compact_str 0.8.1",
@@ -2069,10 +2069,10 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
- "vize_armature 0.28.0 (git+https://github.com/dannote/vize.git?branch=css-modules)",
- "vize_carton 0.28.0 (git+https://github.com/dannote/vize.git?branch=css-modules)",
- "vize_croquis 0.28.0 (git+https://github.com/dannote/vize.git?branch=css-modules)",
- "vize_relief 0.28.0 (git+https://github.com/dannote/vize.git?branch=css-modules)",
+ "vize_armature 0.28.0 (git+https://github.com/dannote/vize.git?branch=combined)",
+ "vize_carton 0.28.0 (git+https://github.com/dannote/vize.git?branch=combined)",
+ "vize_croquis 0.28.0 (git+https://github.com/dannote/vize.git?branch=combined)",
+ "vize_relief 0.28.0 (git+https://github.com/dannote/vize.git?branch=combined)",
 ]
 
 [[package]]
@@ -2092,20 +2092,20 @@ dependencies = [
 [[package]]
 name = "vize_atelier_dom"
 version = "0.28.0"
-source = "git+https://github.com/dannote/vize.git?branch=css-modules#54a2acbcdb3b0bcf1892b9e21545458014f9f5f9"
+source = "git+https://github.com/dannote/vize.git?branch=combined#957ff4428d50bcde3463e58c4ffed37db9245186"
 dependencies = [
  "phf 0.11.3",
  "serde",
  "thiserror",
- "vize_atelier_core 0.28.0 (git+https://github.com/dannote/vize.git?branch=css-modules)",
- "vize_carton 0.28.0 (git+https://github.com/dannote/vize.git?branch=css-modules)",
- "vize_croquis 0.28.0 (git+https://github.com/dannote/vize.git?branch=css-modules)",
+ "vize_atelier_core 0.28.0 (git+https://github.com/dannote/vize.git?branch=combined)",
+ "vize_carton 0.28.0 (git+https://github.com/dannote/vize.git?branch=combined)",
+ "vize_croquis 0.28.0 (git+https://github.com/dannote/vize.git?branch=combined)",
 ]
 
 [[package]]
 name = "vize_atelier_sfc"
 version = "0.28.0"
-source = "git+https://github.com/dannote/vize.git?branch=css-modules#54a2acbcdb3b0bcf1892b9e21545458014f9f5f9"
+source = "git+https://github.com/dannote/vize.git?branch=combined#957ff4428d50bcde3463e58c4ffed37db9245186"
 dependencies = [
  "lightningcss",
  "memchr",
@@ -2122,11 +2122,11 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
- "vize_atelier_core 0.28.0 (git+https://github.com/dannote/vize.git?branch=css-modules)",
- "vize_atelier_dom 0.28.0 (git+https://github.com/dannote/vize.git?branch=css-modules)",
- "vize_atelier_vapor 0.28.0 (git+https://github.com/dannote/vize.git?branch=css-modules)",
- "vize_carton 0.28.0 (git+https://github.com/dannote/vize.git?branch=css-modules)",
- "vize_croquis 0.28.0 (git+https://github.com/dannote/vize.git?branch=css-modules)",
+ "vize_atelier_core 0.28.0 (git+https://github.com/dannote/vize.git?branch=combined)",
+ "vize_atelier_dom 0.28.0 (git+https://github.com/dannote/vize.git?branch=combined)",
+ "vize_atelier_vapor 0.28.0 (git+https://github.com/dannote/vize.git?branch=combined)",
+ "vize_carton 0.28.0 (git+https://github.com/dannote/vize.git?branch=combined)",
+ "vize_croquis 0.28.0 (git+https://github.com/dannote/vize.git?branch=combined)",
 ]
 
 [[package]]
@@ -2164,7 +2164,7 @@ dependencies = [
 [[package]]
 name = "vize_atelier_vapor"
 version = "0.28.0"
-source = "git+https://github.com/dannote/vize.git?branch=css-modules#54a2acbcdb3b0bcf1892b9e21545458014f9f5f9"
+source = "git+https://github.com/dannote/vize.git?branch=combined#957ff4428d50bcde3463e58c4ffed37db9245186"
 dependencies = [
  "oxc_allocator 0.116.0 (git+https://github.com/oxc-project/oxc?rev=27ee4fc46233bc837e01cb384384cf08dced127c)",
  "oxc_ast 0.116.0 (git+https://github.com/oxc-project/oxc?rev=27ee4fc46233bc837e01cb384384cf08dced127c)",
@@ -2174,9 +2174,9 @@ dependencies = [
  "oxc_syntax 0.116.0 (git+https://github.com/oxc-project/oxc?rev=27ee4fc46233bc837e01cb384384cf08dced127c)",
  "serde",
  "thiserror",
- "vize_atelier_core 0.28.0 (git+https://github.com/dannote/vize.git?branch=css-modules)",
- "vize_carton 0.28.0 (git+https://github.com/dannote/vize.git?branch=css-modules)",
- "vize_croquis 0.28.0 (git+https://github.com/dannote/vize.git?branch=css-modules)",
+ "vize_atelier_core 0.28.0 (git+https://github.com/dannote/vize.git?branch=combined)",
+ "vize_carton 0.28.0 (git+https://github.com/dannote/vize.git?branch=combined)",
+ "vize_croquis 0.28.0 (git+https://github.com/dannote/vize.git?branch=combined)",
 ]
 
 [[package]]
@@ -2200,7 +2200,7 @@ dependencies = [
 [[package]]
 name = "vize_carton"
 version = "0.28.0"
-source = "git+https://github.com/dannote/vize.git?branch=css-modules#54a2acbcdb3b0bcf1892b9e21545458014f9f5f9"
+source = "git+https://github.com/dannote/vize.git?branch=combined#957ff4428d50bcde3463e58c4ffed37db9245186"
 dependencies = [
  "bitflags",
  "bumpalo",
@@ -2238,7 +2238,7 @@ dependencies = [
 [[package]]
 name = "vize_croquis"
 version = "0.28.0"
-source = "git+https://github.com/dannote/vize.git?branch=css-modules#54a2acbcdb3b0bcf1892b9e21545458014f9f5f9"
+source = "git+https://github.com/dannote/vize.git?branch=combined#957ff4428d50bcde3463e58c4ffed37db9245186"
 dependencies = [
  "dashmap 6.1.0",
  "once_cell",
@@ -2251,8 +2251,8 @@ dependencies = [
  "rustc-hash",
  "serde",
  "serde_json",
- "vize_carton 0.28.0 (git+https://github.com/dannote/vize.git?branch=css-modules)",
- "vize_relief 0.28.0 (git+https://github.com/dannote/vize.git?branch=css-modules)",
+ "vize_carton 0.28.0 (git+https://github.com/dannote/vize.git?branch=combined)",
+ "vize_relief 0.28.0 (git+https://github.com/dannote/vize.git?branch=combined)",
 ]
 
 [[package]]
@@ -2311,11 +2311,11 @@ dependencies = [
 [[package]]
 name = "vize_relief"
 version = "0.28.0"
-source = "git+https://github.com/dannote/vize.git?branch=css-modules#54a2acbcdb3b0bcf1892b9e21545458014f9f5f9"
+source = "git+https://github.com/dannote/vize.git?branch=combined#957ff4428d50bcde3463e58c4ffed37db9245186"
 dependencies = [
  "serde",
  "thiserror",
- "vize_carton 0.28.0 (git+https://github.com/dannote/vize.git?branch=css-modules)",
+ "vize_carton 0.28.0 (git+https://github.com/dannote/vize.git?branch=combined)",
 ]
 
 [[package]]
