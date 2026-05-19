@@ -55,11 +55,12 @@ defmodule Vize.MixProject do
         "format --check-formatted",
         "credo --strict",
         "ex_dna",
+        "reach.check --dead-code --smells --strict",
         "dialyzer",
         "cmd cargo fmt --manifest-path native/vize_ex_nif/Cargo.toml -- --check",
         "cmd cargo clippy --manifest-path native/vize_ex_nif/Cargo.toml -- -D warnings"
       ],
-      ci: ["lint", "cmd MIX_ENV=test mix test"]
+      ci: ["lint", "cmd --shell MIX_ENV=test mix test"]
     ]
   end
 
@@ -67,11 +68,12 @@ defmodule Vize.MixProject do
     [
       {:rustler, "~> 0.36 or ~> 0.37", optional: true},
       {:rustler_precompiled, "~> 0.8"},
-      {:ex_doc, "~> 0.35", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.40", only: :dev, runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:ex_dna, "~> 1.1", only: [:dev, :test], runtime: false},
-      {:ex_slop, "~> 0.2", only: [:dev, :test], runtime: false}
+      {:ex_dna, "~> 1.5", only: [:dev, :test], runtime: false},
+      {:ex_slop, "~> 0.4", only: [:dev, :test], runtime: false},
+      {:reach, "~> 2.0", only: [:dev, :test], runtime: false}
     ]
   end
 end

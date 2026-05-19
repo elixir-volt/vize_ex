@@ -178,6 +178,7 @@ fn parse_sfc_nif<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
 // ── SFC Compilation ──
 
 #[rustler::nif(schedule = "DirtyCpu")]
+#[allow(clippy::too_many_arguments)]
 fn compile_sfc_nif<'a>(
     env: Env<'a>,
     source: &str,
