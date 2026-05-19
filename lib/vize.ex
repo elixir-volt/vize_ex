@@ -379,13 +379,19 @@ defmodule Vize do
 
   # ── CSS Compilation ──
 
-  @type css_result :: %{
-          optional(:exports) => %{optional(String.t()) => String.t()} | nil,
-          code: String.t(),
-          css_vars: [String.t()],
-          errors: [String.t()],
-          warnings: [String.t()]
-        }
+  @type css_result :: Vize.CSS.css_result()
+
+  @deprecated "Use Vize.CSS.compile/2 instead"
+  defdelegate compile_css(source, opts \\ []), to: Vize.CSS, as: :compile
+
+  @deprecated "Use Vize.CSS.compile!/2 instead"
+  defdelegate compile_css!(source, opts \\ []), to: Vize.CSS, as: :compile!
+
+  @deprecated "Use Vize.CSS.bundle/2 instead"
+  defdelegate bundle_css(entry_path, opts \\ []), to: Vize.CSS, as: :bundle
+
+  @deprecated "Use Vize.CSS.bundle!/2 instead"
+  defdelegate bundle_css!(entry_path, opts \\ []), to: Vize.CSS, as: :bundle!
 
   @deprecated "Use Vize.CSS.parse_ast/2 instead"
   defdelegate parse_css_ast(source, opts \\ []), to: Vize.CSS, as: :parse_ast
@@ -398,124 +404,6 @@ defmodule Vize do
 
   @deprecated "Use Vize.CSS.print_ast!/2 instead"
   defdelegate print_css_ast!(ast, opts \\ []), to: Vize.CSS, as: :print_ast!
-
-  @doc """
-  Compile CSS using LightningCSS.
-
-  Parses, autoprefixes, and optionally minifies CSS. Also handles
-  Vue scoped CSS transformation, `v-bind()` extraction, and CSS Modules.
-
-  ## Options
-
-    * `:minify` — minify the output (default: `false`)
-    * `:scoped` — apply Vue scoped CSS transformation (default: `false`)
-    * `:scope_id` — scope ID for scoped CSS (e.g. `"data-v-abc123"`)
-    * `:filename` — filename for error reporting
-    * `:css_modules` — enable CSS Modules scoping (default: `false`).
-      When enabled, class names, IDs, keyframes, and other identifiers are
-      scoped, and the result includes an `:exports` map of original → hashed names.
-    * `:targets` — browser targets for autoprefixing, map with optional
-      `:chrome`, `:firefox`, `:safari` keys as major version integers
-
-  ## Examples
-
-      iex> {:ok, result} = Vize.compile_css(".foo { color: red }")
-      iex> result.code =~ "color"
-      true
-      iex> result.errors
-      []
-
-      iex> {:ok, result} = Vize.compile_css(".btn { color: red }", css_modules: true, filename: "btn.module.css")
-      iex> is_map(result.exports)
-      true
-  """
-  @spec compile_css(String.t(), keyword()) :: {:ok, css_result()}
-  def compile_css(source, opts \\ []) do
-    minify = Keyword.get(opts, :minify, false)
-    scoped = Keyword.get(opts, :scoped, false)
-    scope_id = Keyword.get(opts, :scope_id, "")
-    filename = Keyword.get(opts, :filename, "")
-    css_modules = Keyword.get(opts, :css_modules, false)
-    targets = Keyword.get(opts, :targets, %{})
-    chrome = Map.get(targets, :chrome, -1)
-    firefox = Map.get(targets, :firefox, -1)
-    safari = Map.get(targets, :safari, -1)
-
-    Vize.Native.compile_css_nif(
-      source,
-      minify,
-      scoped,
-      scope_id,
-      filename,
-      chrome,
-      firefox,
-      safari,
-      css_modules
-    )
-  end
-
-  @doc "Like `compile_css/2` but raises on errors."
-  @spec compile_css!(String.t(), keyword()) :: css_result()
-  def compile_css!(source, opts \\ []) do
-    case compile_css(source, opts) do
-      {:ok, result} ->
-        if result.errors != [] do
-          raise "Vize CSS compile error: #{inspect(result.errors)}"
-        end
-
-        result
-    end
-  end
-
-  @doc """
-  Bundle a CSS file and all its `@import` dependencies into a single stylesheet.
-
-  Reads the entry file and all imported files from disk, resolving `@import` rules
-  recursively. The result is a single merged stylesheet with all imports inlined,
-  wrapped in the appropriate `@media`, `@supports`, and `@layer` rules.
-
-  ## Options
-
-    * `:minify` — minify the output (default: `false`)
-    * `:css_modules` — enable CSS Modules scoping (default: `false`)
-    * `:targets` — browser targets for autoprefixing
-
-  ## Examples
-
-      {:ok, result} = Vize.bundle_css("assets/css/app.css")
-      result.code  #=> merged CSS with all @imports inlined
-  """
-  @spec bundle_css(String.t(), keyword()) :: {:ok, css_result()}
-  def bundle_css(entry_path, opts \\ []) do
-    minify = Keyword.get(opts, :minify, false)
-    css_modules = Keyword.get(opts, :css_modules, false)
-    targets = Keyword.get(opts, :targets, %{})
-    chrome = Map.get(targets, :chrome, -1)
-    firefox = Map.get(targets, :firefox, -1)
-    safari = Map.get(targets, :safari, -1)
-
-    Vize.Native.bundle_css_nif(
-      Path.expand(entry_path),
-      minify,
-      chrome,
-      firefox,
-      safari,
-      css_modules
-    )
-  end
-
-  @doc "Like `bundle_css/2` but raises on errors."
-  @spec bundle_css!(String.t(), keyword()) :: css_result()
-  def bundle_css!(entry_path, opts \\ []) do
-    case bundle_css(entry_path, opts) do
-      {:ok, result} ->
-        if result.errors != [] do
-          raise "Vize CSS bundle error: #{inspect(result.errors)}"
-        end
-
-        result
-    end
-  end
 
   # ── Declaration .d.ts Generation ──
 

@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+### Breaking
+
+- Bump upstream Vize crates 0.76 → 0.108.
+- CSS APIs are namespaced under `Vize.CSS`; root-level `compile_css/2`, `bundle_css/2`, and AST helpers are deprecated compatibility delegates.
+- CSS AST printing uses `Vize.CSS.print_ast/2`; the earlier local `generate_css_from_ast` naming was dropped before release.
+
+### Added
+
+- Add `Vize.CSS.parse_ast/2` and `Vize.CSS.parse_ast!/2` — parse CSS into a LightningCSS-backed AST represented as Elixir maps/lists.
+- Add `Vize.CSS.print_ast/2` and `Vize.CSS.print_ast!/2` — print CSS from a transformed AST.
+- Add `Vize.CSS.walk/2`, `prewalk/2`, `prewalk/3`, `postwalk/2`, `postwalk/3`, and `collect/2` for OXC-style AST traversal.
+- Add strict Reach checks to CI: `reach.check --dead-code --smells --strict`.
+
+### Changed
+
+- Update dev/test tooling: Credo, ExDNA, ExDoc, ExSlop, Jason, and Reach.
+- Encode/decode CSS AST values across the NIF boundary as BEAM terms instead of JSON strings.
+
 ## 0.10.0
 
 - Bump upstream Vize crates 0.43 → 0.76

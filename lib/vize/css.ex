@@ -25,6 +25,113 @@ defmodule Vize.CSS do
         }
 
   @doc """
+  Compile CSS using LightningCSS.
+
+  Parses, autoprefixes, and optionally minifies CSS. Also handles Vue scoped CSS
+  transformation, `v-bind()` extraction, and CSS Modules.
+
+  ## Options
+
+    * `:minify` — minify the output (default: `false`)
+    * `:scoped` — apply Vue scoped CSS transformation (default: `false`)
+    * `:scope_id` — scope ID for scoped CSS (e.g. `"data-v-abc123"`)
+    * `:filename` — filename for error reporting
+    * `:css_modules` — enable CSS Modules scoping (default: `false`)
+    * `:targets` — browser targets for autoprefixing, map with optional
+      `:chrome`, `:firefox`, `:safari` keys as major version integers
+
+  ## Examples
+
+      iex> {:ok, result} = Vize.CSS.compile(".foo { color: red }")
+      iex> result.code =~ "color"
+      true
+      iex> result.errors
+      []
+  """
+  @spec compile(String.t(), keyword()) :: {:ok, css_result()}
+  def compile(source, opts \\ []) do
+    minify = Keyword.get(opts, :minify, false)
+    scoped = Keyword.get(opts, :scoped, false)
+    scope_id = Keyword.get(opts, :scope_id, "")
+    filename = Keyword.get(opts, :filename, "")
+    css_modules = Keyword.get(opts, :css_modules, false)
+    targets = Keyword.get(opts, :targets, %{})
+    chrome = Map.get(targets, :chrome, -1)
+    firefox = Map.get(targets, :firefox, -1)
+    safari = Map.get(targets, :safari, -1)
+
+    Vize.Native.compile_css_nif(
+      source,
+      minify,
+      scoped,
+      scope_id,
+      filename,
+      chrome,
+      firefox,
+      safari,
+      css_modules
+    )
+  end
+
+  @doc "Like `compile/2` but raises on errors."
+  @spec compile!(String.t(), keyword()) :: css_result()
+  def compile!(source, opts \\ []) do
+    case compile(source, opts) do
+      {:ok, result} ->
+        if result.errors != [] do
+          raise "Vize CSS compile error: #{inspect(result.errors)}"
+        end
+
+        result
+    end
+  end
+
+  @doc """
+  Bundle a CSS file and all its `@import` dependencies into a single stylesheet.
+
+  Reads the entry file and all imported files from disk, resolving `@import`
+  rules recursively. The result is a single merged stylesheet with all imports
+  inlined, wrapped in the appropriate `@media`, `@supports`, and `@layer` rules.
+
+  ## Options
+
+    * `:minify` — minify the output (default: `false`)
+    * `:css_modules` — enable CSS Modules scoping (default: `false`)
+    * `:targets` — browser targets for autoprefixing
+  """
+  @spec bundle(String.t(), keyword()) :: {:ok, css_result()}
+  def bundle(entry_path, opts \\ []) do
+    minify = Keyword.get(opts, :minify, false)
+    css_modules = Keyword.get(opts, :css_modules, false)
+    targets = Keyword.get(opts, :targets, %{})
+    chrome = Map.get(targets, :chrome, -1)
+    firefox = Map.get(targets, :firefox, -1)
+    safari = Map.get(targets, :safari, -1)
+
+    Vize.Native.bundle_css_nif(
+      Path.expand(entry_path),
+      minify,
+      chrome,
+      firefox,
+      safari,
+      css_modules
+    )
+  end
+
+  @doc "Like `bundle/2` but raises on errors."
+  @spec bundle!(String.t(), keyword()) :: css_result()
+  def bundle!(entry_path, opts \\ []) do
+    case bundle(entry_path, opts) do
+      {:ok, result} ->
+        if result.errors != [] do
+          raise "Vize CSS bundle error: #{inspect(result.errors)}"
+        end
+
+        result
+    end
+  end
+
+  @doc """
   Parse CSS into a LightningCSS-backed AST represented as Elixir maps and lists.
 
   ## Options

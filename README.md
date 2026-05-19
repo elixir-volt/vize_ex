@@ -14,13 +14,14 @@ including Vapor mode IR for BEAM-native SSR.
 - **Lint** Vue SFCs with built-in rules
 - **Content hashes** — template, script, and style hashes for HMR change detection
 - **CSS compilation** — standalone LightningCSS pipeline with autoprefixing, minification, and Vue scoped styles
+- **CSS AST tooling** — parse, traverse, transform, and print LightningCSS-backed ASTs
 
 ## Installation
 
 ```elixir
 def deps do
   [
-    {:vize, "~> 0.9.0"}
+    {:vize, "~> 0.11.0"}
   ]
 end
 ```
@@ -150,7 +151,7 @@ Standalone CSS compilation via LightningCSS — parse, autoprefix, and minify CS
 independently of SFC compilation:
 
 ```elixir
-{:ok, result} = Vize.compile_css(".foo { color: red; user-select: none }", minify: true)
+{:ok, result} = Vize.CSS.compile(".foo { color: red; user-select: none }", minify: true)
 result.code
 # ".foo{color:red;-webkit-user-select:none;user-select:none}"
 ```
@@ -158,7 +159,7 @@ result.code
 With Vue scoped styles:
 
 ```elixir
-{:ok, result} = Vize.compile_css(".foo { color: red }", scoped: true, scope_id: "data-v-abc123")
+{:ok, result} = Vize.CSS.compile(".foo { color: red }", scoped: true, scope_id: "data-v-abc123")
 result.code
 # ".foo[data-v-abc123] { color: red }"
 ```
@@ -166,15 +167,21 @@ result.code
 Browser targeting:
 
 ```elixir
-{:ok, result} = Vize.compile_css(css, targets: %{chrome: 80, firefox: 78, safari: 14})
+{:ok, result} = Vize.CSS.compile(css, targets: %{chrome: 80, firefox: 78, safari: 14})
 ```
 
 Parser-backed CSS tooling:
 
 ```elixir
 {:ok, parsed} = Vize.CSS.parse_ast(".foo { background: url('./logo.svg') }")
-# inspect or transform parsed.ast as Elixir maps/lists
-{:ok, result} = Vize.CSS.print_ast(parsed.ast)
+
+ast =
+  Vize.CSS.postwalk(parsed.ast, fn
+    %{"url" => "./logo.svg"} = node -> %{node | "url" => "/assets/logo.svg"}
+    node -> node
+  end)
+
+{:ok, result} = Vize.CSS.print_ast(ast)
 ```
 
 ## License

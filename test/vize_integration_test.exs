@@ -16,7 +16,7 @@ defmodule VizeIntegrationTest do
     File.write!(child_path, ".child { color: blue; }")
     File.write!(entry_path, "@import \"./child.css\";\n.root { color: red; }")
 
-    {:ok, result} = Vize.bundle_css(entry_path)
+    {:ok, result} = Vize.CSS.bundle(entry_path)
 
     assert result.errors == []
     assert result.code =~ ".child"
@@ -26,7 +26,7 @@ defmodule VizeIntegrationTest do
 
   test "compile_css/2 returns CSS Modules exports" do
     {:ok, result} =
-      Vize.compile_css(".btn { color: red }", css_modules: true, filename: "button.module.css")
+      Vize.CSS.compile(".btn { color: red }", css_modules: true, filename: "button.module.css")
 
     assert result.errors == []
     assert is_map(result.exports)
