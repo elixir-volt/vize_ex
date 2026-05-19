@@ -1,7 +1,7 @@
 %{
-  "libvize_ex_nif-v0.10.0-nif-2.15-aarch64-apple-darwin.so.tar.gz" => "sha256:769e290655d3ef997bffd86cc7aa944e5907fa739db2975d8bc30e4220f69fa4",
-  "libvize_ex_nif-v0.10.0-nif-2.15-aarch64-unknown-linux-gnu.so.tar.gz" => "sha256:311f0be66ceb416ebe8f2f7bf34aa769f94742491b23a352c4b064456fd68771",
-  "libvize_ex_nif-v0.10.0-nif-2.15-x86_64-apple-darwin.so.tar.gz" => "sha256:3e25ddec52c1aa958ab7b811696b58f2c3b27f0b9e1ccbc235b8879e5e50fc7c",
-  "libvize_ex_nif-v0.10.0-nif-2.15-x86_64-unknown-linux-gnu.so.tar.gz" => "sha256:a14fd275040857819bab96bea02abe5ddc8eb9f3198cfbd6020f518d28a6d5dc",
-  "libvize_ex_nif-v0.10.0-nif-2.15-x86_64-unknown-linux-musl.so.tar.gz" => "sha256:8cde60c9faf3f701a74bdebeacb6f025d1c594ee4a250d546c5fb293b945dfa5",
+  "libvize_ex_nif-v0.11.0-nif-2.15-aarch64-apple-darwin.so.tar.gz" => "sha256:ac1cae6cecfb241f975d08cda140526a8ae2aae38ad9d0c84f685689aaebbcf8",
+  "libvize_ex_nif-v0.11.0-nif-2.15-aarch64-unknown-linux-gnu.so.tar.gz" => "sha256:65730b3041f52d47ea63ab52379a04c32310340f7d6944090e25a473b58906fc",
+  "libvize_ex_nif-v0.11.0-nif-2.15-x86_64-apple-darwin.so.tar.gz" => "sha256:deb1e742eeb245a70a3116f6fccdf3b88c65dd716e323bfa1f3d3ac7d2292c0f",
+  "libvize_ex_nif-v0.11.0-nif-2.15-x86_64-unknown-linux-gnu.so.tar.gz" => "sha256:5e74e5b3c84502048fb88fe33e8f5a810aa226f85c8b5d9ca552cd6422fab8d9",
+  "libvize_ex_nif-v0.11.0-nif-2.15-x86_64-unknown-linux-musl.so.tar.gz" => "sha256:6d0fe790be6162c862bcac877108950c6857c8aadd142323ba57d15c29adedf0",
 }
