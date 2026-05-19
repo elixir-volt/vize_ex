@@ -4,7 +4,7 @@
 
 ### Breaking
 
-- Bump upstream Vize crates 0.76 → 0.108.
+- Bump upstream Vize crates 0.76 → 0.109.
 - CSS APIs are namespaced under `Vize.CSS`; root-level `compile_css/2`, `bundle_css/2`, and AST helpers are deprecated compatibility delegates.
 - CSS AST printing uses `Vize.CSS.print_ast/2`; the earlier local `generate_css_from_ast` naming was dropped before release.
 
