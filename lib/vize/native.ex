@@ -27,8 +27,16 @@ defmodule Vize.Native do
           boolean(),
           boolean()
         ) :: {:ok, map()} | {:error, String.t()}
-  def compile_sfc_nif(_source, _filename, _scope_id, _vapor, _ssr, _custom_renderer, _strip_types),
-    do: :erlang.nif_error(:nif_not_loaded)
+  def compile_sfc_nif(
+        _source,
+        _filename,
+        _scope_id,
+        _vapor,
+        _ssr,
+        _custom_renderer,
+        _strip_types
+      ),
+      do: :erlang.nif_error(:nif_not_loaded)
 
   @spec compile_template_nif(String.t(), String.t(), boolean()) ::
           {:ok, map()} | {:error, list()}
@@ -48,6 +56,14 @@ defmodule Vize.Native do
 
   @spec lint_nif(String.t(), String.t()) :: {:ok, list()}
   def lint_nif(_source, _filename), do: :erlang.nif_error(:nif_not_loaded)
+
+  @spec parse_css_ast_nif(String.t(), String.t(), boolean(), boolean()) :: {:ok, map()}
+  def parse_css_ast_nif(_source, _filename, _custom_media, _css_modules),
+    do: :erlang.nif_error(:nif_not_loaded)
+
+  @spec print_css_ast_nif(map(), boolean(), integer(), integer(), integer()) :: {:ok, map()}
+  def print_css_ast_nif(_ast, _minify, _chrome, _firefox, _safari),
+    do: :erlang.nif_error(:nif_not_loaded)
 
   @spec compile_css_nif(
           String.t(),

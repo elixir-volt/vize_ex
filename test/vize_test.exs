@@ -35,6 +35,9 @@ defmodule VizeTest do
   </style>
   """
 
+  defp rewrite_css_url(%{"url" => from} = node, from, to), do: %{node | "url" => to}
+  defp rewrite_css_url(node, _from, _to), do: node
+
   describe "parse_sfc/1" do
     test "parses template block" do
       {:ok, descriptor} = Vize.parse_sfc(@simple_sfc)
@@ -305,43 +308,80 @@ defmodule VizeTest do
     end
   end
 
+  describe "Vize.CSS AST helpers" do
+    test "round-trips CSS through an Elixir AST" do
+      {:ok, parsed} = Vize.CSS.parse_ast(".foo { color: red }")
+
+      assert is_map(parsed.ast)
+      assert parsed.errors == []
+
+      {:ok, printed} = Vize.CSS.print_ast(parsed.ast)
+
+      assert printed.code =~ "color"
+      assert printed.errors == []
+    end
+
+    test "supports parser-backed URL mutation" do
+      {:ok, parsed} = Vize.CSS.parse_ast(".foo { background: url('./logo.svg') }")
+
+      ast =
+        Vize.CSS.postwalk(parsed.ast, &rewrite_css_url(&1, "./logo.svg", "/assets/logo-hash.svg"))
+
+      {:ok, printed} = Vize.CSS.print_ast(ast)
+
+      assert printed.code =~ "/assets/logo-hash.svg"
+    end
+
+    test "collects URL nodes" do
+      {:ok, parsed} = Vize.CSS.parse_ast(".foo { background: url('./logo.svg') }")
+
+      urls =
+        Vize.CSS.collect(parsed.ast, fn
+          %{"url" => url} -> {:keep, url}
+          _ -> :skip
+        end)
+
+      assert "./logo.svg" in urls
+    end
+  end
+
   describe "compile_css/2" do
     test "compiles basic CSS" do
-      {:ok, result} = Vize.compile_css(".foo { color: red }")
+      {:ok, result} = Vize.CSS.compile(".foo { color: red }")
       assert result.code =~ "color"
       assert result.errors == []
       assert result.warnings == []
     end
 
     test "minifies CSS" do
-      {:ok, result} = Vize.compile_css(".foo {\n  color: red;\n}", minify: true)
+      {:ok, result} = Vize.CSS.compile(".foo {\n  color: red;\n}", minify: true)
       refute result.code =~ "\n"
     end
 
     test "returns empty css_vars for plain CSS" do
-      {:ok, result} = Vize.compile_css(".foo { color: red }")
+      {:ok, result} = Vize.CSS.compile(".foo { color: red }")
       assert result.css_vars == []
     end
 
     test "extracts v-bind expressions" do
-      {:ok, result} = Vize.compile_css(".foo { color: v-bind(textColor) }")
+      {:ok, result} = Vize.CSS.compile(".foo { color: v-bind(textColor) }")
       assert "textColor" in result.css_vars
     end
 
     test "applies scoped transformation" do
       {:ok, result} =
-        Vize.compile_css(".foo { color: red }", scoped: true, scope_id: "data-v-abc123")
+        Vize.CSS.compile(".foo { color: red }", scoped: true, scope_id: "data-v-abc123")
 
       assert result.code =~ "abc123"
     end
 
     test "handles parse errors gracefully" do
-      {:ok, result} = Vize.compile_css(".foo { color: }")
+      {:ok, result} = Vize.CSS.compile(".foo { color: }")
       assert length(result.errors) > 0 or result.code != ""
     end
 
     test "bang variant works" do
-      result = Vize.compile_css!(".foo { color: red }")
+      result = Vize.CSS.compile!(".foo { color: red }")
       assert result.code =~ "color"
     end
   end
