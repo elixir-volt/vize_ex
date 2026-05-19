@@ -35,6 +35,9 @@ defmodule VizeTest do
   </style>
   """
 
+  defp rewrite_css_url(%{"url" => from} = node, from, to), do: %{node | "url" => to}
+  defp rewrite_css_url(node, _from, _to), do: node
+
   describe "parse_sfc/1" do
     test "parses template block" do
       {:ok, descriptor} = Vize.parse_sfc(@simple_sfc)
@@ -302,6 +305,43 @@ defmodule VizeTest do
     test "returns diagnostics list" do
       {:ok, diagnostics} = Vize.lint("<template><div>ok</div></template>", "test.vue")
       assert is_list(diagnostics)
+    end
+  end
+
+  describe "Vize.CSS AST helpers" do
+    test "round-trips CSS through an Elixir AST" do
+      {:ok, parsed} = Vize.CSS.parse_ast(".foo { color: red }")
+
+      assert is_map(parsed.ast)
+      assert parsed.errors == []
+
+      {:ok, printed} = Vize.CSS.print_ast(parsed.ast)
+
+      assert printed.code =~ "color"
+      assert printed.errors == []
+    end
+
+    test "supports parser-backed URL mutation" do
+      {:ok, parsed} = Vize.CSS.parse_ast(".foo { background: url('./logo.svg') }")
+
+      ast =
+        Vize.CSS.postwalk(parsed.ast, &rewrite_css_url(&1, "./logo.svg", "/assets/logo-hash.svg"))
+
+      {:ok, printed} = Vize.CSS.print_ast(ast)
+
+      assert printed.code =~ "/assets/logo-hash.svg"
+    end
+
+    test "collects URL nodes" do
+      {:ok, parsed} = Vize.CSS.parse_ast(".foo { background: url('./logo.svg') }")
+
+      urls =
+        Vize.CSS.collect(parsed.ast, fn
+          %{"url" => url} -> {:keep, url}
+          _ -> :skip
+        end)
+
+      assert "./logo.svg" in urls
     end
   end
 

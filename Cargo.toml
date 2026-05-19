@@ -2,3 +2,14 @@
 resolver = "2"
 
 members = ["native/vize_ex_nif"]
+
+[patch.crates-io]
+vize_armature = { path = "../vize/crates/vize_armature" }
+vize_atelier_core = { path = "../vize/crates/vize_atelier_core" }
+vize_atelier_dom = { path = "../vize/crates/vize_atelier_dom" }
+vize_atelier_sfc = { path = "../vize/crates/vize_atelier_sfc" }
+vize_atelier_ssr = { path = "../vize/crates/vize_atelier_ssr" }
+vize_atelier_vapor = { path = "../vize/crates/vize_atelier_vapor" }
+vize_carton = { path = "../vize/crates/vize_carton" }
+vize_croquis = { path = "../vize/crates/vize_croquis" }
+vize_relief = { path = "../vize/crates/vize_relief" }

@@ -169,6 +169,14 @@ Browser targeting:
 {:ok, result} = Vize.compile_css(css, targets: %{chrome: 80, firefox: 78, safari: 14})
 ```
 
+Parser-backed CSS tooling:
+
+```elixir
+{:ok, parsed} = Vize.CSS.parse_ast(".foo { background: url('./logo.svg') }")
+# inspect or transform parsed.ast as Elixir maps/lists
+{:ok, result} = Vize.CSS.print_ast(parsed.ast)
+```
+
 ## License
 
 [MIT](./LICENSE)

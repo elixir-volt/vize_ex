@@ -1,4 +1,6 @@
-use rustler::{Encoder, Env, Term};
+use rustler::types::map::MapIterator;
+use rustler::{Encoder, Env, Error, NifResult, Term};
+use serde_json::{Map, Number, Value};
 
 use crate::atoms;
 
@@ -118,6 +120,102 @@ pub(crate) fn ok_term<'a, T: Encoder>(env: Env<'a>, payload: T) -> Term<'a> {
 
 pub(crate) fn error_term<'a, T: Encoder>(env: Env<'a>, payload: T) -> Term<'a> {
     (atoms::error(), payload).encode(env)
+}
+
+pub(crate) fn encode_json_value<'a>(env: Env<'a>, value: &Value) -> Term<'a> {
+    match value {
+        Value::Null => nil_term(env),
+        Value::Bool(value) => value.encode(env),
+        Value::Number(number) => {
+            if let Some(value) = number.as_i64() {
+                value.encode(env)
+            } else if let Some(value) = number.as_u64() {
+                value.encode(env)
+            } else if let Some(value) = number.as_f64() {
+                value.encode(env)
+            } else {
+                nil_term(env)
+            }
+        }
+        Value::String(value) => value.encode(env),
+        Value::Array(items) => {
+            let terms: Vec<Term<'a>> = items
+                .iter()
+                .map(|item| encode_json_value(env, item))
+                .collect();
+            terms.encode(env)
+        }
+        Value::Object(map) => {
+            let keys: Vec<Term<'a>> = map.keys().map(|key| key.encode(env)).collect();
+            let values: Vec<Term<'a>> = map
+                .values()
+                .map(|value| encode_json_value(env, value))
+                .collect();
+
+            if keys.is_empty() {
+                Term::map_new(env)
+            } else {
+                Term::map_from_arrays(env, &keys, &values).unwrap()
+            }
+        }
+    }
+}
+
+pub(crate) fn decode_json_value(term: Term<'_>) -> NifResult<Value> {
+    if term.is_empty_list() {
+        return Ok(Value::Array(vec![]));
+    }
+
+    if term.is_list() {
+        let items = term.decode::<Vec<Term>>()?;
+        return items
+            .into_iter()
+            .map(decode_json_value)
+            .collect::<NifResult<Vec<_>>>()
+            .map(Value::Array);
+    }
+
+    if term.is_map() {
+        let mut map = Map::new();
+        let iterator = MapIterator::new(term).ok_or(Error::BadArg)?;
+
+        for (key, value) in iterator {
+            map.insert(
+                key.decode::<std::string::String>()?,
+                decode_json_value(value)?,
+            );
+        }
+
+        return Ok(Value::Object(map));
+    }
+
+    if let Ok(value) = term.decode::<bool>() {
+        return Ok(Value::Bool(value));
+    }
+
+    if let Ok(value) = term.decode::<i64>() {
+        return Ok(Value::Number(value.into()));
+    }
+
+    if let Ok(value) = term.decode::<u64>() {
+        return Ok(Value::Number(value.into()));
+    }
+
+    if let Ok(value) = term.decode::<f64>() {
+        if let Some(number) = Number::from_f64(value) {
+            return Ok(Value::Number(number));
+        }
+    }
+
+    if let Ok(value) = term.decode::<std::string::String>() {
+        return Ok(Value::String(value));
+    }
+
+    if term == nil_term(term.get_env()) {
+        return Ok(Value::Null);
+    }
+
+    Err(Error::BadArg)
 }
 
 struct EncodedTemplateBlock<'a>(&'a vize_atelier_sfc::SfcTemplateBlock<'a>);
@@ -333,9 +431,7 @@ impl Encoder for EncodedCompileSfcResult<'_> {
             .map(|a| EncodedMacroArtifact(a).encode(env))
             .collect();
 
-        let code = self
-            .code_override
-            .unwrap_or(self.result.code.as_str());
+        let code = self.code_override.unwrap_or(self.result.code.as_str());
 
         Term::map_from_arrays(
             env,
@@ -422,6 +518,44 @@ fn encode_css_exports<'a>(
             Term::map_from_arrays(env, &keys, &values).unwrap()
         }
         None => nil_term(env),
+    }
+}
+
+pub(crate) struct EncodedCssAstResult<'a> {
+    pub(crate) result: &'a vize_atelier_sfc::CssAstResult,
+}
+
+impl Encoder for EncodedCssAstResult<'_> {
+    fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
+        let errors: Vec<&str> = self
+            .result
+            .errors
+            .iter()
+            .map(|value| value.as_str())
+            .collect();
+        let warnings: Vec<&str> = self
+            .result
+            .warnings
+            .iter()
+            .map(|value| value.as_str())
+            .collect();
+        let ast = self
+            .result
+            .ast
+            .as_ref()
+            .map(|value| encode_json_value(env, value))
+            .unwrap_or_else(|| nil_term(env));
+
+        Term::map_from_arrays(
+            env,
+            &[
+                atoms::ast().encode(env),
+                atoms::errors().encode(env),
+                atoms::warnings().encode(env),
+            ],
+            &[ast, errors.encode(env), warnings.encode(env)],
+        )
+        .unwrap()
     }
 }
 

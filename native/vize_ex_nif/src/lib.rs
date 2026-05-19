@@ -2,12 +2,12 @@ use rustler::{Encoder, Env, NifResult, Term};
 use vize_atelier_core::options::{CodegenMode, CodegenOptions, ParserOptions, TransformOptions};
 use vize_atelier_core::parser::{parse, parse_with_options};
 use vize_atelier_core::transform::transform;
-use vize_atelier_sfc::{
-    bundle_css, compile_css, compile_sfc, parse_sfc, CssCompileOptions, CssTargets,
-    SfcCompileOptions, SfcParseOptions,
-};
 use vize_atelier_sfc::compile_script::typescript::transform_typescript_to_js;
 use vize_atelier_sfc::script::analyze_script_setup_to_summary;
+use vize_atelier_sfc::{
+    bundle_css, compile_css, compile_sfc, parse_css_ast, parse_sfc, print_css_ast,
+    CssCompileOptions, CssTargets, SfcCompileOptions, SfcParseOptions,
+};
 use vize_atelier_ssr::compile_ssr;
 use vize_atelier_vapor::{compile_vapor, ir::*, transform_to_ir, VaporCompilerOptions};
 use vize_carton::Bump;
@@ -21,9 +21,9 @@ mod vapor_split;
 
 use crate::ir_encoding::{encode_ir_prop, encode_simple_expr};
 use crate::term_encoding::{
-    error_term, nil_term, ok_term, EncodedBundleCssResult, EncodedCompileSfcResult,
-    EncodedCssCompileResult, EncodedLintDiagnostic, EncodedParseSfcResult, EncodedSsrCompileResult,
-    EncodedTemplateCompileResult,
+    decode_json_value, error_term, nil_term, ok_term, EncodedBundleCssResult,
+    EncodedCompileSfcResult, EncodedCssAstResult, EncodedCssCompileResult, EncodedLintDiagnostic,
+    EncodedParseSfcResult, EncodedSsrCompileResult, EncodedTemplateCompileResult,
 };
 use crate::vapor_split::process_block;
 
@@ -108,6 +108,7 @@ mod atoms {
         offset,
 
         // CSS result fields
+        ast,
         map,
         css_vars,
         exports,
@@ -660,6 +661,91 @@ fn lint_nif<'a>(env: Env<'a>, source: &str, filename: &str) -> NifResult<Term<'a
 
 // ── CSS Compilation ──
 
+fn css_targets(chrome: i64, firefox: i64, safari: i64) -> Option<CssTargets> {
+    if chrome >= 0 || firefox >= 0 || safari >= 0 {
+        Some(CssTargets {
+            chrome: if chrome >= 0 {
+                Some(chrome as u32)
+            } else {
+                None
+            },
+            firefox: if firefox >= 0 {
+                Some(firefox as u32)
+            } else {
+                None
+            },
+            safari: if safari >= 0 {
+                Some(safari as u32)
+            } else {
+                None
+            },
+            ..Default::default()
+        })
+    } else {
+        None
+    }
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+fn parse_css_ast_nif<'a>(
+    env: Env<'a>,
+    source: &str,
+    filename: &str,
+    custom_media: bool,
+    css_modules: bool,
+) -> NifResult<Term<'a>> {
+    let options = CssCompileOptions {
+        filename: if filename.is_empty() {
+            None
+        } else {
+            Some(filename.into())
+        },
+        custom_media,
+        css_modules,
+        ..Default::default()
+    };
+
+    let result = parse_css_ast(source, &options);
+
+    Ok(ok_term(env, EncodedCssAstResult { result: &result }))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+fn print_css_ast_nif<'a>(
+    env: Env<'a>,
+    ast: Term<'a>,
+    minify: bool,
+    chrome: i64,
+    firefox: i64,
+    safari: i64,
+) -> NifResult<Term<'a>> {
+    let ast = match decode_json_value(ast) {
+        Ok(ast) => ast,
+        Err(_) => {
+            let result = vize_atelier_sfc::CssCompileResult {
+                code: Default::default(),
+                map: None,
+                css_vars: vec![],
+                errors: vec!["Invalid CSS AST term".into()],
+                warnings: vec![],
+                exports: None,
+            };
+
+            return Ok(ok_term(env, EncodedCssCompileResult { result: &result }));
+        }
+    };
+
+    let options = CssCompileOptions {
+        minify,
+        targets: css_targets(chrome, firefox, safari),
+        ..Default::default()
+    };
+
+    let result = print_css_ast(ast, &options);
+
+    Ok(ok_term(env, EncodedCssCompileResult { result: &result }))
+}
+
 #[rustler::nif(schedule = "DirtyCpu")]
 #[allow(clippy::too_many_arguments)]
 fn compile_css_nif<'a>(
@@ -857,9 +943,7 @@ fn generate_dts_nif<'a>(env: Env<'a>, source: &str, filename: &str) -> NifResult
         (Some(plain), None) => {
             vize_croquis::declaration_ts::generate_declaration_ts(&summary, Some(plain))
         }
-        (None, None) => {
-            vize_croquis::declaration_ts::generate_declaration_ts(&summary, None)
-        }
+        (None, None) => vize_croquis::declaration_ts::generate_declaration_ts(&summary, None),
     };
 
     let result = term_map!(env, {

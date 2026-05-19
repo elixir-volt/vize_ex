@@ -151,7 +151,16 @@ defmodule Vize do
     scope_id = Keyword.get(opts, :scope_id, "")
     custom_renderer = Keyword.get(opts, :custom_renderer, false)
     strip_types = Keyword.get(opts, :strip_types, false)
-    Vize.Native.compile_sfc_nif(source, filename, scope_id, vapor, ssr, custom_renderer, strip_types)
+
+    Vize.Native.compile_sfc_nif(
+      source,
+      filename,
+      scope_id,
+      vapor,
+      ssr,
+      custom_renderer,
+      strip_types
+    )
   end
 
   @doc """
@@ -377,6 +386,18 @@ defmodule Vize do
           errors: [String.t()],
           warnings: [String.t()]
         }
+
+  @deprecated "Use Vize.CSS.parse_ast/2 instead"
+  defdelegate parse_css_ast(source, opts \\ []), to: Vize.CSS, as: :parse_ast
+
+  @deprecated "Use Vize.CSS.parse_ast!/2 instead"
+  defdelegate parse_css_ast!(source, opts \\ []), to: Vize.CSS, as: :parse_ast!
+
+  @deprecated "Use Vize.CSS.print_ast/2 instead"
+  defdelegate print_css_ast(ast, opts \\ []), to: Vize.CSS, as: :print_ast
+
+  @deprecated "Use Vize.CSS.print_ast!/2 instead"
+  defdelegate print_css_ast!(ast, opts \\ []), to: Vize.CSS, as: :print_ast!
 
   @doc """
   Compile CSS using LightningCSS.
