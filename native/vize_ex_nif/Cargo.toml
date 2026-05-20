@@ -12,16 +12,16 @@ rustler = { version = "0.37", default-features = false, features = ["derive", "n
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
-vize_carton = "0.109"
-vize_relief = "0.109"
-vize_armature = "0.109"
-vize_atelier_core = "0.109"
-vize_atelier_dom = "0.109"
-vize_atelier_vapor = "0.109"
-vize_atelier_ssr = "0.109"
-vize_atelier_sfc = { version = "0.109", features = ["native"] }
-vize_patina = "0.109"
-vize_croquis = "0.109"
+vize_carton = "0.112"
+vize_relief = "0.112"
+vize_armature = "0.112"
+vize_atelier_core = "0.112"
+vize_atelier_dom = "0.112"
+vize_atelier_vapor = "0.112"
+vize_atelier_ssr = "0.112"
+vize_atelier_sfc = { version = "0.112", features = ["native"] }
+vize_patina = "0.112"
+vize_croquis = "0.112"
 
 [dev-dependencies]
 proptest = "1.6"

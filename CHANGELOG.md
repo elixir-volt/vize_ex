@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.11.1
+
+- Bump upstream Vize crates 0.109 → 0.112.
+- Fix CSS AST print round-trip for `image-set(...)`.
+
 ## 0.11.0
 
 ### Breaking

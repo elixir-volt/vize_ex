@@ -2296,9 +2296,9 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "vize_armature"
-version = "0.109.0"
+version = "0.112.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eaa5aaf9ea8d2e3ca51bf85822e9c5bf227c394bd9949a651f001fcc0e1d59ac"
+checksum = "b2f29f8442caef199474668dfb97e6dadd51070048c0df4704c9f3e3c68fb347"
 dependencies = [
  "compact_str 0.9.0",
  "htmlize",
@@ -2310,9 +2310,9 @@ dependencies = [
 
 [[package]]
 name = "vize_atelier_core"
-version = "0.109.0"
+version = "0.112.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "78179137225d7cae44e93b344cc44f245e24ba7b3cf3baee1bbdc57c8f55670e"
+checksum = "2677f29e5a1d42956d1bc5d849274129b34303a2a0fd624a94eca2eb07243ea8"
 dependencies = [
  "bumpalo",
  "compact_str 0.9.0",
@@ -2338,9 +2338,9 @@ dependencies = [
 
 [[package]]
 name = "vize_atelier_dom"
-version = "0.109.0"
+version = "0.112.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "edbb36a5eaf1bf971e633be88d7ffc0067e0e9dd9beb2e9a3b8d15c5b90fe4d5"
+checksum = "7cb0b5931a2d38c7f65359df19f0591397de21d26668910ce082ae261e39391f"
 dependencies = [
  "phf 0.13.1",
  "serde",
@@ -2352,9 +2352,9 @@ dependencies = [
 
 [[package]]
 name = "vize_atelier_sfc"
-version = "0.109.0"
+version = "0.112.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cde0c034f75c60307b017f838a7bdfb87ad6cbdb6ae533401ad84166f77bc209"
+checksum = "d243ba5dcf4f782a953bdca5dd889e2c60a4d31702e33affcb53e8d934866c52"
 dependencies = [
  "lightningcss",
  "memchr",
@@ -2382,9 +2382,9 @@ dependencies = [
 
 [[package]]
 name = "vize_atelier_ssr"
-version = "0.109.0"
+version = "0.112.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "889eedcad0c4ea49eab1fe82fbad0252bb6aef6a36adc715e65518bc7412373e"
+checksum = "a0c0029ca03a3eed54a1d7a1228c9b46d476510df992d979736534f3fb109d6d"
 dependencies = [
  "serde",
  "vize_armature",
@@ -2396,9 +2396,9 @@ dependencies = [
 
 [[package]]
 name = "vize_atelier_vapor"
-version = "0.109.0"
+version = "0.112.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c63aea42ef49e9ad2ff2799348978503f78e77c776421f622bc5c0c13933771"
+checksum = "b1545e1273bd3c7e42880319f0b18757d44dc34feef28c9f133d0cd0ff94725e"
 dependencies = [
  "oxc_allocator",
  "oxc_ast",
@@ -2415,9 +2415,9 @@ dependencies = [
 
 [[package]]
 name = "vize_carton"
-version = "0.109.0"
+version = "0.112.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7d0835001521e4736885021781a35612cfde6402cd295967267e15e47c4fb48"
+checksum = "e3ca75f463b5661801c7efbe2bcdb22f3ae25dd8c48ca54d33b91971df446972"
 dependencies = [
  "bitflags 2.11.1",
  "bumpalo",
@@ -2434,9 +2434,9 @@ dependencies = [
 
 [[package]]
 name = "vize_croquis"
-version = "0.109.0"
+version = "0.112.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "928b466b985c0cf9b293e12db3cb6dad99b5b63ec466b7974ec1863ef0aa918d"
+checksum = "e42231c86e0f8ab4a5eee626714f1a10e3c2dfee700a1623f03504e5d4e5ee39"
 dependencies = [
  "dashmap 6.1.0",
  "once_cell",
@@ -2475,9 +2475,9 @@ dependencies = [
 
 [[package]]
 name = "vize_patina"
-version = "0.109.0"
+version = "0.112.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d94a24fce1ca589e0e924ad70a8270340fc6453f4d8c52209dfd5b2cebd03e34"
+checksum = "7f79ebc443145923d667ec26da259259800547aff60e34cf961348d681d9cda1"
 dependencies = [
  "corsa",
  "lightningcss",
@@ -2501,9 +2501,9 @@ dependencies = [
 
 [[package]]
 name = "vize_relief"
-version = "0.109.0"
+version = "0.112.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "14775e182c6d8dc577f3ae72048ddcd44a35f9972eef84cfd3e531df0088051b"
+checksum = "7ae4a6776dfdae2f9d84135eaa402821e49a2ec5c40da03493237c0ef59e4348"
 dependencies = [
  "serde",
  "thiserror",

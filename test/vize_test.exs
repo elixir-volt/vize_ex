@@ -332,6 +332,15 @@ defmodule VizeTest do
       assert printed.code =~ "/assets/logo-hash.svg"
     end
 
+    test "prints image-set ASTs" do
+      css = ".hero { background-image: image-set(url('./hero.avif') type('image/avif') 1x) }"
+      {:ok, parsed} = Vize.CSS.parse_ast(css)
+      {:ok, printed} = Vize.CSS.print_ast(parsed.ast)
+
+      assert printed.code =~ "image-set"
+      assert printed.code =~ "hero.avif"
+    end
+
     test "collects URL nodes" do
       {:ok, parsed} = Vize.CSS.parse_ast(".foo { background: url('./logo.svg') }")
 
