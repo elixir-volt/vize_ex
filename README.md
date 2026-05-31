@@ -26,7 +26,33 @@ def deps do
 end
 ```
 
-Requires a Rust toolchain (`rustup` recommended). The NIF compiles automatically on `mix compile`.
+Vize uses precompiled NIFs on supported targets. On targets without a
+precompiled artifact, Vize automatically builds the NIF from source, if
+required tools are available.
+
+Source builds require a Rust toolchain (`rustup` recommended) and Rustler
+in your app's deps:
+
+```elixir
+def deps do
+  [
+    {:vize, "~> 0.11.0"},
+    {:rustler, "~> 0.37", optional: true}
+  ]
+end
+```
+
+To force a source build on any target:
+
+```sh
+VIZE_EX_BUILD=1 mix deps.compile vize --force
+```
+
+You can also make source builds permanent with compile-time config:
+
+```elixir
+config :rustler_precompiled, :force_build, vize: true
+```
 
 ## Usage
 
