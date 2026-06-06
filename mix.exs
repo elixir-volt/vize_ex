@@ -8,11 +8,11 @@ defmodule Vize.MixProject do
     [
       app: :vize,
       version: @version,
-      elixir: "~> 1.17",
+      elixir: "~> 1.19",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       aliases: aliases(),
-      dialyzer: [plt_add_apps: [:mix]],
+      dialyzer: [plt_add_apps: [:mix], flags: [:no_opaque]],
       name: "Vize",
       description:
         "Elixir bindings for the Vize Vue.js toolchain — compile, lint, and format Vue SFCs via Rust NIFs.",
@@ -60,13 +60,13 @@ defmodule Vize.MixProject do
         "cmd cargo fmt --manifest-path native/vize_ex_nif/Cargo.toml -- --check",
         "cmd cargo clippy --manifest-path native/vize_ex_nif/Cargo.toml -- -D warnings"
       ],
-      ci: ["lint", "cmd --shell MIX_ENV=test mix test"]
+      ci: ["lint", "cmd env MIX_ENV=test mix test"]
     ]
   end
 
   defp deps do
     [
-      {:rustler, "~> 0.36 or ~> 0.37", optional: true},
+      {:rustler, "~> 0.36 or ~> 0.37 or ~> 0.38", optional: true},
       {:rustler_precompiled, "~> 0.8"},
       {:ex_doc, "~> 0.40", only: :dev, runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
