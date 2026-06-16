@@ -38,6 +38,26 @@ defmodule VizeTest do
   defp rewrite_css_url(%{"url" => from} = node, from, to), do: %{node | "url" => to}
   defp rewrite_css_url(node, _from, _to), do: node
 
+  describe "native build config" do
+    test "honors explicit source build settings" do
+      assert Vize.Native.Build.force_build?("1", false, "x86_64-unknown-linux-gnu")
+      assert Vize.Native.Build.force_build?("true", false, "x86_64-unknown-linux-gnu")
+      assert Vize.Native.Build.force_build?(nil, true, "x86_64-unknown-linux-gnu")
+      refute Vize.Native.Build.force_build?(nil, false, "x86_64-unknown-linux-gnu")
+    end
+
+    test "source builds when no precompiled target is available" do
+      assert Vize.Native.Build.force_build?(nil, false, "x86_64-unknown-freebsd")
+      refute Vize.Native.Build.force_build?(nil, false, "x86_64-unknown-linux-gnu")
+    end
+
+    test "raises a clear error when source build needs Rustler" do
+      assert_raise RuntimeError, ~r/Rustler is not available/, fn ->
+        Vize.Native.Build.ensure_rustler_available!(true, false)
+      end
+    end
+  end
+
   describe "parse_sfc/1" do
     test "parses template block" do
       {:ok, descriptor} = Vize.parse_sfc(@simple_sfc)

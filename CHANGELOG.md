@@ -4,6 +4,7 @@
 
 - Bump upstream Vize crates 0.109 → 0.112.
 - Fix CSS AST print round-trip for `image-set(...)`.
+- Automatically build NIF from source on targets without precompiled artifacts.
 
 ## 0.11.0
 

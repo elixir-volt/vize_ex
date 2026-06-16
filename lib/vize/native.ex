@@ -1,18 +1,72 @@
+defmodule Vize.Native.Build do
+  @moduledoc false
+
+  @targets ~w(
+    aarch64-apple-darwin
+    aarch64-unknown-linux-gnu
+    x86_64-apple-darwin
+    x86_64-unknown-linux-gnu
+    x86_64-unknown-linux-musl
+  )
+
+  def targets, do: @targets
+
+  def force_build?(env_value, config_value, target \\ current_target()) do
+    env_value in ["1", "true"] or config_value == true or target not in @targets
+  end
+
+  def ensure_rustler_available!(force_build?, rustler_loaded? \\ Code.ensure_loaded?(Rustler))
+  def ensure_rustler_available!(false, _rustler_loaded?), do: :ok
+
+  def ensure_rustler_available!(true, rustler_loaded?) do
+    unless rustler_loaded? do
+      raise """
+      Vize needs to compile its Rust NIF from source, but Rustler is not available.
+
+      Add Rustler to your application's dependencies:
+
+          {:rustler, "~> 0.37", optional: true}
+
+      Then run:
+
+          mix deps.get
+          mix deps.compile vize --force
+      """
+    end
+
+    :ok
+  end
+
+  defp current_target do
+    case RustlerPrecompiled.target() do
+      {:ok, "nif-" <> target} ->
+        target
+        |> String.split("-", parts: 2)
+        |> List.last()
+
+      {:error, _reason} ->
+        nil
+    end
+  end
+end
+
 defmodule Vize.Native do
   version = Mix.Project.config()[:version]
+
+  force_build? =
+    Vize.Native.Build.force_build?(
+      System.get_env("VIZE_EX_BUILD"),
+      Application.compile_env(:rustler_precompiled, [:force_build, :vize], false)
+    )
+
+  Vize.Native.Build.ensure_rustler_available!(force_build?)
 
   use RustlerPrecompiled,
     otp_app: :vize,
     crate: "vize_ex_nif",
     base_url: "https://github.com/elixir-volt/vize_ex/releases/download/v#{version}",
-    force_build: System.get_env("VIZE_EX_BUILD") in ["1", "true"],
-    targets: ~w(
-      aarch64-apple-darwin
-      aarch64-unknown-linux-gnu
-      x86_64-apple-darwin
-      x86_64-unknown-linux-gnu
-      x86_64-unknown-linux-musl
-    ),
+    force_build: force_build?,
+    targets: Vize.Native.Build.targets(),
     version: version
 
   @spec parse_sfc_nif(String.t()) :: {:ok, map()} | {:error, String.t()}
