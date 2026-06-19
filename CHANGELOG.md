@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.12.0
+
+### Added
+
+- Add `Vize.CSS.collect_urls/2` and `Vize.CSS.rewrite_urls/3` for parser-backed CSS URL source rewriting without CSS AST print round-trips.
+- Add bang variants for CSS URL helpers.
+- Add structured `Vize.Error`, `Vize.Diagnostic`, source range/location, CSS URL, Vapor result, and Croquis structs.
+- Add structured Vapor diagnostics with `diagnostics: true` and `template_syntax: :standard | :quirks` options.
+- Add `Vize.analyze_sfc/2` and `Vize.analyze_sfc!/2` returning `%Vize.Croquis{}` semantic summaries.
+
+### Changed
+
+- Bump upstream Vize crates 0.112 → 0.206.
+- `Vize.compile_vapor/2` now returns `%Vize.Vapor.Result{}`.
+
 ## 0.11.1
 
 - Bump upstream Vize crates 0.109 → 0.112.

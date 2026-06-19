@@ -18,6 +18,9 @@ defmodule Vize.Native do
   @spec parse_sfc_nif(String.t()) :: {:ok, map()} | {:error, String.t()}
   def parse_sfc_nif(_source), do: :erlang.nif_error(:nif_not_loaded)
 
+  @spec analyze_sfc_nif(String.t(), String.t()) :: {:ok, map()} | {:error, String.t()}
+  def analyze_sfc_nif(_source, _mode), do: :erlang.nif_error(:nif_not_loaded)
+
   @spec compile_sfc_nif(
           String.t(),
           String.t(),
@@ -45,8 +48,10 @@ defmodule Vize.Native do
   @spec compile_ssr_nif(String.t()) :: {:ok, map()} | {:error, list()}
   def compile_ssr_nif(_source), do: :erlang.nif_error(:nif_not_loaded)
 
-  @spec compile_vapor_nif(String.t(), boolean()) :: {:ok, map()} | {:error, list()}
-  def compile_vapor_nif(_source, _ssr), do: :erlang.nif_error(:nif_not_loaded)
+  @spec compile_vapor_nif(String.t(), boolean(), boolean(), String.t()) ::
+          {:ok, map()} | {:error, list()}
+  def compile_vapor_nif(_source, _ssr, _diagnostics, _template_syntax),
+    do: :erlang.nif_error(:nif_not_loaded)
 
   @spec vapor_ir_nif(String.t()) :: {:ok, map()} | {:error, list()}
   def vapor_ir_nif(_source), do: :erlang.nif_error(:nif_not_loaded)
@@ -56,6 +61,11 @@ defmodule Vize.Native do
 
   @spec lint_nif(String.t(), String.t()) :: {:ok, list()}
   def lint_nif(_source, _filename), do: :erlang.nif_error(:nif_not_loaded)
+
+  @spec collect_css_urls_nif(String.t(), String.t(), boolean(), boolean()) ::
+          {:ok, [map()]} | {:error, [String.t()]}
+  def collect_css_urls_nif(_source, _filename, _custom_media, _css_modules),
+    do: :erlang.nif_error(:nif_not_loaded)
 
   @spec parse_css_ast_nif(String.t(), String.t(), boolean(), boolean()) :: {:ok, map()}
   def parse_css_ast_nif(_source, _filename, _custom_media, _css_modules),

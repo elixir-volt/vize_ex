@@ -24,6 +24,8 @@ defmodule Vize.CSS do
           warnings: [String.t()]
         }
 
+  @type url_ref :: Vize.CSS.URL.t()
+
   @doc """
   Compile CSS using LightningCSS.
 
@@ -128,6 +130,79 @@ defmodule Vize.CSS do
         end
 
         result
+    end
+  end
+
+  @doc """
+  Collect parser-backed `url()` references from CSS source.
+
+  Returns byte offsets for the URL value inside the original source, suitable for
+  source patching without round-tripping through the serialized CSS AST.
+
+  ## Options
+
+    * `:filename` — filename for parser locations and error reporting
+    * `:css_modules` — enable CSS Modules parsing (default: `false`)
+    * `:custom_media` — enable custom media parsing (default: `false`)
+  """
+  @spec collect_urls(String.t(), keyword()) :: {:ok, [url_ref()]} | {:error, Vize.Error.t()}
+  def collect_urls(source, opts \\ []) do
+    filename = Keyword.get(opts, :filename, "")
+    css_modules = Keyword.get(opts, :css_modules, false)
+    custom_media = Keyword.get(opts, :custom_media, false)
+
+    case Vize.Native.collect_css_urls_nif(source, filename, custom_media, css_modules) do
+      {:ok, urls} -> {:ok, Enum.map(urls, &Vize.CSS.URL.new/1)}
+      {:error, errors} -> {:error, error("Vize CSS URL collection error", errors)}
+    end
+  end
+
+  @doc "Like `collect_urls/2` but raises `Vize.Error` on errors."
+  @spec collect_urls!(String.t(), keyword()) :: [url_ref()]
+  def collect_urls!(source, opts \\ []) do
+    case collect_urls(source, opts) do
+      {:ok, urls} -> urls
+      {:error, error} -> raise error
+    end
+  end
+
+  @doc """
+  Rewrite parser-backed `url()` references in CSS source.
+
+  The callback receives each URL string and returns either `:keep` or
+  `{:rewrite, new_url}`. Rewrites are applied to the original source using byte
+  ranges reported by the native parser.
+  """
+  @spec rewrite_urls(String.t(), keyword(), (String.t() -> :keep | {:rewrite, iodata()})) ::
+          {:ok, String.t()} | {:error, Vize.Error.t()}
+  def rewrite_urls(source, fun) when is_function(fun, 1), do: rewrite_urls(source, [], fun)
+
+  def rewrite_urls(source, opts, fun) when is_function(fun, 1) do
+    with {:ok, urls} <- collect_urls(source, opts) do
+      patches =
+        Enum.reduce(urls, [], fn %Vize.CSS.URL{url: url, range: range}, acc ->
+          case fun.(url) do
+            {:rewrite, replacement} ->
+              [%{start: range.start, end: range.end, change: replacement} | acc]
+
+            :keep ->
+              acc
+          end
+        end)
+
+      {:ok, patch_string(source, patches)}
+    end
+  end
+
+  @doc "Like `rewrite_urls/3` but raises `Vize.Error` on errors."
+  @spec rewrite_urls!(String.t(), keyword(), (String.t() -> :keep | {:rewrite, iodata()})) ::
+          String.t()
+  def rewrite_urls!(source, fun) when is_function(fun, 1), do: rewrite_urls!(source, [], fun)
+
+  def rewrite_urls!(source, opts, fun) when is_function(fun, 1) do
+    case rewrite_urls(source, opts, fun) do
+      {:ok, source} -> source
+      {:error, error} -> raise error
     end
   end
 
@@ -285,6 +360,26 @@ defmodule Vize.CSS do
       end)
 
     Enum.reverse(collected)
+  end
+
+  defp error(message, errors) do
+    diagnostics = Enum.map(List.wrap(errors), &Vize.Diagnostic.new/1)
+    %Vize.Error{message: message, diagnostics: diagnostics, errors: errors}
+  end
+
+  defp patch_string(source, patches) do
+    {chunks, offset} =
+      patches
+      |> Enum.uniq_by(fn %{start: start, end: end_offset} -> {start, end_offset} end)
+      |> Enum.sort_by(fn %{start: start} -> start end)
+      |> Enum.reduce({[], 0}, fn %{start: start, end: end_offset, change: replacement},
+                                 {chunks, offset} ->
+        chunk = binary_part(source, offset, start - offset)
+        {[replacement, chunk | chunks], end_offset}
+      end)
+
+    tail = binary_part(source, offset, byte_size(source) - offset)
+    IO.iodata_to_binary(Enum.reverse([tail | chunks]))
   end
 
   defp do_prewalk(value, fun, acc) when is_map(value) do

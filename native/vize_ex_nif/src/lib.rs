@@ -1,15 +1,26 @@
+use lightningcss::dependencies::{Dependency, DependencyOptions};
+use lightningcss::printer::PrinterOptions;
+use lightningcss::stylesheet::{
+    ParserFlags as CssParserFlags, ParserOptions as CssParserOptions, StyleSheet,
+};
 use rustler::{Encoder, Env, NifResult, Term};
-use vize_atelier_core::options::{CodegenMode, CodegenOptions, ParserOptions, TransformOptions};
+use vize_atelier_core::options::{
+    CodegenMode, CodegenOptions, ParserOptions, TemplateSyntaxMode, TransformOptions,
+};
 use vize_atelier_core::parser::{parse, parse_with_options};
 use vize_atelier_core::transform::transform;
 use vize_atelier_sfc::compile_script::typescript::transform_typescript_to_js;
+use vize_atelier_sfc::croquis::{analyze_sfc_descriptor, SfcCroquisOptions};
 use vize_atelier_sfc::script::analyze_script_setup_to_summary;
 use vize_atelier_sfc::{
     bundle_css, compile_css, compile_sfc, parse_css_ast, parse_sfc, print_css_ast,
     CssCompileOptions, CssTargets, SfcCompileOptions, SfcParseOptions,
 };
 use vize_atelier_ssr::compile_ssr;
-use vize_atelier_vapor::{compile_vapor, ir::*, transform_to_ir, VaporCompilerOptions};
+use vize_atelier_vapor::{
+    compile_vapor, compile_vapor_with_template_syntax_and_diagnostics, ir::*, transform_to_ir,
+    VaporCompilerOptions,
+};
 use vize_carton::Bump;
 
 #[macro_use]
@@ -52,12 +63,32 @@ mod atoms {
         start_column,
         end_line,
         end_column,
+        url,
 
         // Compile result fields
         code,
+        stats,
+        bindings,
+        emits,
+        models,
+        used_components,
+        used_directives,
+        undefined_refs,
+        component_usages,
+        template_expressions,
+        required,
+        context,
+        handler,
+        events,
+        has_spread_attrs,
+        is_dynamic,
+        range,
         css,
         errors,
         warnings,
+        diagnostics,
+        recoverable,
+        location,
         template_hash,
         style_hash,
         script_hash,
@@ -106,6 +137,8 @@ mod atoms {
         child_id,
         parent_id,
         offset,
+        line,
+        column,
 
         // CSS result fields
         ast,
@@ -173,6 +206,152 @@ fn parse_sfc_nif<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
         )),
         Err(e) => Ok(error_term(env, format!("{e:?}"))),
     }
+}
+
+// ── SFC Analysis ──
+
+#[rustler::nif(schedule = "DirtyCpu")]
+fn analyze_sfc_nif<'a>(env: Env<'a>, source: &str, mode: &str) -> NifResult<Term<'a>> {
+    let parse_opts = SfcParseOptions {
+        filename: "component.vue".into(),
+        ..Default::default()
+    };
+
+    let descriptor = match parse_sfc(source, parse_opts) {
+        Ok(descriptor) => descriptor,
+        Err(error) => return Ok(error_term(env, error.message.as_str())),
+    };
+
+    let allocator = Bump::new();
+    let template_ast = descriptor.template.as_ref().map(|template| {
+        let (root, _errors) = parse_with_options(
+            &allocator,
+            template.content.as_ref(),
+            ParserOptions::default(),
+        );
+        root
+    });
+
+    let options = match mode {
+        "lint" => SfcCroquisOptions::for_lint(),
+        "compile" => SfcCroquisOptions::for_compile(),
+        "declaration" => SfcCroquisOptions::for_declaration(),
+        _ => SfcCroquisOptions::full(),
+    };
+
+    let croquis = analyze_sfc_descriptor(&descriptor, template_ast.as_ref(), options);
+    let stats = croquis.stats();
+
+    let bindings: Vec<Term<'a>> = croquis
+        .bindings
+        .iter()
+        .map(|(name, binding_type)| {
+            term_map!(env, {
+                atoms::name() => name,
+                atoms::kind() => format!("{:?}", binding_type),
+            })
+        })
+        .collect();
+
+    let props: Vec<Term<'a>> = croquis
+        .get_props()
+        .map(|(name, required)| {
+            term_map!(env, {
+                atoms::name() => name,
+                atoms::required() => required,
+            })
+        })
+        .collect();
+
+    let emits: Vec<&str> = croquis.get_emits().collect();
+    let models: Vec<&str> = croquis.get_models().collect();
+    let used_components: Vec<&str> = croquis.used_components.iter().map(|s| s.as_str()).collect();
+    let used_directives: Vec<&str> = croquis.used_directives.iter().map(|s| s.as_str()).collect();
+
+    let undefined_refs: Vec<Term<'a>> = croquis
+        .undefined_refs
+        .iter()
+        .map(|reference| {
+            term_map!(env, {
+                atoms::name() => reference.name.as_str(),
+                atoms::offset() => reference.offset,
+                atoms::context() => reference.context.as_str(),
+            })
+        })
+        .collect();
+
+    let component_usages: Vec<Term<'a>> = croquis
+        .component_usages
+        .iter()
+        .map(|usage| {
+            let props: Vec<Term<'a>> = usage
+                .props
+                .iter()
+                .map(|prop| {
+                    term_map!(env, {
+                        atoms::name() => prop.name.as_str(),
+                        atoms::value() => prop.value.as_ref().map(|v| v.as_str()),
+                        atoms::is_dynamic() => prop.is_dynamic,
+                    })
+                })
+                .collect();
+            let events: Vec<Term<'a>> = usage
+                .events
+                .iter()
+                .map(|event| {
+                    term_map!(env, {
+                        atoms::name() => event.name.as_str(),
+                        atoms::handler() => event.handler.as_ref().map(|h| h.as_str()),
+                    })
+                })
+                .collect();
+
+            term_map!(env, {
+                atoms::name() => usage.name.as_str(),
+                atoms::props() => props,
+                atoms::events() => events,
+                atoms::has_spread_attrs() => usage.has_spread_attrs,
+            })
+        })
+        .collect();
+
+    let template_expressions: Vec<Term<'a>> = croquis
+        .template_expressions
+        .iter()
+        .map(|expression| {
+            term_map!(env, {
+                atoms::source() => expression.content.as_str(),
+                atoms::kind() => expression.kind.as_str(),
+                atoms::range() => term_map!(env, {
+                    atoms::start() => expression.start,
+                    atoms::end_() => expression.end,
+                }),
+            })
+        })
+        .collect();
+
+    let result = term_map!(env, {
+        atoms::stats() => term_map!(env, {
+            atoms::bindings() => stats.binding_count,
+            atoms::props() => stats.prop_count,
+            atoms::emits() => stats.emit_count,
+            atoms::models() => stats.model_count,
+            atoms::used_components() => stats.used_components,
+            atoms::used_directives() => stats.used_directives,
+            atoms::undefined_refs() => stats.undefined_ref_count,
+        }),
+        atoms::bindings() => bindings,
+        atoms::props() => props,
+        atoms::emits() => emits,
+        atoms::models() => models,
+        atoms::used_components() => used_components,
+        atoms::used_directives() => used_directives,
+        atoms::undefined_refs() => undefined_refs,
+        atoms::component_usages() => component_usages,
+        atoms::template_expressions() => template_expressions,
+    });
+
+    Ok(ok_term(env, result))
 }
 
 // ── SFC Compilation ──
@@ -311,13 +490,94 @@ fn compile_ssr_nif<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
 
 // ── Vapor Compilation ──
 
+fn encode_position<'a>(env: Env<'a>, position: &vize_atelier_core::Position) -> Term<'a> {
+    term_map!(env, {
+        atoms::offset() => position.offset,
+        atoms::line() => position.line,
+        atoms::column() => position.column,
+    })
+}
+
+fn encode_source_location<'a>(
+    env: Env<'a>,
+    location: &vize_atelier_core::SourceLocation,
+) -> Term<'a> {
+    term_map!(env, {
+        atoms::start() => encode_position(env, &location.start),
+        atoms::end_() => encode_position(env, &location.end),
+        atoms::source() => location.source.as_str(),
+    })
+}
+
+fn encode_compiler_error<'a>(env: Env<'a>, error: &vize_atelier_core::CompilerError) -> Term<'a> {
+    term_map!(env, {
+        atoms::code() => format!("{:?}", error.code),
+        atoms::message() => error.message.as_str(),
+        atoms::recoverable() => error.is_recoverable(),
+        atoms::location() => error
+            .loc
+            .as_ref()
+            .map(|location| encode_source_location(env, location))
+            .unwrap_or_else(|| nil_term(env)),
+    })
+}
+
+fn template_syntax_mode(value: &str) -> TemplateSyntaxMode {
+    match value {
+        "quirks" => TemplateSyntaxMode::Quirks,
+        _ => TemplateSyntaxMode::Standard,
+    }
+}
+
 #[rustler::nif(schedule = "DirtyCpu")]
-fn compile_vapor_nif<'a>(env: Env<'a>, source: &str, ssr: bool) -> NifResult<Term<'a>> {
+fn compile_vapor_nif<'a>(
+    env: Env<'a>,
+    source: &str,
+    ssr: bool,
+    diagnostics: bool,
+    template_syntax: &str,
+) -> NifResult<Term<'a>> {
     let allocator = Bump::new();
     let opts = VaporCompilerOptions {
         ssr,
         ..Default::default()
     };
+    let syntax = template_syntax_mode(template_syntax);
+
+    if diagnostics || syntax.is_quirks() {
+        let (result, parser_diagnostics) =
+            compile_vapor_with_template_syntax_and_diagnostics(&allocator, source, opts, syntax);
+
+        let mut diagnostic_terms: Vec<Term<'a>> = parser_diagnostics
+            .iter()
+            .map(|diagnostic| encode_compiler_error(env, diagnostic))
+            .collect();
+
+        if !result.error_messages.is_empty() {
+            let mut errors: Vec<Term<'a>> = result
+                .error_messages
+                .iter()
+                .map(|message| {
+                    term_map!(env, {
+                        atoms::message() => message.as_str(),
+                        atoms::recoverable() => false,
+                    })
+                })
+                .collect();
+            diagnostic_terms.append(&mut errors);
+            return Ok(error_term(env, diagnostic_terms));
+        }
+
+        let templates: Vec<&str> = result.templates.iter().map(|s| s.as_str()).collect();
+        let map = term_map!(env, {
+            atoms::code() => result.code.as_str(),
+            atoms::templates() => templates,
+            atoms::diagnostics() => diagnostic_terms,
+        });
+
+        return Ok(ok_term(env, map));
+    }
+
     let result = compile_vapor(&allocator, source, opts);
 
     if !result.error_messages.is_empty() {
@@ -685,6 +945,134 @@ fn css_targets(chrome: i64, firefox: i64, safari: i64) -> Option<CssTargets> {
     } else {
         None
     }
+}
+
+fn css_parser_options<'a>(
+    filename: &'a str,
+    custom_media: bool,
+    css_modules: bool,
+) -> CssParserOptions<'a, 'a> {
+    let mut flags = CssParserFlags::NESTING | CssParserFlags::DEEP_SELECTOR_COMBINATOR;
+    if custom_media {
+        flags |= CssParserFlags::CUSTOM_MEDIA;
+    }
+
+    let css_modules_config = if css_modules {
+        Some(lightningcss::css_modules::Config {
+            pattern: lightningcss::css_modules::Pattern::default(),
+            ..Default::default()
+        })
+    } else {
+        None
+    };
+
+    CssParserOptions {
+        filename: if filename.is_empty() {
+            "style.css".into()
+        } else {
+            filename.into()
+        },
+        flags,
+        css_modules: css_modules_config,
+        ..Default::default()
+    }
+}
+
+fn find_line_bounds(source: &str, line: u32) -> Option<(usize, usize)> {
+    let mut current_line = 1_u32;
+    let mut line_start = 0_usize;
+
+    for (index, byte) in source.bytes().enumerate() {
+        if byte == b'\n' {
+            if current_line == line {
+                return Some((line_start, index));
+            }
+            current_line += 1;
+            line_start = index + 1;
+        }
+    }
+
+    if current_line == line {
+        Some((line_start, source.len()))
+    } else {
+        None
+    }
+}
+
+fn find_url_range(source: &str, line: u32, column: u32, url: &str) -> Option<(usize, usize)> {
+    let (line_start, line_end) = find_line_bounds(source, line)?;
+    let line_source = &source[line_start..line_end];
+    let target_column = column as usize;
+
+    let match_start = line_source
+        .match_indices(url)
+        .map(|(index, _)| index)
+        .min_by_key(|index| index.abs_diff(target_column))?;
+
+    let start = line_start + match_start;
+    Some((start, start + url.len()))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+fn collect_css_urls_nif<'a>(
+    env: Env<'a>,
+    source: &str,
+    filename: &str,
+    custom_media: bool,
+    css_modules: bool,
+) -> NifResult<Term<'a>> {
+    let stylesheet = match StyleSheet::parse(
+        source,
+        css_parser_options(filename, custom_media, css_modules),
+    ) {
+        Ok(stylesheet) => stylesheet,
+        Err(error) => return Ok(error_term(env, vec![format!("CSS parse error: {error}")])),
+    };
+
+    let result = match stylesheet.to_css(PrinterOptions {
+        analyze_dependencies: Some(DependencyOptions {
+            remove_imports: false,
+        }),
+        ..Default::default()
+    }) {
+        Ok(result) => result,
+        Err(error) => return Ok(error_term(env, vec![format!("CSS print error: {error:?}")])),
+    };
+
+    let mut urls = Vec::new();
+
+    for dependency in result.dependencies.unwrap_or_default() {
+        let Dependency::Url(dependency) = dependency else {
+            continue;
+        };
+
+        let Some((start, end)) = find_url_range(
+            source,
+            dependency.loc.start.line,
+            dependency.loc.start.column,
+            &dependency.url,
+        ) else {
+            return Ok(error_term(
+                env,
+                vec![format!(
+                    "Could not locate CSS URL range for {}",
+                    dependency.url
+                )],
+            ));
+        };
+
+        urls.push(term_map!(env, {
+            atoms::url() => dependency.url.as_str(),
+            atoms::start() => start,
+            atoms::end_() => end,
+            atoms::start_line() => dependency.loc.start.line,
+            atoms::start_column() => dependency.loc.start.column,
+            atoms::end_line() => dependency.loc.end.line,
+            atoms::end_column() => dependency.loc.end.column,
+        }));
+    }
+
+    Ok(ok_term(env, urls))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

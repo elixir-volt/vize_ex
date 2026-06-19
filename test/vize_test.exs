@@ -79,6 +79,23 @@ defmodule VizeTest do
     end
   end
 
+  describe "analyze_sfc/2" do
+    test "returns a Croquis summary" do
+      source =
+        ~S[<template><MyButton :label="msg" @click="save" /></template><script setup>const msg = "hi"; function save(){}</script>]
+
+      assert {:ok, %Vize.Croquis{} = croquis} = Vize.analyze_sfc(source)
+      assert "MyButton" in croquis.used_components
+
+      assert [%{name: "MyButton", props: [%{name: "label"}], events: [%{name: "click"}]}] =
+               croquis.component_usages
+    end
+
+    test "bang variant returns a Croquis" do
+      assert %Vize.Croquis{} = Vize.analyze_sfc!("<template><div /></template>")
+    end
+  end
+
   describe "compile_sfc/2" do
     test "compiles simple SFC" do
       {:ok, result} = Vize.compile_sfc(@simple_sfc)
@@ -217,6 +234,15 @@ defmodule VizeTest do
       {:ok, result} = Vize.compile_vapor("<button @click=\"onClick\">click</button>")
       assert result.code =~ "click"
     end
+
+    test "can return structured diagnostics" do
+      {:ok, result} = Vize.compile_vapor(~s(<div id="a" id="b">x</div>), diagnostics: true)
+
+      assert %Vize.Vapor.Result{} = result
+
+      assert [%Vize.Diagnostic{code: "DuplicateAttribute", recoverable?: true}] =
+               result.diagnostics
+    end
   end
 
   describe "compile_vapor!/2" do
@@ -305,6 +331,53 @@ defmodule VizeTest do
     test "returns diagnostics list" do
       {:ok, diagnostics} = Vize.lint("<template><div>ok</div></template>", "test.vue")
       assert is_list(diagnostics)
+    end
+  end
+
+  describe "Vize.CSS URL helpers" do
+    test "collects parser-backed URL ranges" do
+      css = ".foo { background: url('./logo.svg') }"
+
+      assert {:ok, [%Vize.CSS.URL{url: "./logo.svg", range: range}]} =
+               Vize.CSS.collect_urls(css)
+
+      assert binary_part(css, range.start, range.end - range.start) == "./logo.svg"
+    end
+
+    test "rewrites URLs without CSS AST print roundtrip" do
+      css = ".x{left:calc(var(--vscode-sash-size)*-.5);background:url('./logo.svg')}"
+
+      assert {:ok, rewritten} =
+               Vize.CSS.rewrite_urls(css, fn
+                 "./logo.svg" -> {:rewrite, "/assets/logo-hash.svg"}
+                 _url -> :keep
+               end)
+
+      assert rewritten =~ "calc(var(--vscode-sash-size)*-.5)"
+      assert rewritten =~ "url('/assets/logo-hash.svg')"
+    end
+
+    test "rewrites font URLs without CSS AST print roundtrip" do
+      css = "@font-face { src: url(foo.ttf); }"
+
+      assert {:ok, rewritten} =
+               Vize.CSS.rewrite_urls(css, fn
+                 "foo.ttf" -> {:rewrite, "/assets/foo.ttf"}
+                 _url -> :keep
+               end)
+
+      assert rewritten == "@font-face { src: url(/assets/foo.ttf); }"
+    end
+
+    test "bang variants return values" do
+      css = ".foo { background: url('./logo.svg') }"
+
+      assert [%Vize.CSS.URL{url: "./logo.svg"}] = Vize.CSS.collect_urls!(css)
+
+      assert Vize.CSS.rewrite_urls!(css, fn
+               "./logo.svg" -> {:rewrite, "/assets/logo.svg"}
+               _url -> :keep
+             end) =~ "/assets/logo.svg"
     end
   end
 

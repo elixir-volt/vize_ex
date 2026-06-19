@@ -53,10 +53,7 @@ defmodule Vize do
           helpers: [String.t()]
         }
 
-  @type vapor_result :: %{
-          code: String.t(),
-          templates: [String.t()]
-        }
+  @type vapor_result :: Vize.Vapor.Result.t()
 
   @type ssr_result :: %{
           code: String.t(),
@@ -108,6 +105,34 @@ defmodule Vize do
     case parse_sfc(source) do
       {:ok, descriptor} -> descriptor
       {:error, reason} -> raise "Vize parse error: #{reason}"
+    end
+  end
+
+  # ── SFC Analysis ──
+
+  @doc """
+  Analyze a Vue Single File Component into a semantic Croquis summary.
+
+  ## Options
+
+    * `:mode` — analysis mode: `:full`, `:lint`, `:compile`, or `:declaration`
+  """
+  @spec analyze_sfc(String.t(), keyword()) :: {:ok, Vize.Croquis.t()} | {:error, Vize.Error.t()}
+  def analyze_sfc(source, opts \\ []) do
+    mode = opts |> Keyword.get(:mode, :full) |> to_string()
+
+    case Vize.Native.analyze_sfc_nif(source, mode) do
+      {:ok, result} -> {:ok, Vize.Croquis.new(result)}
+      {:error, reason} -> {:error, error("Vize SFC analysis error", [reason])}
+    end
+  end
+
+  @doc "Like `analyze_sfc/2` but raises `Vize.Error` on errors."
+  @spec analyze_sfc!(String.t(), keyword()) :: Vize.Croquis.t()
+  def analyze_sfc!(source, opts \\ []) do
+    case analyze_sfc(source, opts) do
+      {:ok, croquis} -> croquis
+      {:error, error} -> raise error
     end
   end
 
@@ -262,10 +287,18 @@ defmodule Vize do
       iex> length(result.templates) > 0
       true
   """
-  @spec compile_vapor(String.t(), keyword()) :: {:ok, vapor_result()} | {:error, [String.t()]}
+  @spec compile_vapor(String.t(), keyword()) :: {:ok, vapor_result()} | {:error, Vize.Error.t()}
   def compile_vapor(source, opts \\ []) do
     ssr = Keyword.get(opts, :ssr, false)
-    Vize.Native.compile_vapor_nif(source, ssr)
+    diagnostics = Keyword.get(opts, :diagnostics, false)
+
+    template_syntax =
+      opts |> Keyword.get(:template_syntax, :standard) |> normalize_template_syntax()
+
+    case Vize.Native.compile_vapor_nif(source, ssr, diagnostics, template_syntax) do
+      {:ok, result} -> {:ok, Vize.Vapor.Result.new(result)}
+      {:error, errors} -> {:error, error("Vize vapor compile error", errors)}
+    end
   end
 
   @doc """
@@ -275,7 +308,7 @@ defmodule Vize do
   def compile_vapor!(source, opts \\ []) do
     case compile_vapor(source, opts) do
       {:ok, result} -> result
-      {:error, errors} -> raise "Vize vapor compile error: #{inspect(errors)}"
+      {:error, error} -> raise error
     end
   end
 
@@ -439,5 +472,15 @@ defmodule Vize do
       {:ok, result} -> result
       {:error, reason} -> raise "Vize declaration generation error: #{reason}"
     end
+  end
+
+  defp normalize_template_syntax(:standard), do: "standard"
+  defp normalize_template_syntax(:quirks), do: "quirks"
+  defp normalize_template_syntax("standard"), do: "standard"
+  defp normalize_template_syntax("quirks"), do: "quirks"
+
+  defp error(message, errors) do
+    diagnostics = Enum.map(List.wrap(errors), &Vize.Diagnostic.new/1)
+    %Vize.Error{message: message, diagnostics: diagnostics, errors: errors}
   end
 end
