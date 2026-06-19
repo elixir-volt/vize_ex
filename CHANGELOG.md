@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.13.0 - 2026-06-19
+
+### Added
+
+- Add `Vize.CSS.select/3` for compact parser-backed CSS event selection.
+- Add the `:urls` CSS selector for `url()` references with source byte ranges and locations.
+
+### Changed
+
+- `Vize.CSS.collect_urls/2` now uses the CSS selector API internally.
+- Native CSS selection now uses the shared `rustler_match_spec` crate.
+- Upgrade native Rustler dependency to 0.38.
+- Struct constructors now use strict atom-keyed input contracts.
+
 ## 0.12.0
 
 ### Added
