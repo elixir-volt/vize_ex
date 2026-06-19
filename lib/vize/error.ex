@@ -8,4 +8,10 @@ defmodule Vize.Error do
           diagnostics: [Vize.Diagnostic.t()],
           errors: term()
         }
+
+  @spec new(String.t(), term()) :: t()
+  def new(message, errors) do
+    diagnostics = Enum.map(List.wrap(errors), &Vize.Diagnostic.new/1)
+    %__MODULE__{message: message, diagnostics: diagnostics, errors: errors}
+  end
 end

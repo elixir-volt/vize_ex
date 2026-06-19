@@ -335,6 +335,15 @@ defmodule VizeTest do
   end
 
   describe "Vize.CSS URL helpers" do
+    test "selects parser-backed URL events" do
+      css = ".foo { background: url('./logo.svg') }"
+
+      assert {:ok, [%{url: "./logo.svg", start: start, end: finish}]} =
+               Vize.CSS.select(css, :urls)
+
+      assert binary_part(css, start, finish - start) == "./logo.svg"
+    end
+
     test "collects parser-backed URL ranges" do
       css = ".foo { background: url('./logo.svg') }"
 

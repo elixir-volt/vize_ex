@@ -9,19 +9,34 @@ defmodule Vize.CSS.URL do
           location: Vize.SourceRange.t()
         }
 
-  @spec new(map()) :: t()
-  def new(map) when is_map(map) do
+  @type input :: %{
+          required(:url) => String.t(),
+          required(:start) => non_neg_integer(),
+          required(:end) => non_neg_integer(),
+          optional(:start_line) => pos_integer() | nil,
+          optional(:start_column) => pos_integer() | nil,
+          optional(:end_line) => pos_integer() | nil,
+          optional(:end_column) => pos_integer() | nil
+        }
+
+  @spec new(input() | t()) :: t()
+  def new(%__MODULE__{} = url), do: url
+
+  def new(%{} = attrs) do
     %__MODULE__{
-      url: map[:url] || map["url"],
-      range: %Vize.Range{start: map[:start] || map["start"], end: map[:end] || map["end"]},
+      url: Map.fetch!(attrs, :url),
+      range: %Vize.Range{
+        start: Map.fetch!(attrs, :start),
+        end: Map.fetch!(attrs, :end)
+      },
       location: %Vize.SourceRange{
         start: %Vize.SourceLocation{
-          line: map[:start_line] || map["start_line"],
-          column: map[:start_column] || map["start_column"]
+          line: Map.get(attrs, :start_line),
+          column: Map.get(attrs, :start_column)
         },
         end: %Vize.SourceLocation{
-          line: map[:end_line] || map["end_line"],
-          column: map[:end_column] || map["end_column"]
+          line: Map.get(attrs, :end_line),
+          column: Map.get(attrs, :end_column)
         }
       }
     }

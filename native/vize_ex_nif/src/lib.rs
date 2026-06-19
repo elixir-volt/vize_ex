@@ -3,7 +3,8 @@ use lightningcss::printer::PrinterOptions;
 use lightningcss::stylesheet::{
     ParserFlags as CssParserFlags, ParserOptions as CssParserOptions, StyleSheet,
 };
-use rustler::{Encoder, Env, NifResult, Term};
+use rustler::{Atom, Encoder, Env, NifResult, Term};
+use rustler_match_spec::{MatchEvent, Selector, ValueRef};
 use vize_atelier_core::options::{
     CodegenMode, CodegenOptions, ParserOptions, TemplateSyntaxMode, TransformOptions,
 };
@@ -64,6 +65,7 @@ mod atoms {
         end_line,
         end_column,
         url,
+        css_url,
 
         // Compile result fields
         code,
@@ -1013,14 +1015,70 @@ fn find_url_range(source: &str, line: u32, column: u32, url: &str) -> Option<(us
     Some((start, start + url.len()))
 }
 
+struct CssUrlEvent {
+    url: String,
+    start: usize,
+    end: usize,
+    start_line: u32,
+    start_column: u32,
+    end_line: u32,
+    end_column: u32,
+}
+
+impl<'a> MatchEvent<'a> for &'a CssUrlEvent {
+    fn tag(&self) -> Atom {
+        atoms::css_url()
+    }
+
+    fn arity(&self) -> usize {
+        8
+    }
+
+    fn positional_field(&self, index: usize) -> Option<ValueRef<'a>> {
+        match index {
+            1 => Some(ValueRef::Str(self.url.as_str())),
+            2 => Some(ValueRef::U64(self.start as u64)),
+            3 => Some(ValueRef::U64(self.end as u64)),
+            4 => Some(ValueRef::U64(self.start_line.into())),
+            5 => Some(ValueRef::U64(self.start_column.into())),
+            6 => Some(ValueRef::U64(self.end_line.into())),
+            7 => Some(ValueRef::U64(self.end_column.into())),
+            _ => None,
+        }
+    }
+
+    fn field(&self, name: Atom) -> Option<ValueRef<'a>> {
+        if name == atoms::url() {
+            Some(ValueRef::Str(self.url.as_str()))
+        } else if name == atoms::start() {
+            Some(ValueRef::U64(self.start as u64))
+        } else if name == atoms::end_() {
+            Some(ValueRef::U64(self.end as u64))
+        } else if name == atoms::start_line() {
+            Some(ValueRef::U64(self.start_line.into()))
+        } else if name == atoms::start_column() {
+            Some(ValueRef::U64(self.start_column.into()))
+        } else if name == atoms::end_line() {
+            Some(ValueRef::U64(self.end_line.into()))
+        } else if name == atoms::end_column() {
+            Some(ValueRef::U64(self.end_column.into()))
+        } else {
+            None
+        }
+    }
+}
+
 #[rustler::nif(schedule = "DirtyCpu")]
-fn collect_css_urls_nif<'a>(
+fn select_css_nif<'a>(
     env: Env<'a>,
     source: &str,
     filename: &str,
     custom_media: bool,
     css_modules: bool,
+    selector_term: Term<'a>,
 ) -> NifResult<Term<'a>> {
+    let selector = Selector::from_term(selector_term)?;
+
     let stylesheet = match StyleSheet::parse(
         source,
         css_parser_options(filename, custom_media, css_modules),
@@ -1039,7 +1097,7 @@ fn collect_css_urls_nif<'a>(
         Err(error) => return Ok(error_term(env, vec![format!("CSS print error: {error:?}")])),
     };
 
-    let mut urls = Vec::new();
+    let mut events = Vec::new();
 
     for dependency in result.dependencies.unwrap_or_default() {
         let Dependency::Url(dependency) = dependency else {
@@ -1061,15 +1119,21 @@ fn collect_css_urls_nif<'a>(
             ));
         };
 
-        urls.push(term_map!(env, {
-            atoms::url() => dependency.url.as_str(),
-            atoms::start() => start,
-            atoms::end_() => end,
-            atoms::start_line() => dependency.loc.start.line,
-            atoms::start_column() => dependency.loc.start.column,
-            atoms::end_line() => dependency.loc.end.line,
-            atoms::end_column() => dependency.loc.end.column,
-        }));
+        events.push(CssUrlEvent {
+            url: dependency.url.to_string(),
+            start,
+            end,
+            start_line: dependency.loc.start.line,
+            start_column: dependency.loc.start.column,
+            end_line: dependency.loc.end.line,
+            end_column: dependency.loc.end.column,
+        });
+    }
+
+    let mut urls = Vec::new();
+
+    for event in &events {
+        selector.run_event(env, &event, &mut urls)?;
     }
 
     Ok(ok_term(env, urls))

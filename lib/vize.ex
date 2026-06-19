@@ -479,8 +479,5 @@ defmodule Vize do
   defp normalize_template_syntax("standard"), do: "standard"
   defp normalize_template_syntax("quirks"), do: "quirks"
 
-  defp error(message, errors) do
-    diagnostics = Enum.map(List.wrap(errors), &Vize.Diagnostic.new/1)
-    %Vize.Error{message: message, diagnostics: diagnostics, errors: errors}
-  end
+  defp error(message, errors), do: Vize.Error.new(message, errors)
 end

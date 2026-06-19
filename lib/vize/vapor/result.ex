@@ -9,12 +9,20 @@ defmodule Vize.Vapor.Result do
           diagnostics: [Vize.Diagnostic.t()]
         }
 
-  @spec new(map()) :: t()
-  def new(map) when is_map(map) do
+  @type input :: %{
+          required(:code) => String.t(),
+          optional(:templates) => [String.t()],
+          optional(:diagnostics) => [Vize.Diagnostic.input() | Vize.Diagnostic.t() | String.t()]
+        }
+
+  @spec new(input() | t()) :: t()
+  def new(%__MODULE__{} = result), do: result
+
+  def new(%{} = attrs) do
     %__MODULE__{
-      code: map[:code] || map["code"],
-      templates: map[:templates] || map["templates"] || [],
-      diagnostics: Enum.map(map[:diagnostics] || map["diagnostics"] || [], &Vize.Diagnostic.new/1)
+      code: Map.fetch!(attrs, :code),
+      templates: Map.get(attrs, :templates, []),
+      diagnostics: Enum.map(Map.get(attrs, :diagnostics, []), &Vize.Diagnostic.new/1)
     }
   end
 end

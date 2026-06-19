@@ -9,14 +9,21 @@ defmodule Vize.SourceLocation do
           column: pos_integer() | nil
         }
 
-  @spec new(map() | nil) :: t() | nil
-  def new(nil), do: nil
+  @type input :: %{
+          optional(:offset) => non_neg_integer() | nil,
+          optional(:line) => pos_integer() | nil,
+          optional(:column) => pos_integer() | nil
+        }
 
-  def new(map) when is_map(map) do
+  @spec new(input() | t() | nil) :: t() | nil
+  def new(nil), do: nil
+  def new(%__MODULE__{} = location), do: location
+
+  def new(%{} = attrs) do
     %__MODULE__{
-      offset: map[:offset] || map["offset"],
-      line: map[:line] || map["line"],
-      column: map[:column] || map["column"]
+      offset: Map.get(attrs, :offset),
+      line: Map.get(attrs, :line),
+      column: Map.get(attrs, :column)
     }
   end
 end

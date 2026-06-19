@@ -134,10 +134,11 @@ defmodule Vize.CSS do
   end
 
   @doc """
-  Collect parser-backed `url()` references from CSS source.
+  Select compact parser events from CSS source by name.
 
-  Returns byte offsets for the URL value inside the original source, suitable for
-  source patching without round-tripping through the serialized CSS AST.
+  Available selectors:
+
+    * `:urls` — `url()` references with source byte ranges and source locations
 
   ## Options
 
@@ -145,16 +146,57 @@ defmodule Vize.CSS do
     * `:css_modules` — enable CSS Modules parsing (default: `false`)
     * `:custom_media` — enable custom media parsing (default: `false`)
   """
-  @spec collect_urls(String.t(), keyword()) :: {:ok, [url_ref()]} | {:error, Vize.Error.t()}
-  def collect_urls(source, opts \\ []) do
+  @spec select(String.t(), atom(), keyword()) :: {:ok, [map()]} | {:error, Vize.Error.t()}
+  def select(source, selector, opts \\ []) when is_atom(selector) do
     filename = Keyword.get(opts, :filename, "")
     css_modules = Keyword.get(opts, :css_modules, false)
     custom_media = Keyword.get(opts, :custom_media, false)
 
-    case Vize.Native.collect_css_urls_nif(source, filename, custom_media, css_modules) do
-      {:ok, urls} -> {:ok, Enum.map(urls, &Vize.CSS.URL.new/1)}
-      {:error, errors} -> {:error, error("Vize CSS URL collection error", errors)}
+    case Vize.Native.select_css_nif(
+           source,
+           filename,
+           custom_media,
+           css_modules,
+           selector_spec(selector)
+         ) do
+      {:ok, events} -> {:ok, events}
+      {:error, errors} -> {:error, error("Vize CSS selection error", errors)}
     end
+  end
+
+  @doc """
+  Collect parser-backed `url()` references from CSS source.
+
+  Returns byte offsets for the URL value inside the original source, suitable for
+  source patching without round-tripping through the serialized CSS AST.
+  """
+  @spec collect_urls(String.t(), keyword()) :: {:ok, [url_ref()]} | {:error, Vize.Error.t()}
+  def collect_urls(source, opts \\ []) do
+    case select(source, :urls, opts) do
+      {:ok, urls} -> {:ok, Enum.map(urls, &Vize.CSS.URL.new/1)}
+      {:error, _} = error -> error
+    end
+  end
+
+  defp selector_spec(:urls) do
+    [
+      {{:css_url, :"$1", :"$2", :"$3", :"$4", :"$5", :"$6", :"$7"}, [],
+       [
+         %{
+           url: :"$1",
+           start: :"$2",
+           end: :"$3",
+           start_line: :"$4",
+           start_column: :"$5",
+           end_line: :"$6",
+           end_column: :"$7"
+         }
+       ]}
+    ]
+  end
+
+  defp selector_spec(selector) do
+    raise ArgumentError, "unknown Vize CSS selector #{inspect(selector)}"
   end
 
   @doc "Like `collect_urls/2` but raises `Vize.Error` on errors."
@@ -362,10 +404,7 @@ defmodule Vize.CSS do
     Enum.reverse(collected)
   end
 
-  defp error(message, errors) do
-    diagnostics = Enum.map(List.wrap(errors), &Vize.Diagnostic.new/1)
-    %Vize.Error{message: message, diagnostics: diagnostics, errors: errors}
-  end
+  defp error(message, errors), do: Vize.Error.new(message, errors)
 
   defp patch_string(source, patches) do
     {chunks, offset} =

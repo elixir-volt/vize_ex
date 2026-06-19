@@ -62,9 +62,9 @@ defmodule Vize.Native do
   @spec lint_nif(String.t(), String.t()) :: {:ok, list()}
   def lint_nif(_source, _filename), do: :erlang.nif_error(:nif_not_loaded)
 
-  @spec collect_css_urls_nif(String.t(), String.t(), boolean(), boolean()) ::
+  @spec select_css_nif(String.t(), String.t(), boolean(), boolean(), list()) ::
           {:ok, [map()]} | {:error, [String.t()]}
-  def collect_css_urls_nif(_source, _filename, _custom_media, _css_modules),
+  def select_css_nif(_source, _filename, _custom_media, _css_modules, _selector),
     do: :erlang.nif_error(:nif_not_loaded)
 
   @spec parse_css_ast_nif(String.t(), String.t(), boolean(), boolean()) :: {:ok, map()}
