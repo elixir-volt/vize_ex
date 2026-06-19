@@ -5,6 +5,9 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: write
+
 jobs:
   build_release:
     uses: elixir-vibe/actions/.github/workflows/elixir-rustler-release.yml@v1
