@@ -353,6 +353,42 @@ defmodule VizeTest do
       assert binary_part(css, range.start, range.end - range.start) == "./logo.svg"
     end
 
+    test "selects parser-backed import events" do
+      css = "@import './reset.css';\n@import './print.css' print;\n.app { color: red }"
+
+      assert {:ok,
+              [
+                %{
+                  url: "./reset.css",
+                  start: reset_start,
+                  end: reset_end,
+                  media: nil,
+                  supports: nil
+                },
+                %{
+                  url: "./print.css",
+                  start: print_start,
+                  end: print_end,
+                  media: "print",
+                  supports: nil
+                }
+              ]} = Vize.CSS.select(css, :imports)
+
+      assert binary_part(css, reset_start, reset_end - reset_start) == "./reset.css"
+      assert binary_part(css, print_start, print_end - print_start) == "./print.css"
+    end
+
+    test "selects mixed CSS dependency events" do
+      css =
+        "@import './theme.css' supports(display: grid);\n.logo { background: url('./logo.svg') }"
+
+      assert {:ok,
+              [
+                %{kind: :import, url: "./theme.css", supports: "(display: grid)"},
+                %{kind: :url, url: "./logo.svg"}
+              ]} = Vize.CSS.select(css, :dependencies)
+    end
+
     test "rewrites URLs without CSS AST print roundtrip" do
       css = ".x{left:calc(var(--vscode-sash-size)*-.5);background:url('./logo.svg')}"
 

@@ -139,6 +139,10 @@ defmodule Vize.CSS do
   Available selectors:
 
     * `:urls` — `url()` references with source byte ranges and source locations
+    * `:imports` — `@import` references with source byte ranges, source locations,
+      and optional `supports` / `media` conditions
+    * `:dependencies` — both `url()` and `@import` dependency references with a
+      `:kind` field of `:url` or `:import`
 
   ## Options
 
@@ -180,23 +184,41 @@ defmodule Vize.CSS do
 
   defp selector_spec(:urls) do
     [
-      {{:css_url, :"$1", :"$2", :"$3", :"$4", :"$5", :"$6", :"$7"}, [],
-       [
-         %{
-           url: :"$1",
-           start: :"$2",
-           end: :"$3",
-           start_line: :"$4",
-           start_column: :"$5",
-           end_line: :"$6",
-           end_column: :"$7"
-         }
-       ]}
+      {{:css_url, :"$1", :"$2", :"$3", :"$4", :"$5", :"$6", :"$7", :"$8", :"$9"}, [],
+       [source_ref_projection()]}
+    ]
+  end
+
+  defp selector_spec(:imports) do
+    [
+      {{:css_import, :"$1", :"$2", :"$3", :"$4", :"$5", :"$6", :"$7", :"$8", :"$9"}, [],
+       [Map.merge(source_ref_projection(), %{supports: :"$8", media: :"$9"})]}
+    ]
+  end
+
+  defp selector_spec(:dependencies) do
+    [
+      {{:css_url, :"$1", :"$2", :"$3", :"$4", :"$5", :"$6", :"$7", :"$8", :"$9"}, [],
+       [Map.put(source_ref_projection(), :kind, :url)]},
+      {{:css_import, :"$1", :"$2", :"$3", :"$4", :"$5", :"$6", :"$7", :"$8", :"$9"}, [],
+       [Map.merge(source_ref_projection(), %{kind: :import, supports: :"$8", media: :"$9"})]}
     ]
   end
 
   defp selector_spec(selector) do
     raise ArgumentError, "unknown Vize CSS selector #{inspect(selector)}"
+  end
+
+  defp source_ref_projection do
+    %{
+      url: :"$1",
+      start: :"$2",
+      end: :"$3",
+      start_line: :"$4",
+      start_column: :"$5",
+      end_line: :"$6",
+      end_column: :"$7"
+    }
   end
 
   @doc "Like `collect_urls/2` but raises `Vize.Error` on errors."

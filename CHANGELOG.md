@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.1 - 2026-06-23
+
+### Added
+
+- Add `:imports` and `:dependencies` selectors to `Vize.CSS.select/3` for parser-backed CSS `@import` dependency discovery.
+
 ## 0.13.0 - 2026-06-19
 
 ### Added

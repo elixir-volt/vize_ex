@@ -66,6 +66,9 @@ mod atoms {
         end_column,
         url,
         css_url,
+        css_import,
+        supports,
+        media,
 
         // Compile result fields
         code,
@@ -1015,7 +1018,8 @@ fn find_url_range(source: &str, line: u32, column: u32, url: &str) -> Option<(us
     Some((start, start + url.len()))
 }
 
-struct CssUrlEvent {
+struct CssDependencyEvent {
+    tag: Atom,
     url: String,
     start: usize,
     end: usize,
@@ -1023,15 +1027,17 @@ struct CssUrlEvent {
     start_column: u32,
     end_line: u32,
     end_column: u32,
+    supports: Option<String>,
+    media: Option<String>,
 }
 
-impl<'a> MatchEvent<'a> for &'a CssUrlEvent {
+impl<'a> MatchEvent<'a> for &'a CssDependencyEvent {
     fn tag(&self) -> Atom {
-        atoms::css_url()
+        self.tag
     }
 
     fn arity(&self) -> usize {
-        8
+        10
     }
 
     fn positional_field(&self, index: usize) -> Option<ValueRef<'a>> {
@@ -1043,6 +1049,8 @@ impl<'a> MatchEvent<'a> for &'a CssUrlEvent {
             5 => Some(ValueRef::U64(self.start_column.into())),
             6 => Some(ValueRef::U64(self.end_line.into())),
             7 => Some(ValueRef::U64(self.end_column.into())),
+            8 => Some(optional_string(self.supports.as_deref())),
+            9 => Some(optional_string(self.media.as_deref())),
             _ => None,
         }
     }
@@ -1062,9 +1070,20 @@ impl<'a> MatchEvent<'a> for &'a CssUrlEvent {
             Some(ValueRef::U64(self.end_line.into()))
         } else if name == atoms::end_column() {
             Some(ValueRef::U64(self.end_column.into()))
+        } else if name == atoms::supports() {
+            Some(optional_string(self.supports.as_deref()))
+        } else if name == atoms::media() {
+            Some(optional_string(self.media.as_deref()))
         } else {
             None
         }
+    }
+}
+
+fn optional_string(value: Option<&str>) -> ValueRef<'_> {
+    match value {
+        Some(value) => ValueRef::Str(value),
+        None => ValueRef::Atom(rustler::types::atom::nil()),
     }
 }
 
@@ -1100,34 +1119,66 @@ fn select_css_nif<'a>(
     let mut events = Vec::new();
 
     for dependency in result.dependencies.unwrap_or_default() {
-        let Dependency::Url(dependency) = dependency else {
-            continue;
-        };
+        match dependency {
+            Dependency::Url(dependency) => {
+                let Some((start, end)) = find_url_range(
+                    source,
+                    dependency.loc.start.line,
+                    dependency.loc.start.column,
+                    &dependency.url,
+                ) else {
+                    return Ok(error_term(
+                        env,
+                        vec![format!(
+                            "Could not locate CSS URL range for {}",
+                            dependency.url
+                        )],
+                    ));
+                };
 
-        let Some((start, end)) = find_url_range(
-            source,
-            dependency.loc.start.line,
-            dependency.loc.start.column,
-            &dependency.url,
-        ) else {
-            return Ok(error_term(
-                env,
-                vec![format!(
-                    "Could not locate CSS URL range for {}",
-                    dependency.url
-                )],
-            ));
-        };
+                events.push(CssDependencyEvent {
+                    tag: atoms::css_url(),
+                    url: dependency.url.to_string(),
+                    start,
+                    end,
+                    start_line: dependency.loc.start.line,
+                    start_column: dependency.loc.start.column,
+                    end_line: dependency.loc.end.line,
+                    end_column: dependency.loc.end.column,
+                    supports: None,
+                    media: None,
+                });
+            }
+            Dependency::Import(dependency) => {
+                let Some((start, end)) = find_url_range(
+                    source,
+                    dependency.loc.start.line,
+                    dependency.loc.start.column,
+                    &dependency.url,
+                ) else {
+                    return Ok(error_term(
+                        env,
+                        vec![format!(
+                            "Could not locate CSS import range for {}",
+                            dependency.url
+                        )],
+                    ));
+                };
 
-        events.push(CssUrlEvent {
-            url: dependency.url.to_string(),
-            start,
-            end,
-            start_line: dependency.loc.start.line,
-            start_column: dependency.loc.start.column,
-            end_line: dependency.loc.end.line,
-            end_column: dependency.loc.end.column,
-        });
+                events.push(CssDependencyEvent {
+                    tag: atoms::css_import(),
+                    url: dependency.url.to_string(),
+                    start,
+                    end,
+                    start_line: dependency.loc.start.line,
+                    start_column: dependency.loc.start.column,
+                    end_line: dependency.loc.end.line,
+                    end_column: dependency.loc.end.column,
+                    supports: dependency.supports,
+                    media: dependency.media,
+                });
+            }
+        }
     }
 
     let mut urls = Vec::new();
