@@ -59,18 +59,6 @@ impl<'a> From<&'a vize_atelier_sfc::SfcError> for EncodedSfcError<'a> {
     }
 }
 
-impl Encoder for EncodedSfcError<'_> {
-    fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
-        let mut keys = vec![atoms::message().encode(env)];
-        let mut vals: Vec<Term<'a>> = vec![self.message.encode(env)];
-        if let Some(code) = self.code {
-            keys.push(atoms::code().encode(env));
-            vals.push(code.encode(env));
-        }
-        Term::map_from_arrays(env, &keys, &vals).unwrap()
-    }
-}
-
 pub(crate) struct EncodedLintDiagnostic<'a> {
     pub(crate) message: &'a str,
     pub(crate) name: &'a str,

@@ -34,3 +34,14 @@ impl rustler::Encoder for EncodedLintDiagnostic<'_> {
             .unwrap()
     }
 }
+impl rustler::Encoder for EncodedSfcError<'_> {
+    fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
+        let mut keys = vec![atoms::message().encode(env)];
+        let mut values = vec![self.message.encode(env)];
+        if let Some(value) = self.code.as_ref() {
+            keys.push(atoms::code().encode(env));
+            values.push(value.encode(env));
+        }
+        Term::map_from_arrays(env, &keys, &values).unwrap()
+    }
+}

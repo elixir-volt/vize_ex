@@ -26,6 +26,10 @@ rust "native/vize_ex_nif/src/generated_term_encoders.rs" do
     Rustler.term_encoder(:EncodedLintDiagnostic,
       fields: [:message, :name],
       target_lifetimes: [:_]
+    ),
+    Rustler.term_encoder(:EncodedSfcError,
+      fields: [:message, code: [when_some: true]],
+      target_lifetimes: [:_]
     )
   ]
 end
