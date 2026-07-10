@@ -17,3 +17,15 @@ atoms =
 rust "native/vize_ex_nif/src/generated_atoms.rs" do
   Rustler.atoms(atoms)
 end
+
+rust "native/vize_ex_nif/src/generated_term_encoders.rs" do
+  [
+    Rustler.term_encoder(:EncodedLoc,
+      fields: [:start, {:end_, :end}, :start_line, :start_column, :end_line, :end_column]
+    ),
+    Rustler.term_encoder(:EncodedLintDiagnostic,
+      fields: [:message, :name],
+      target_lifetimes: [:_]
+    )
+  ]
+end

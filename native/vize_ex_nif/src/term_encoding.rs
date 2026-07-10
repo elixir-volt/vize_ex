@@ -4,6 +4,8 @@ use serde_json::{Map, Number, Value};
 
 use crate::atoms;
 
+include!("generated_term_encoders.rs");
+
 pub(crate) struct EncodedLoc {
     start: usize,
     end: usize,
@@ -23,31 +25,6 @@ impl From<&vize_atelier_sfc::BlockLocation> for EncodedLoc {
             end_line: loc.end_line,
             end_column: loc.end_column,
         }
-    }
-}
-
-impl Encoder for EncodedLoc {
-    fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
-        Term::map_from_arrays(
-            env,
-            &[
-                atoms::start().encode(env),
-                atoms::end_().encode(env),
-                atoms::start_line().encode(env),
-                atoms::start_column().encode(env),
-                atoms::end_line().encode(env),
-                atoms::end_column().encode(env),
-            ],
-            &[
-                self.start.encode(env),
-                self.end.encode(env),
-                self.start_line.encode(env),
-                self.start_column.encode(env),
-                self.end_line.encode(env),
-                self.end_column.encode(env),
-            ],
-        )
-        .unwrap()
     }
 }
 
@@ -97,17 +74,6 @@ impl Encoder for EncodedSfcError<'_> {
 pub(crate) struct EncodedLintDiagnostic<'a> {
     pub(crate) message: &'a str,
     pub(crate) name: &'a str,
-}
-
-impl Encoder for EncodedLintDiagnostic<'_> {
-    fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
-        Term::map_from_arrays(
-            env,
-            &[atoms::message().encode(env), atoms::name().encode(env)],
-            &[self.message.encode(env), self.name.encode(env)],
-        )
-        .unwrap()
-    }
 }
 
 pub(crate) fn nil_term<'a>(env: Env<'a>) -> Term<'a> {
