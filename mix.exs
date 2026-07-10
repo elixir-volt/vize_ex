@@ -12,7 +12,7 @@ defmodule Vize.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       aliases: aliases(),
-      dialyzer: [plt_add_apps: [:mix], flags: [:no_opaque]],
+      dialyzer: [plt_add_apps: [:mix, :rustq], flags: [:no_opaque]],
       name: "Vize",
       description:
         "Elixir bindings for the Vize Vue.js toolchain — compile, lint, and format Vue SFCs via Rust NIFs.",
@@ -37,7 +37,7 @@ defmodule Vize.MixProject do
         "Vize" => "https://vizejs.dev"
       },
       files:
-        ~w(lib native/vize_ex_nif/src native/vize_ex_nif/Cargo.toml Cargo.toml Cargo.lock .formatter.exs mix.exs README.md LICENSE checksum-*.exs)
+        ~w(lib native/vize_ex_nif/src native/vize_ex_nif/Cargo.toml Cargo.toml Cargo.lock .formatter.exs mix.exs rustq.exs README.md LICENSE checksum-*.exs)
     ]
   end
 
@@ -52,6 +52,7 @@ defmodule Vize.MixProject do
   defp aliases do
     [
       lint: [
+        "rustq.gen --check",
         "format --check-formatted",
         "credo --strict",
         "ex_dna",
@@ -68,6 +69,7 @@ defmodule Vize.MixProject do
     [
       {:rustler, "~> 0.36 or ~> 0.37 or ~> 0.38", optional: true},
       {:rustler_precompiled, "~> 0.8"},
+      {:rustq, github: "dannote/rustq", ref: "d5c2d6c", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40", only: :dev, runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
