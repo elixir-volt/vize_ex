@@ -75,6 +75,36 @@ defmodule Vize.CSS do
     )
   end
 
+  @doc """
+  Compile Sass or SCSS to CSS using the native Rust `grass` compiler.
+
+  ## Options
+
+    * `:syntax` — `:scss` (default) or `:sass`
+    * `:filename` — source filename, used to resolve relative imports
+    * `:load_paths` — additional directories used to resolve imports
+    * `:compressed` — emit compressed CSS (default: `false`)
+  """
+  @spec compile_sass(String.t(), keyword()) ::
+          {:ok, %{code: String.t()}} | {:error, String.t()}
+  def compile_sass(source, opts \\ []) do
+    syntax = opts |> Keyword.get(:syntax, :scss) |> Atom.to_string()
+    filename = opts |> Keyword.get(:filename, "") |> to_string()
+    load_paths = opts |> Keyword.get(:load_paths, []) |> Enum.map(&Path.expand/1)
+    compressed = Keyword.get(opts, :compressed, false)
+
+    Vize.Native.compile_sass_nif(source, syntax, filename, load_paths, compressed)
+  end
+
+  @doc "Like `compile_sass/2` but raises on compilation errors."
+  @spec compile_sass!(String.t(), keyword()) :: %{code: String.t()}
+  def compile_sass!(source, opts \\ []) do
+    case compile_sass(source, opts) do
+      {:ok, result} -> result
+      {:error, error} -> raise "Vize Sass compile error: #{error}"
+    end
+  end
+
   @doc "Like `compile/2` but raises on errors."
   @spec compile!(String.t(), keyword()) :: css_result()
   def compile!(source, opts \\ []) do

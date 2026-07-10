@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Add native Sass and SCSS compilation through `Vize.CSS.compile_sass/2`, backed by the Rust `grass` compiler.
+
+### Changed
+
+- Upgrade the upstream Vize workspace from 0.206 to 0.290.
+
 ## 0.13.1 - 2026-06-23
 
 ### Added

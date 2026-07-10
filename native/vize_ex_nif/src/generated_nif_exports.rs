@@ -94,6 +94,17 @@ fn print_css_ast_nif<'a>(
 ) -> NifResult<Term<'a>> {
     print_css_ast_nif_impl(env, ast, minify, chrome, firefox, safari)
 }
+#[rustler::nif(schedule = "DirtyCpu")]
+fn compile_sass_nif<'a>(
+    env: Env<'a>,
+    source: &str,
+    syntax: &str,
+    filename: &str,
+    load_paths: Vec<String>,
+    compressed: bool,
+) -> NifResult<Term<'a>> {
+    compile_sass_nif_impl(env, source, syntax, filename, load_paths, compressed)
+}
 #[allow(clippy::too_many_arguments)]
 #[rustler::nif(schedule = "DirtyCpu")]
 fn compile_css_nif<'a>(

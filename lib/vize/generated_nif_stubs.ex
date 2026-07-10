@@ -54,6 +54,10 @@ defmodule Vize.GeneratedNifStubs do
         :erlang.nif_error(:nif_not_loaded)
       end
 
+      def compile_sass_nif(_source, _syntax, _filename, _load_paths, _compressed) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
       def compile_css_nif(
             _source,
             _minify,

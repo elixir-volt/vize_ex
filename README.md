@@ -189,6 +189,19 @@ Browser targeting:
 {:ok, result} = Vize.CSS.compile(css, targets: %{chrome: 80, firefox: 78, safari: 14})
 ```
 
+Native Sass and SCSS compilation via the Rust `grass` compiler:
+
+```elixir
+{:ok, result} =
+  Vize.CSS.compile_sass("$brand: #639; .button { color: $brand; &:hover { opacity: .8 } }")
+
+result.code
+# ".button { ... }\n.button:hover { ... }"
+```
+
+Use `syntax: :sass` for indented syntax, `filename:` for relative imports, and
+`load_paths:` for additional import directories.
+
 Parser-backed CSS URL rewriting without AST print round-trips:
 
 ```elixir

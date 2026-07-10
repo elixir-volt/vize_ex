@@ -9,7 +9,7 @@ use vize_atelier_core::options::{
     CodegenMode, CodegenOptions, ParserOptions, TemplateSyntaxMode, TransformOptions,
 };
 use vize_atelier_core::parser::{parse, parse_with_options};
-use vize_atelier_core::transform::transform;
+use vize_atelier_core::transform;
 use vize_atelier_sfc::compile_script::typescript::transform_typescript_to_js;
 use vize_atelier_sfc::croquis::{analyze_sfc_descriptor, SfcCroquisOptions};
 use vize_atelier_sfc::script::analyze_script_setup_to_summary;
@@ -762,6 +762,44 @@ fn lint_nif_impl<'a>(env: Env<'a>, source: &str, filename: &str) -> NifResult<Te
 }
 
 // ── CSS Compilation ──
+
+fn compile_sass_nif_impl<'a>(
+    env: Env<'a>,
+    source: &str,
+    syntax: &str,
+    filename: &str,
+    load_paths: Vec<String>,
+    compressed: bool,
+) -> NifResult<Term<'a>> {
+    let input_syntax = match syntax {
+        "sass" => grass::InputSyntax::Sass,
+        "scss" => grass::InputSyntax::Scss,
+        _ => return Ok(error_term(env, format!("Unknown Sass syntax: {syntax}"))),
+    };
+
+    let mut options = grass::Options::default()
+        .input_syntax(input_syntax)
+        .style(if compressed {
+            grass::OutputStyle::Compressed
+        } else {
+            grass::OutputStyle::Expanded
+        });
+
+    if !filename.is_empty() {
+        if let Some(parent) = std::path::Path::new(filename).parent() {
+            options = options.load_path(parent);
+        }
+    }
+
+    for path in load_paths {
+        options = options.load_path(path);
+    }
+
+    match grass::from_string(source.to_owned(), &options) {
+        Ok(code) => Ok(ok_term(env, term_map!(env, { atoms::code() => code }))),
+        Err(error) => Ok(error_term(env, error.to_string())),
+    }
+}
 
 fn css_targets(chrome: i64, firefox: i64, safari: i64) -> Option<CssTargets> {
     if chrome >= 0 || firefox >= 0 || safari >= 0 {

@@ -117,6 +117,7 @@ nifs = [
   select_css_nif: [],
   parse_css_ast_nif: [],
   print_css_ast_nif: [],
+  compile_sass_nif: [],
   compile_css_nif: [attrs: [A.attr(:allow, [A.path([:clippy, :too_many_arguments])])]],
   bundle_css_nif: [],
   vapor_split_nif: [],

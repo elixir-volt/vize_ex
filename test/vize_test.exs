@@ -513,6 +513,48 @@ defmodule VizeTest do
     end
   end
 
+  describe "compile_sass/2" do
+    test "compiles SCSS variables and nesting" do
+      {:ok, result} =
+        Vize.CSS.compile_sass("$color: #c00; .button { color: $color; &:hover { color: blue; } }")
+
+      assert result.code =~ ".button"
+      assert result.code =~ ".button:hover"
+      assert result.code =~ "#c00"
+    end
+
+    test "compiles indented Sass syntax" do
+      {:ok, result} =
+        Vize.CSS.compile_sass("$color: red\n.button\n  color: $color", syntax: :sass)
+
+      assert result.code =~ ".button"
+      assert result.code =~ "color: red"
+    end
+
+    test "resolves imports relative to the filename" do
+      directory = Path.join(System.tmp_dir!(), "vize-sass-#{System.unique_integer([:positive])}")
+      File.mkdir_p!(directory)
+      on_exit(fn -> File.rm_rf(directory) end)
+      File.write!(Path.join(directory, "_colors.scss"), "$brand: rebeccapurple;")
+
+      assert {:ok, result} =
+               Vize.CSS.compile_sass("@use 'colors' as *; .logo { color: $brand; }",
+                 filename: Path.join(directory, "app.scss")
+               )
+
+      assert result.code =~ "rebeccapurple"
+    end
+
+    test "returns compilation errors and bang variant raises" do
+      assert {:error, error} = Vize.CSS.compile_sass(".broken { color: $missing; }")
+      assert error =~ "Undefined variable"
+
+      assert_raise RuntimeError, ~r/Vize Sass compile error/, fn ->
+        Vize.CSS.compile_sass!(".broken { color: $missing; }")
+      end
+    end
+  end
+
   describe "compile_sfc/2 new options" do
     test "returns macro_artifacts" do
       {:ok, result} = Vize.compile_sfc(@setup_sfc)
