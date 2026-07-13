@@ -42,7 +42,21 @@ encoders = [
      loc: [field: [0, :loc], with: :loc_to_term],
      attrs: [field: [0, :attrs], with: :attrs_to_term]
    ],
-   target_lifetimes: [:_]}
+   target_lifetimes: [:_]},
+  {:EncodedMacroArtifact,
+   fields: [
+     kind: [field: [0, :kind], via: :as_str],
+     name: [field: [0, :name], via: :as_str],
+     source: [field: [0, :source], via: :as_str],
+     content: [field: [0, :content], via: :as_str],
+     start: [field: [0, :start]],
+     end_: [field: [0, :end]],
+     code: [field: [0, :module_code], when_some: true, via: :as_str]
+   ],
+   target_lifetimes: [:_]},
+  {:EncodedTemplateCompileResult,
+   fields: [:code, :preamble, :helpers], target_lifetimes: [:_]},
+  {:EncodedSsrCompileResult, fields: [:code, :preamble], target_lifetimes: [:_]}
 ]
 
 encoder_atoms =

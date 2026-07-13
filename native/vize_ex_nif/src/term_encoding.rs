@@ -248,32 +248,6 @@ pub(crate) struct EncodedCompileSfcResult<'a> {
 
 struct EncodedMacroArtifact<'a>(&'a vize_atelier_sfc::SfcMacroArtifact);
 
-impl Encoder for EncodedMacroArtifact<'_> {
-    fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
-        let mut keys = vec![
-            atoms::kind().encode(env),
-            atoms::name().encode(env),
-            atoms::source().encode(env),
-            atoms::content().encode(env),
-            atoms::start().encode(env),
-            atoms::end_().encode(env),
-        ];
-        let mut vals: Vec<Term<'a>> = vec![
-            self.0.kind.as_str().encode(env),
-            self.0.name.as_str().encode(env),
-            self.0.source.as_str().encode(env),
-            self.0.content.as_str().encode(env),
-            self.0.start.encode(env),
-            self.0.end.encode(env),
-        ];
-        if let Some(ref module_code) = self.0.module_code {
-            keys.push(atoms::code().encode(env));
-            vals.push(module_code.as_str().encode(env));
-        }
-        Term::map_from_arrays(env, &keys, &vals).unwrap()
-    }
-}
-
 impl Encoder for EncodedCompileSfcResult<'_> {
     fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
         let errors: Vec<Term<'a>> = self
@@ -330,39 +304,9 @@ pub(crate) struct EncodedTemplateCompileResult<'a> {
     pub(crate) helpers: Vec<&'a str>,
 }
 
-impl Encoder for EncodedTemplateCompileResult<'_> {
-    fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
-        Term::map_from_arrays(
-            env,
-            &[
-                atoms::code().encode(env),
-                atoms::preamble().encode(env),
-                atoms::helpers().encode(env),
-            ],
-            &[
-                self.code.encode(env),
-                self.preamble.encode(env),
-                self.helpers.encode(env),
-            ],
-        )
-        .unwrap()
-    }
-}
-
 pub(crate) struct EncodedSsrCompileResult<'a> {
     pub(crate) code: &'a str,
     pub(crate) preamble: &'a str,
-}
-
-impl Encoder for EncodedSsrCompileResult<'_> {
-    fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
-        Term::map_from_arrays(
-            env,
-            &[atoms::code().encode(env), atoms::preamble().encode(env)],
-            &[self.code.encode(env), self.preamble.encode(env)],
-        )
-        .unwrap()
-    }
 }
 
 fn encode_css_exports<'a>(

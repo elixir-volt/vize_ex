@@ -131,3 +131,50 @@ impl rustler::Encoder for EncodedCustomBlock<'_> {
             .unwrap()
     }
 }
+impl rustler::Encoder for EncodedMacroArtifact<'_> {
+    fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
+        let mut keys = vec![
+            atoms::kind().encode(env), atoms::name().encode(env), atoms::source()
+            .encode(env), atoms::content().encode(env), atoms::start().encode(env),
+            atoms::end_().encode(env)
+        ];
+        let mut values = vec![
+            self.0.kind.as_str().encode(env), self.0.name.as_str().encode(env), self.0
+            .source.as_str().encode(env), self.0.content.as_str().encode(env), self.0
+            .start.encode(env), self.0.end.encode(env)
+        ];
+        if let Some(value) = self.0.module_code.as_ref() {
+            keys.push(atoms::code().encode(env));
+            values.push(value.as_str().encode(env));
+        }
+        Term::map_from_arrays(env, &keys, &values).unwrap()
+    }
+}
+impl rustler::Encoder for EncodedTemplateCompileResult<'_> {
+    fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
+        Term::map_from_arrays(
+                env,
+                &[
+                    atoms::code().encode(env),
+                    atoms::preamble().encode(env),
+                    atoms::helpers().encode(env),
+                ],
+                &[
+                    self.code.encode(env),
+                    self.preamble.encode(env),
+                    self.helpers.encode(env),
+                ],
+            )
+            .unwrap()
+    }
+}
+impl rustler::Encoder for EncodedSsrCompileResult<'_> {
+    fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
+        Term::map_from_arrays(
+                env,
+                &[atoms::code().encode(env), atoms::preamble().encode(env)],
+                &[self.code.encode(env), self.preamble.encode(env)],
+            )
+            .unwrap()
+    }
+}
