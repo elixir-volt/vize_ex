@@ -1,10 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.14.0 - 2026-07-10
 
 ### Added
 
-- Add native Sass and SCSS compilation through `Vize.CSS.compile_sass/2`, backed by the Rust `grass` compiler.
+- Add native Sass and SCSS compilation through `Vize.CSS.compile_sass/2` and `Vize.CSS.compile_sass!/2`, backed by the Rust `grass` compiler. Supports SCSS and indented Sass syntax, relative imports, additional load paths, and compressed output.
 
 ### Changed
 
