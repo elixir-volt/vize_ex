@@ -178,3 +178,205 @@ impl rustler::Encoder for EncodedSsrCompileResult<'_> {
             .unwrap()
     }
 }
+impl rustler::Encoder for EncodedParseSfcResult<'_> {
+    fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
+        Term::map_from_arrays(
+                env,
+                &[
+                    atoms::template().encode(env),
+                    atoms::script().encode(env),
+                    atoms::script_setup().encode(env),
+                    atoms::styles().encode(env),
+                    atoms::custom_blocks().encode(env),
+                ],
+                &[
+                    self
+                        .descriptor
+                        .template
+                        .as_ref()
+                        .map(|value| EncodedTemplateBlock(value).encode(env))
+                        .unwrap_or_else(|| nil_term(env)),
+                    self
+                        .descriptor
+                        .script
+                        .as_ref()
+                        .map(|value| EncodedScriptBlock(value).encode(env))
+                        .unwrap_or_else(|| nil_term(env)),
+                    self
+                        .descriptor
+                        .script_setup
+                        .as_ref()
+                        .map(|value| EncodedScriptBlock(value).encode(env))
+                        .unwrap_or_else(|| nil_term(env)),
+                    self
+                        .descriptor
+                        .styles
+                        .iter()
+                        .map(|value| EncodedStyleBlock(value).encode(env))
+                        .collect::<Vec<Term<'a>>>()
+                        .encode(env),
+                    self
+                        .descriptor
+                        .custom_blocks
+                        .iter()
+                        .map(|value| EncodedCustomBlock(value).encode(env))
+                        .collect::<Vec<Term<'a>>>()
+                        .encode(env),
+                ],
+            )
+            .unwrap()
+    }
+}
+impl rustler::Encoder for EncodedCompileSfcResult<'_> {
+    fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
+        Term::map_from_arrays(
+                env,
+                &[
+                    atoms::code().encode(env),
+                    atoms::css().encode(env),
+                    atoms::errors().encode(env),
+                    atoms::warnings().encode(env),
+                    atoms::template_hash().encode(env),
+                    atoms::style_hash().encode(env),
+                    atoms::script_hash().encode(env),
+                    atoms::macro_artifacts().encode(env),
+                ],
+                &[
+                    self.code_override.unwrap_or(self.result.code.as_str()).encode(env),
+                    self.result.css.as_deref().encode(env),
+                    self
+                        .result
+                        .errors
+                        .iter()
+                        .map(|value| EncodedSfcError::from(value).encode(env))
+                        .collect::<Vec<Term<'a>>>()
+                        .encode(env),
+                    self
+                        .result
+                        .warnings
+                        .iter()
+                        .map(|value| EncodedSfcError::from(value).encode(env))
+                        .collect::<Vec<Term<'a>>>()
+                        .encode(env),
+                    self.template_hash.as_deref().encode(env),
+                    self.style_hash.as_deref().encode(env),
+                    self.script_hash.as_deref().encode(env),
+                    self
+                        .result
+                        .macro_artifacts
+                        .iter()
+                        .map(|value| EncodedMacroArtifact(value).encode(env))
+                        .collect::<Vec<Term<'a>>>()
+                        .encode(env),
+                ],
+            )
+            .unwrap()
+    }
+}
+impl rustler::Encoder for EncodedCssAstResult<'_> {
+    fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
+        Term::map_from_arrays(
+                env,
+                &[
+                    atoms::ast().encode(env),
+                    atoms::errors().encode(env),
+                    atoms::warnings().encode(env),
+                ],
+                &[
+                    self
+                        .result
+                        .ast
+                        .as_ref()
+                        .map(|value| encode_json_value(env, value))
+                        .unwrap_or_else(|| nil_term(env)),
+                    self
+                        .result
+                        .errors
+                        .iter()
+                        .map(|value| value.as_str().encode(env))
+                        .collect::<Vec<Term<'a>>>()
+                        .encode(env),
+                    self
+                        .result
+                        .warnings
+                        .iter()
+                        .map(|value| value.as_str().encode(env))
+                        .collect::<Vec<Term<'a>>>()
+                        .encode(env),
+                ],
+            )
+            .unwrap()
+    }
+}
+impl rustler::Encoder for EncodedCssCompileResult<'_> {
+    fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
+        Term::map_from_arrays(
+                env,
+                &[
+                    atoms::code().encode(env),
+                    atoms::css_vars().encode(env),
+                    atoms::errors().encode(env),
+                    atoms::warnings().encode(env),
+                    atoms::exports().encode(env),
+                ],
+                &[
+                    self.result.code.as_str().encode(env),
+                    self
+                        .result
+                        .css_vars
+                        .iter()
+                        .map(|value| value.as_str().encode(env))
+                        .collect::<Vec<Term<'a>>>()
+                        .encode(env),
+                    self
+                        .result
+                        .errors
+                        .iter()
+                        .map(|value| value.as_str().encode(env))
+                        .collect::<Vec<Term<'a>>>()
+                        .encode(env),
+                    self
+                        .result
+                        .warnings
+                        .iter()
+                        .map(|value| value.as_str().encode(env))
+                        .collect::<Vec<Term<'a>>>()
+                        .encode(env),
+                    encode_css_exports(env, self.result.exports.as_ref()),
+                ],
+            )
+            .unwrap()
+    }
+}
+impl rustler::Encoder for EncodedBundleCssResult<'_> {
+    fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
+        Term::map_from_arrays(
+                env,
+                &[
+                    atoms::code().encode(env),
+                    atoms::errors().encode(env),
+                    atoms::warnings().encode(env),
+                    atoms::exports().encode(env),
+                ],
+                &[
+                    self.result.code.as_str().encode(env),
+                    self
+                        .result
+                        .errors
+                        .iter()
+                        .map(|value| value.as_str().encode(env))
+                        .collect::<Vec<Term<'a>>>()
+                        .encode(env),
+                    self
+                        .result
+                        .warnings
+                        .iter()
+                        .map(|value| value.as_str().encode(env))
+                        .collect::<Vec<Term<'a>>>()
+                        .encode(env),
+                    encode_css_exports(env, self.result.exports.as_ref()),
+                ],
+            )
+            .unwrap()
+    }
+}

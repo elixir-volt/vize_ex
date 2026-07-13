@@ -184,60 +184,6 @@ pub(crate) struct EncodedParseSfcResult<'a> {
     pub(crate) descriptor: &'a vize_atelier_sfc::SfcDescriptor<'a>,
 }
 
-impl Encoder for EncodedParseSfcResult<'_> {
-    fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
-        let template_term = self
-            .descriptor
-            .template
-            .as_ref()
-            .map(|template| EncodedTemplateBlock(template).encode(env))
-            .unwrap_or_else(|| nil_term(env));
-        let script_term = self
-            .descriptor
-            .script
-            .as_ref()
-            .map(|script| EncodedScriptBlock(script).encode(env))
-            .unwrap_or_else(|| nil_term(env));
-        let script_setup_term = self
-            .descriptor
-            .script_setup
-            .as_ref()
-            .map(|script| EncodedScriptBlock(script).encode(env))
-            .unwrap_or_else(|| nil_term(env));
-        let styles_term: Vec<Term<'a>> = self
-            .descriptor
-            .styles
-            .iter()
-            .map(|style| EncodedStyleBlock(style).encode(env))
-            .collect();
-        let custom_blocks_term: Vec<Term<'a>> = self
-            .descriptor
-            .custom_blocks
-            .iter()
-            .map(|block| EncodedCustomBlock(block).encode(env))
-            .collect();
-
-        Term::map_from_arrays(
-            env,
-            &[
-                atoms::template().encode(env),
-                atoms::script().encode(env),
-                atoms::script_setup().encode(env),
-                atoms::styles().encode(env),
-                atoms::custom_blocks().encode(env),
-            ],
-            &[
-                template_term,
-                script_term,
-                script_setup_term,
-                styles_term.encode(env),
-                custom_blocks_term.encode(env),
-            ],
-        )
-        .unwrap()
-    }
-}
-
 pub(crate) struct EncodedCompileSfcResult<'a> {
     pub(crate) result: &'a vize_atelier_sfc::SfcCompileResult,
     pub(crate) code_override: Option<&'a str>,
@@ -247,56 +193,6 @@ pub(crate) struct EncodedCompileSfcResult<'a> {
 }
 
 struct EncodedMacroArtifact<'a>(&'a vize_atelier_sfc::SfcMacroArtifact);
-
-impl Encoder for EncodedCompileSfcResult<'_> {
-    fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
-        let errors: Vec<Term<'a>> = self
-            .result
-            .errors
-            .iter()
-            .map(|error| EncodedSfcError::from(error).encode(env))
-            .collect();
-        let warnings: Vec<Term<'a>> = self
-            .result
-            .warnings
-            .iter()
-            .map(|warning| EncodedSfcError::from(warning).encode(env))
-            .collect();
-        let macro_artifacts: Vec<Term<'a>> = self
-            .result
-            .macro_artifacts
-            .iter()
-            .map(|a| EncodedMacroArtifact(a).encode(env))
-            .collect();
-
-        let code = self.code_override.unwrap_or(self.result.code.as_str());
-
-        Term::map_from_arrays(
-            env,
-            &[
-                atoms::code().encode(env),
-                atoms::css().encode(env),
-                atoms::errors().encode(env),
-                atoms::warnings().encode(env),
-                atoms::template_hash().encode(env),
-                atoms::style_hash().encode(env),
-                atoms::script_hash().encode(env),
-                atoms::macro_artifacts().encode(env),
-            ],
-            &[
-                code.encode(env),
-                self.result.css.as_deref().encode(env),
-                errors.encode(env),
-                warnings.encode(env),
-                self.template_hash.as_deref().encode(env),
-                self.style_hash.as_deref().encode(env),
-                self.script_hash.as_deref().encode(env),
-                macro_artifacts.encode(env),
-            ],
-        )
-        .unwrap()
-    }
-}
 
 pub(crate) struct EncodedTemplateCompileResult<'a> {
     pub(crate) code: &'a str,
@@ -333,120 +229,10 @@ pub(crate) struct EncodedCssAstResult<'a> {
     pub(crate) result: &'a vize_atelier_sfc::CssAstResult,
 }
 
-impl Encoder for EncodedCssAstResult<'_> {
-    fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
-        let errors: Vec<&str> = self
-            .result
-            .errors
-            .iter()
-            .map(|value| value.as_str())
-            .collect();
-        let warnings: Vec<&str> = self
-            .result
-            .warnings
-            .iter()
-            .map(|value| value.as_str())
-            .collect();
-        let ast = self
-            .result
-            .ast
-            .as_ref()
-            .map(|value| encode_json_value(env, value))
-            .unwrap_or_else(|| nil_term(env));
-
-        Term::map_from_arrays(
-            env,
-            &[
-                atoms::ast().encode(env),
-                atoms::errors().encode(env),
-                atoms::warnings().encode(env),
-            ],
-            &[ast, errors.encode(env), warnings.encode(env)],
-        )
-        .unwrap()
-    }
-}
-
 pub(crate) struct EncodedCssCompileResult<'a> {
     pub(crate) result: &'a vize_atelier_sfc::CssCompileResult,
 }
 
-impl Encoder for EncodedCssCompileResult<'_> {
-    fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
-        let css_vars: Vec<&str> = self
-            .result
-            .css_vars
-            .iter()
-            .map(|value| value.as_str())
-            .collect();
-        let errors: Vec<&str> = self
-            .result
-            .errors
-            .iter()
-            .map(|value| value.as_str())
-            .collect();
-        let warnings: Vec<&str> = self
-            .result
-            .warnings
-            .iter()
-            .map(|value| value.as_str())
-            .collect();
-
-        Term::map_from_arrays(
-            env,
-            &[
-                atoms::code().encode(env),
-                atoms::css_vars().encode(env),
-                atoms::errors().encode(env),
-                atoms::warnings().encode(env),
-                atoms::exports().encode(env),
-            ],
-            &[
-                self.result.code.as_str().encode(env),
-                css_vars.encode(env),
-                errors.encode(env),
-                warnings.encode(env),
-                encode_css_exports(env, self.result.exports.as_ref()),
-            ],
-        )
-        .unwrap()
-    }
-}
-
 pub(crate) struct EncodedBundleCssResult<'a> {
     pub(crate) result: &'a vize_atelier_sfc::CssCompileResult,
-}
-
-impl Encoder for EncodedBundleCssResult<'_> {
-    fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
-        let errors: Vec<&str> = self
-            .result
-            .errors
-            .iter()
-            .map(|value| value.as_str())
-            .collect();
-        let warnings: Vec<&str> = self
-            .result
-            .warnings
-            .iter()
-            .map(|value| value.as_str())
-            .collect();
-
-        Term::map_from_arrays(
-            env,
-            &[
-                atoms::code().encode(env),
-                atoms::errors().encode(env),
-                atoms::warnings().encode(env),
-                atoms::exports().encode(env),
-            ],
-            &[
-                self.result.code.as_str().encode(env),
-                errors.encode(env),
-                warnings.encode(env),
-                encode_css_exports(env, self.result.exports.as_ref()),
-            ],
-        )
-        .unwrap()
-    }
 }

@@ -56,7 +56,52 @@ encoders = [
    target_lifetimes: [:_]},
   {:EncodedTemplateCompileResult,
    fields: [:code, :preamble, :helpers], target_lifetimes: [:_]},
-  {:EncodedSsrCompileResult, fields: [:code, :preamble], target_lifetimes: [:_]}
+  {:EncodedSsrCompileResult, fields: [:code, :preamble], target_lifetimes: [:_]},
+  {:EncodedParseSfcResult,
+   fields: [
+     template: [field: [:descriptor, :template], optional: [wrap: :EncodedTemplateBlock]],
+     script: [field: [:descriptor, :script], optional: [wrap: :EncodedScriptBlock]],
+     script_setup: [field: [:descriptor, :script_setup], optional: [wrap: :EncodedScriptBlock]],
+     styles: [field: [:descriptor, :styles], map: [wrap: :EncodedStyleBlock]],
+     custom_blocks: [field: [:descriptor, :custom_blocks], map: [wrap: :EncodedCustomBlock]]
+   ],
+   target_lifetimes: [:_]},
+  {:EncodedCompileSfcResult,
+   fields: [
+     code: [field: :code_override, fallback: [field: [:result, :code], via: :as_str]],
+     css: [field: [:result, :css], via: :as_deref],
+     errors: [field: [:result, :errors], map: [convert: :EncodedSfcError]],
+     warnings: [field: [:result, :warnings], map: [convert: :EncodedSfcError]],
+     template_hash: [via: :as_deref],
+     style_hash: [via: :as_deref],
+     script_hash: [via: :as_deref],
+     macro_artifacts: [field: [:result, :macro_artifacts], map: [wrap: :EncodedMacroArtifact]]
+   ],
+   target_lifetimes: [:_]},
+  {:EncodedCssAstResult,
+   fields: [
+     ast: [field: [:result, :ast], optional: [with: :encode_json_value]],
+     errors: [field: [:result, :errors], map: [via: :as_str]],
+     warnings: [field: [:result, :warnings], map: [via: :as_str]]
+   ],
+   target_lifetimes: [:_]},
+  {:EncodedCssCompileResult,
+   fields: [
+     code: [field: [:result, :code], via: :as_str],
+     css_vars: [field: [:result, :css_vars], map: [via: :as_str]],
+     errors: [field: [:result, :errors], map: [via: :as_str]],
+     warnings: [field: [:result, :warnings], map: [via: :as_str]],
+     exports: [field: [:result, :exports], via: :as_ref, with: :encode_css_exports, borrow: false]
+   ],
+   target_lifetimes: [:_]},
+  {:EncodedBundleCssResult,
+   fields: [
+     code: [field: [:result, :code], via: :as_str],
+     errors: [field: [:result, :errors], map: [via: :as_str]],
+     warnings: [field: [:result, :warnings], map: [via: :as_str]],
+     exports: [field: [:result, :exports], via: :as_ref, with: :encode_css_exports, borrow: false]
+   ],
+   target_lifetimes: [:_]}
 ]
 
 encoder_atoms =
