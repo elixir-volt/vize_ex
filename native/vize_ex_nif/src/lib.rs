@@ -40,11 +40,11 @@ use crate::term_encoding::{
 use crate::vapor_split::process_block;
 
 include!("generated_atoms.rs");
+include!("generated_nif_exports.rs");
 
 // ── SFC Parsing ──
 
-#[rustler::nif(schedule = "DirtyCpu")]
-fn parse_sfc_nif<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
+fn parse_sfc_nif_impl<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
     let opts = SfcParseOptions::default();
     match parse_sfc(source, opts) {
         Ok(descriptor) => Ok(ok_term(
@@ -205,9 +205,8 @@ fn analyze_sfc_nif<'a>(env: Env<'a>, source: &str, mode: &str) -> NifResult<Term
 
 // ── SFC Compilation ──
 
-#[rustler::nif(schedule = "DirtyCpu")]
 #[allow(clippy::too_many_arguments)]
-fn compile_sfc_nif<'a>(
+fn compile_sfc_nif_impl<'a>(
     env: Env<'a>,
     source: &str,
     filename: &str,
@@ -270,8 +269,7 @@ fn compile_sfc_nif<'a>(
 
 // ── Template Compilation ──
 
-#[rustler::nif(schedule = "DirtyCpu")]
-fn compile_template_nif<'a>(
+fn compile_template_nif_impl<'a>(
     env: Env<'a>,
     source: &str,
     mode: &str,
@@ -318,8 +316,7 @@ fn compile_template_nif<'a>(
 
 // ── SSR Compilation ──
 
-#[rustler::nif(schedule = "DirtyCpu")]
-fn compile_ssr_nif<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
+fn compile_ssr_nif_impl<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
     let allocator = Bump::new();
     let (_root, errors, result) = compile_ssr(&allocator, source);
 

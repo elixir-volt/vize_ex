@@ -1,5 +1,6 @@
 use RustQ.Config
 
+alias RustQ.Rust.AST.Builder, as: A
 alias RustQ.Rustler
 
 encoders = [
@@ -133,4 +134,18 @@ end
 
 rust "native/vize_ex_nif/src/generated_term_encoders.rs" do
   Enum.map(encoders, fn {name, opts} -> Rustler.term_encoder(name, opts) end)
+end
+
+rust "native/vize_ex_nif/src/generated_nif_exports.rs" do
+  Rustler.nif_exports_from_source(
+    "native/vize_ex_nif/src/lib.rs",
+    [
+      parse_sfc_nif: [],
+      compile_sfc_nif: [attrs: [A.attr(:allow, [A.path([:clippy, :too_many_arguments])])]],
+      compile_template_nif: [],
+      compile_ssr_nif: []
+    ],
+    lifetime: :a,
+    schedule: :dirty_cpu
+  )
 end
