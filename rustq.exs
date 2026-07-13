@@ -1,7 +1,7 @@
 use RustQ.Config
 
 alias RustQ.Rust.AST.Builder, as: A
-alias RustQ.Rustler
+alias RustQ.Rustler.{Atom, Nif, Term}
 
 encoders = [
   {:EncodedLoc,
@@ -126,10 +126,7 @@ nifs = [
 
 encoder_atoms =
   Enum.flat_map(encoders, fn {_name, opts} ->
-    Enum.map(Keyword.fetch!(opts, :fields), fn
-      field when is_atom(field) -> Atom.to_string(field)
-      {key, _field_or_opts} -> Atom.to_string(key)
-    end)
+    Term.encoder_atom_names(opts)
   end)
 
 source_atoms =
@@ -148,25 +145,24 @@ atoms =
   end)
 
 rust "native/vize_ex_nif/src/generated_atoms.rs" do
-  Rustler.atoms(atoms)
+  Atom.declaration(atoms)
 end
 
 rust "native/vize_ex_nif/src/generated_term_encoders.rs" do
-  Enum.map(encoders, fn {name, opts} -> Rustler.term_encoder(name, opts) end)
+  Enum.map(encoders, fn {name, opts} -> Term.encoder(name, opts) end)
 end
 
-rust "native/vize_ex_nif/src/generated_nif_exports.rs" do
-  Rustler.nif_exports_from_source(
+rust "native/vize_ex_nif/src/generated_nifs.rs" do
+  Nif.wrappers_from_source(
     "native/vize_ex_nif/src/lib.rs",
     nifs,
-    lifetime: :a,
     schedule: :dirty_cpu
   )
 end
 
 generate "lib/vize/generated_nif_stubs.ex" do
   content(
-    Rustler.nif_stubs_from_source(
+    Nif.stubs_from_source(
       "native/vize_ex_nif/src/lib.rs",
       nifs,
       Vize.GeneratedNifStubs

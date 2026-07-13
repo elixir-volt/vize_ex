@@ -40,7 +40,7 @@ use crate::term_encoding::{
 use crate::vapor_split::process_block;
 
 include!("generated_atoms.rs");
-include!("generated_nif_exports.rs");
+include!("generated_nifs.rs");
 
 // ── SFC Parsing ──
 
