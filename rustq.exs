@@ -105,6 +105,24 @@ encoders = [
    target_lifetimes: [:_]}
 ]
 
+nifs = [
+  parse_sfc_nif: [],
+  analyze_sfc_nif: [],
+  compile_sfc_nif: [attrs: [A.attr(:allow, [A.path([:clippy, :too_many_arguments])])]],
+  compile_template_nif: [],
+  compile_ssr_nif: [],
+  compile_vapor_nif: [],
+  vapor_ir_nif: [],
+  lint_nif: [],
+  select_css_nif: [],
+  parse_css_ast_nif: [],
+  print_css_ast_nif: [],
+  compile_css_nif: [attrs: [A.attr(:allow, [A.path([:clippy, :too_many_arguments])])]],
+  bundle_css_nif: [],
+  vapor_split_nif: [],
+  generate_dts_nif: []
+]
+
 encoder_atoms =
   Enum.flat_map(encoders, fn {_name, opts} ->
     Enum.map(Keyword.fetch!(opts, :fields), fn
@@ -139,24 +157,18 @@ end
 rust "native/vize_ex_nif/src/generated_nif_exports.rs" do
   Rustler.nif_exports_from_source(
     "native/vize_ex_nif/src/lib.rs",
-    [
-      parse_sfc_nif: [],
-      analyze_sfc_nif: [],
-      compile_sfc_nif: [attrs: [A.attr(:allow, [A.path([:clippy, :too_many_arguments])])]],
-      compile_template_nif: [],
-      compile_ssr_nif: [],
-      compile_vapor_nif: [],
-      vapor_ir_nif: [],
-      lint_nif: [],
-      select_css_nif: [],
-      parse_css_ast_nif: [],
-      print_css_ast_nif: [],
-      compile_css_nif: [attrs: [A.attr(:allow, [A.path([:clippy, :too_many_arguments])])]],
-      bundle_css_nif: [],
-      vapor_split_nif: [],
-      generate_dts_nif: []
-    ],
+    nifs,
     lifetime: :a,
     schedule: :dirty_cpu
+  )
+end
+
+generate "lib/vize/generated_nif_stubs.ex" do
+  content(
+    Rustler.nif_stubs_from_source(
+      "native/vize_ex_nif/src/lib.rs",
+      nifs,
+      Vize.GeneratedNifStubs
+    )
   )
 end
