@@ -174,101 +174,11 @@ pub(crate) fn decode_json_value(term: Term<'_>) -> NifResult<Value> {
 
 struct EncodedTemplateBlock<'a>(&'a vize_atelier_sfc::SfcTemplateBlock<'a>);
 
-impl Encoder for EncodedTemplateBlock<'_> {
-    fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
-        Term::map_from_arrays(
-            env,
-            &[
-                atoms::content().encode(env),
-                atoms::lang().encode(env),
-                atoms::loc().encode(env),
-                atoms::attrs().encode(env),
-            ],
-            &[
-                self.0.content.as_ref().encode(env),
-                self.0.lang.as_deref().encode(env),
-                loc_to_term(env, &self.0.loc),
-                attrs_to_term(env, &self.0.attrs),
-            ],
-        )
-        .unwrap()
-    }
-}
-
 struct EncodedScriptBlock<'a>(&'a vize_atelier_sfc::SfcScriptBlock<'a>);
-
-impl Encoder for EncodedScriptBlock<'_> {
-    fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
-        Term::map_from_arrays(
-            env,
-            &[
-                atoms::content().encode(env),
-                atoms::lang().encode(env),
-                atoms::setup().encode(env),
-                atoms::loc().encode(env),
-                atoms::attrs().encode(env),
-            ],
-            &[
-                self.0.content.as_ref().encode(env),
-                self.0.lang.as_deref().encode(env),
-                self.0.setup.encode(env),
-                loc_to_term(env, &self.0.loc),
-                attrs_to_term(env, &self.0.attrs),
-            ],
-        )
-        .unwrap()
-    }
-}
 
 struct EncodedStyleBlock<'a>(&'a vize_atelier_sfc::SfcStyleBlock<'a>);
 
-impl Encoder for EncodedStyleBlock<'_> {
-    fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
-        Term::map_from_arrays(
-            env,
-            &[
-                atoms::content().encode(env),
-                atoms::lang().encode(env),
-                atoms::scoped().encode(env),
-                atoms::module().encode(env),
-                atoms::loc().encode(env),
-                atoms::attrs().encode(env),
-            ],
-            &[
-                self.0.content.as_ref().encode(env),
-                self.0.lang.as_deref().encode(env),
-                self.0.scoped.encode(env),
-                self.0.module.as_deref().encode(env),
-                loc_to_term(env, &self.0.loc),
-                attrs_to_term(env, &self.0.attrs),
-            ],
-        )
-        .unwrap()
-    }
-}
-
 struct EncodedCustomBlock<'a>(&'a vize_atelier_sfc::SfcCustomBlock<'a>);
-
-impl Encoder for EncodedCustomBlock<'_> {
-    fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
-        Term::map_from_arrays(
-            env,
-            &[
-                atoms::block_type().encode(env),
-                atoms::content().encode(env),
-                atoms::loc().encode(env),
-                atoms::attrs().encode(env),
-            ],
-            &[
-                self.0.block_type.as_ref().encode(env),
-                self.0.content.as_ref().encode(env),
-                loc_to_term(env, &self.0.loc),
-                attrs_to_term(env, &self.0.attrs),
-            ],
-        )
-        .unwrap()
-    }
-}
 
 pub(crate) struct EncodedParseSfcResult<'a> {
     pub(crate) descriptor: &'a vize_atelier_sfc::SfcDescriptor<'a>,

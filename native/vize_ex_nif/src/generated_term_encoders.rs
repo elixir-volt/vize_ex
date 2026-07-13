@@ -45,3 +45,89 @@ impl rustler::Encoder for EncodedSfcError<'_> {
         Term::map_from_arrays(env, &keys, &values).unwrap()
     }
 }
+impl rustler::Encoder for EncodedTemplateBlock<'_> {
+    fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
+        Term::map_from_arrays(
+                env,
+                &[
+                    atoms::content().encode(env),
+                    atoms::lang().encode(env),
+                    atoms::loc().encode(env),
+                    atoms::attrs().encode(env),
+                ],
+                &[
+                    self.0.content.as_ref().encode(env),
+                    self.0.lang.as_deref().encode(env),
+                    loc_to_term(env, &self.0.loc),
+                    attrs_to_term(env, &self.0.attrs),
+                ],
+            )
+            .unwrap()
+    }
+}
+impl rustler::Encoder for EncodedScriptBlock<'_> {
+    fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
+        Term::map_from_arrays(
+                env,
+                &[
+                    atoms::content().encode(env),
+                    atoms::lang().encode(env),
+                    atoms::setup().encode(env),
+                    atoms::loc().encode(env),
+                    atoms::attrs().encode(env),
+                ],
+                &[
+                    self.0.content.as_ref().encode(env),
+                    self.0.lang.as_deref().encode(env),
+                    self.0.setup.encode(env),
+                    loc_to_term(env, &self.0.loc),
+                    attrs_to_term(env, &self.0.attrs),
+                ],
+            )
+            .unwrap()
+    }
+}
+impl rustler::Encoder for EncodedStyleBlock<'_> {
+    fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
+        Term::map_from_arrays(
+                env,
+                &[
+                    atoms::content().encode(env),
+                    atoms::lang().encode(env),
+                    atoms::scoped().encode(env),
+                    atoms::module().encode(env),
+                    atoms::loc().encode(env),
+                    atoms::attrs().encode(env),
+                ],
+                &[
+                    self.0.content.as_ref().encode(env),
+                    self.0.lang.as_deref().encode(env),
+                    self.0.scoped.encode(env),
+                    self.0.module.as_deref().encode(env),
+                    loc_to_term(env, &self.0.loc),
+                    attrs_to_term(env, &self.0.attrs),
+                ],
+            )
+            .unwrap()
+    }
+}
+impl rustler::Encoder for EncodedCustomBlock<'_> {
+    fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
+        Term::map_from_arrays(
+                env,
+                &[
+                    atoms::block_type().encode(env),
+                    atoms::content().encode(env),
+                    atoms::loc().encode(env),
+                    atoms::attrs().encode(env),
+                ],
+                &[
+                    self.0.block_type.as_ref().encode(env),
+                    self.0.content.as_ref().encode(env),
+                    loc_to_term(env, &self.0.loc),
+                    attrs_to_term(env, &self.0.attrs),
+                ],
+            )
+            .unwrap()
+    }
+}

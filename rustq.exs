@@ -2,11 +2,65 @@ use RustQ.Config
 
 alias RustQ.Rustler
 
-atoms =
+encoders = [
+  {:EncodedLoc,
+   fields: [:start, {:end_, :end}, :start_line, :start_column, :end_line, :end_column]},
+  {:EncodedLintDiagnostic, fields: [:message, :name], target_lifetimes: [:_]},
+  {:EncodedSfcError,
+   fields: [:message, code: [when_some: true]], target_lifetimes: [:_]},
+  {:EncodedTemplateBlock,
+   fields: [
+     content: [field: [0, :content], via: :as_ref],
+     lang: [field: [0, :lang], via: :as_deref],
+     loc: [field: [0, :loc], with: :loc_to_term],
+     attrs: [field: [0, :attrs], with: :attrs_to_term]
+   ],
+   target_lifetimes: [:_]},
+  {:EncodedScriptBlock,
+   fields: [
+     content: [field: [0, :content], via: :as_ref],
+     lang: [field: [0, :lang], via: :as_deref],
+     setup: [field: [0, :setup]],
+     loc: [field: [0, :loc], with: :loc_to_term],
+     attrs: [field: [0, :attrs], with: :attrs_to_term]
+   ],
+   target_lifetimes: [:_]},
+  {:EncodedStyleBlock,
+   fields: [
+     content: [field: [0, :content], via: :as_ref],
+     lang: [field: [0, :lang], via: :as_deref],
+     scoped: [field: [0, :scoped]],
+     module: [field: [0, :module], via: :as_deref],
+     loc: [field: [0, :loc], with: :loc_to_term],
+     attrs: [field: [0, :attrs], with: :attrs_to_term]
+   ],
+   target_lifetimes: [:_]},
+  {:EncodedCustomBlock,
+   fields: [
+     block_type: [field: [0, :block_type], via: :as_ref],
+     content: [field: [0, :content], via: :as_ref],
+     loc: [field: [0, :loc], with: :loc_to_term],
+     attrs: [field: [0, :attrs], with: :attrs_to_term]
+   ],
+   target_lifetimes: [:_]}
+]
+
+encoder_atoms =
+  Enum.flat_map(encoders, fn {_name, opts} ->
+    Enum.map(Keyword.fetch!(opts, :fields), fn
+      field when is_atom(field) -> Atom.to_string(field)
+      {key, _field_or_opts} -> Atom.to_string(key)
+    end)
+  end)
+
+source_atoms =
   "native/vize_ex_nif/src/*.rs"
   |> Path.wildcard()
-  |> Enum.reject(&String.ends_with?(&1, "/generated_atoms.rs"))
+  |> Enum.reject(&(Path.basename(&1) |> String.starts_with?("generated_")))
   |> Enum.flat_map(fn path -> path |> File.read!() |> RustQ.Syn.atom_references!() end)
+
+atoms =
+  (source_atoms ++ encoder_atoms)
   |> Enum.uniq()
   |> Enum.sort()
   |> Enum.map(fn
@@ -19,17 +73,5 @@ rust "native/vize_ex_nif/src/generated_atoms.rs" do
 end
 
 rust "native/vize_ex_nif/src/generated_term_encoders.rs" do
-  [
-    Rustler.term_encoder(:EncodedLoc,
-      fields: [:start, {:end_, :end}, :start_line, :start_column, :end_line, :end_column]
-    ),
-    Rustler.term_encoder(:EncodedLintDiagnostic,
-      fields: [:message, :name],
-      target_lifetimes: [:_]
-    ),
-    Rustler.term_encoder(:EncodedSfcError,
-      fields: [:message, code: [when_some: true]],
-      target_lifetimes: [:_]
-    )
-  ]
+  Enum.map(encoders, fn {name, opts} -> Rustler.term_encoder(name, opts) end)
 end
