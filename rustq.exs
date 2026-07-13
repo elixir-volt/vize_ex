@@ -141,9 +141,20 @@ rust "native/vize_ex_nif/src/generated_nif_exports.rs" do
     "native/vize_ex_nif/src/lib.rs",
     [
       parse_sfc_nif: [],
+      analyze_sfc_nif: [],
       compile_sfc_nif: [attrs: [A.attr(:allow, [A.path([:clippy, :too_many_arguments])])]],
       compile_template_nif: [],
-      compile_ssr_nif: []
+      compile_ssr_nif: [],
+      compile_vapor_nif: [],
+      vapor_ir_nif: [],
+      lint_nif: [],
+      select_css_nif: [],
+      parse_css_ast_nif: [],
+      print_css_ast_nif: [],
+      compile_css_nif: [attrs: [A.attr(:allow, [A.path([:clippy, :too_many_arguments])])]],
+      bundle_css_nif: [],
+      vapor_split_nif: [],
+      generate_dts_nif: []
     ],
     lifetime: :a,
     schedule: :dirty_cpu

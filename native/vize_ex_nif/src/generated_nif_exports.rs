@@ -4,6 +4,10 @@
 fn parse_sfc_nif<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
     parse_sfc_nif_impl(env, source)
 }
+#[rustler::nif(schedule = "DirtyCpu")]
+fn analyze_sfc_nif<'a>(env: Env<'a>, source: &str, mode: &str) -> NifResult<Term<'a>> {
+    analyze_sfc_nif_impl(env, source, mode)
+}
 #[allow(clippy::too_many_arguments)]
 #[rustler::nif(schedule = "DirtyCpu")]
 fn compile_sfc_nif<'a>(
@@ -39,4 +43,105 @@ fn compile_template_nif<'a>(
 #[rustler::nif(schedule = "DirtyCpu")]
 fn compile_ssr_nif<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
     compile_ssr_nif_impl(env, source)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
+fn compile_vapor_nif<'a>(
+    env: Env<'a>,
+    source: &str,
+    ssr: bool,
+    diagnostics: bool,
+    template_syntax: &str,
+) -> NifResult<Term<'a>> {
+    compile_vapor_nif_impl(env, source, ssr, diagnostics, template_syntax)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
+fn vapor_ir_nif<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
+    vapor_ir_nif_impl(env, source)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
+fn lint_nif<'a>(env: Env<'a>, source: &str, filename: &str) -> NifResult<Term<'a>> {
+    lint_nif_impl(env, source, filename)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
+fn select_css_nif<'a>(
+    env: Env<'a>,
+    source: &str,
+    filename: &str,
+    custom_media: bool,
+    css_modules: bool,
+    selector_term: Term<'a>,
+) -> NifResult<Term<'a>> {
+    select_css_nif_impl(env, source, filename, custom_media, css_modules, selector_term)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
+fn parse_css_ast_nif<'a>(
+    env: Env<'a>,
+    source: &str,
+    filename: &str,
+    custom_media: bool,
+    css_modules: bool,
+) -> NifResult<Term<'a>> {
+    parse_css_ast_nif_impl(env, source, filename, custom_media, css_modules)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
+fn print_css_ast_nif<'a>(
+    env: Env<'a>,
+    ast: Term<'a>,
+    minify: bool,
+    chrome: i64,
+    firefox: i64,
+    safari: i64,
+) -> NifResult<Term<'a>> {
+    print_css_ast_nif_impl(env, ast, minify, chrome, firefox, safari)
+}
+#[allow(clippy::too_many_arguments)]
+#[rustler::nif(schedule = "DirtyCpu")]
+fn compile_css_nif<'a>(
+    env: Env<'a>,
+    source: &str,
+    minify: bool,
+    scoped: bool,
+    scope_id_str: &str,
+    filename: &str,
+    chrome: i64,
+    firefox: i64,
+    safari: i64,
+    css_modules: bool,
+) -> NifResult<Term<'a>> {
+    compile_css_nif_impl(
+        env,
+        source,
+        minify,
+        scoped,
+        scope_id_str,
+        filename,
+        chrome,
+        firefox,
+        safari,
+        css_modules,
+    )
+}
+#[rustler::nif(schedule = "DirtyCpu")]
+fn bundle_css_nif<'a>(
+    env: Env<'a>,
+    entry_path: &str,
+    minify: bool,
+    chrome: i64,
+    firefox: i64,
+    safari: i64,
+    css_modules: bool,
+) -> NifResult<Term<'a>> {
+    bundle_css_nif_impl(env, entry_path, minify, chrome, firefox, safari, css_modules)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
+fn vapor_split_nif<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
+    vapor_split_nif_impl(env, source)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
+fn generate_dts_nif<'a>(
+    env: Env<'a>,
+    source: &str,
+    filename: &str,
+) -> NifResult<Term<'a>> {
+    generate_dts_nif_impl(env, source, filename)
 }

@@ -59,8 +59,7 @@ fn parse_sfc_nif_impl<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
 
 // ── SFC Analysis ──
 
-#[rustler::nif(schedule = "DirtyCpu")]
-fn analyze_sfc_nif<'a>(env: Env<'a>, source: &str, mode: &str) -> NifResult<Term<'a>> {
+fn analyze_sfc_nif_impl<'a>(env: Env<'a>, source: &str, mode: &str) -> NifResult<Term<'a>> {
     let parse_opts = SfcParseOptions {
         filename: "component.vue".into(),
         ..Default::default()
@@ -375,8 +374,7 @@ fn template_syntax_mode(value: &str) -> TemplateSyntaxMode {
     }
 }
 
-#[rustler::nif(schedule = "DirtyCpu")]
-fn compile_vapor_nif<'a>(
+fn compile_vapor_nif_impl<'a>(
     env: Env<'a>,
     source: &str,
     ssr: bool,
@@ -690,8 +688,7 @@ fn encode_for_node<'a>(env: Env<'a>, for_node: &ForIRNode) -> Term<'a> {
     })
 }
 
-#[rustler::nif(schedule = "DirtyCpu")]
-fn vapor_ir_nif<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
+fn vapor_ir_nif_impl<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
     let allocator = Bump::new();
     let parser_opts = ParserOptions::default();
     let (mut root, errors) = parse_with_options(&allocator, source, parser_opts);
@@ -718,8 +715,7 @@ fn vapor_ir_nif<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
         .iter()
         .map(|k| ir.element_template_map[k])
         .collect();
-    let element_template_map: Vec<(usize, usize)> =
-        etm_keys.into_iter().zip(etm_vals.into_iter()).collect();
+    let element_template_map: Vec<(usize, usize)> = etm_keys.into_iter().zip(etm_vals).collect();
 
     let map = Term::map_from_arrays(
         env,
@@ -745,8 +741,7 @@ fn vapor_ir_nif<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
 
 // ── Linting ──
 
-#[rustler::nif(schedule = "DirtyCpu")]
-fn lint_nif<'a>(env: Env<'a>, source: &str, filename: &str) -> NifResult<Term<'a>> {
+fn lint_nif_impl<'a>(env: Env<'a>, source: &str, filename: &str) -> NifResult<Term<'a>> {
     use vize_patina::Linter;
 
     let linter = Linter::default();
@@ -928,8 +923,7 @@ fn optional_string(value: Option<&str>) -> ValueRef<'_> {
     }
 }
 
-#[rustler::nif(schedule = "DirtyCpu")]
-fn select_css_nif<'a>(
+fn select_css_nif_impl<'a>(
     env: Env<'a>,
     source: &str,
     filename: &str,
@@ -1031,8 +1025,7 @@ fn select_css_nif<'a>(
     Ok(ok_term(env, urls))
 }
 
-#[rustler::nif(schedule = "DirtyCpu")]
-fn parse_css_ast_nif<'a>(
+fn parse_css_ast_nif_impl<'a>(
     env: Env<'a>,
     source: &str,
     filename: &str,
@@ -1055,8 +1048,7 @@ fn parse_css_ast_nif<'a>(
     Ok(ok_term(env, EncodedCssAstResult { result: &result }))
 }
 
-#[rustler::nif(schedule = "DirtyCpu")]
-fn print_css_ast_nif<'a>(
+fn print_css_ast_nif_impl<'a>(
     env: Env<'a>,
     ast: Term<'a>,
     minify: bool,
@@ -1091,9 +1083,8 @@ fn print_css_ast_nif<'a>(
     Ok(ok_term(env, EncodedCssCompileResult { result: &result }))
 }
 
-#[rustler::nif(schedule = "DirtyCpu")]
 #[allow(clippy::too_many_arguments)]
-fn compile_css_nif<'a>(
+fn compile_css_nif_impl<'a>(
     env: Env<'a>,
     source: &str,
     minify: bool,
@@ -1154,8 +1145,7 @@ fn compile_css_nif<'a>(
 
 // ── CSS Bundling ──
 
-#[rustler::nif(schedule = "DirtyCpu")]
-fn bundle_css_nif<'a>(
+fn bundle_css_nif_impl<'a>(
     env: Env<'a>,
     entry_path: &str,
     minify: bool,
@@ -1199,8 +1189,7 @@ fn bundle_css_nif<'a>(
     Ok(ok_term(env, EncodedBundleCssResult { result: &result }))
 }
 
-#[rustler::nif(schedule = "DirtyCpu")]
-fn vapor_split_nif<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
+fn vapor_split_nif_impl<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
     let allocator = Bump::new();
     let parser_opts = ParserOptions::default();
     let (mut root, errors) = parse_with_options(&allocator, source, parser_opts);
@@ -1252,8 +1241,7 @@ fn vapor_split_nif<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
 
 // ── Declaration .d.ts Generation ──
 
-#[rustler::nif(schedule = "DirtyCpu")]
-fn generate_dts_nif<'a>(env: Env<'a>, source: &str, filename: &str) -> NifResult<Term<'a>> {
+fn generate_dts_nif_impl<'a>(env: Env<'a>, source: &str, filename: &str) -> NifResult<Term<'a>> {
     let parse_opts = SfcParseOptions {
         filename: if filename.is_empty() {
             "component.vue".into()
