@@ -3,9 +3,16 @@ use RustQ.Config
 alias RustQ.Rust.AST.Builder, as: A
 alias RustQ.Rustler.{Atom, Nif, Term}
 
-encoders = [
+unless Code.ensure_loaded?(Vize.Codegen.NativeTypes) do
+  Code.require_file("codegen/vize/codegen/native_types.ex")
+end
+
+derived_encoders = [
   {:EncodedLoc,
-   fields: [:start, {:end_, :end}, :start_line, :start_column, :end_line, :end_column]},
+   fields: [:start, {:end_, :end}, :start_line, :start_column, :end_line, :end_column]}
+]
+
+encoders = [
   {:EncodedLintDiagnostic, fields: [:message, :name], target_lifetimes: [:_]},
   {:EncodedSfcError,
    fields: [:message, code: [when_some: true]], target_lifetimes: [:_]},
@@ -125,7 +132,7 @@ nifs = [
 ]
 
 encoder_atoms =
-  Enum.flat_map(encoders, fn {_name, opts} ->
+  Enum.flat_map(derived_encoders ++ encoders, fn {_name, opts} ->
     Term.encoder_atom_names(opts)
   end)
 
@@ -146,6 +153,10 @@ atoms =
 
 rust "native/vize_ex_nif/src/generated_atoms.rs" do
   Atom.declaration(atoms)
+end
+
+rust "native/vize_ex_nif/src/generated_types.rs" do
+  RustQ.Native.items(Vize.Codegen.NativeTypes)
 end
 
 rust "native/vize_ex_nif/src/generated_term_encoders.rs" do

@@ -4,16 +4,8 @@ use serde_json::{Map, Number, Value};
 
 use crate::atoms;
 
+include!("generated_types.rs");
 include!("generated_term_encoders.rs");
-
-pub(crate) struct EncodedLoc {
-    start: usize,
-    end: usize,
-    start_line: usize,
-    start_column: usize,
-    end_line: usize,
-    end_column: usize,
-}
 
 impl From<&vize_atelier_sfc::BlockLocation> for EncodedLoc {
     fn from(loc: &vize_atelier_sfc::BlockLocation) -> Self {
