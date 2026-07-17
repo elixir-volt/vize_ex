@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Add an x86_64 Windows precompiled NIF target.
+
 ## 0.14.0 - 2026-07-10
 
 ### Added
