@@ -9,6 +9,6 @@ defmodule Vize.RustQCodegenTest do
     assert source =~ "pub struct EncodedLoc"
     assert source =~ "rustler::NifMap"
     assert source =~ "pub end_column: usize"
-    assert_rust_valid(Vize.Codegen.NativeTypes)
+    assert RustQ.valid?(source, "vize_native_types.rs")
   end
 end
