@@ -1323,7 +1323,7 @@ fn vapor_split_nif_impl<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
 
     let ir = transform_to_ir(&allocator, &root, source);
 
-    let (statics, slots) = process_block(env, &ir.block, &ir);
+    let (statics, slots) = process_block(env, &ir.block, &ir, source);
 
     let statics_term: std::vec::Vec<Term<'a>> =
         statics.iter().map(|s| s.as_str().encode(env)).collect();

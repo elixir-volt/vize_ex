@@ -1,5 +1,6 @@
 #[derive(Debug, Clone)]
 pub(crate) struct TagEntry {
+    pub(crate) tag: String,
     pub(crate) pos: usize,
     pub(crate) parent: Option<usize>,
     pub(crate) child_index: usize,
@@ -137,6 +138,7 @@ pub(crate) fn parse_tag_tree(html: &str) -> Vec<TagEntry> {
 
         let pos = entries.len();
         entries.push(TagEntry {
+            tag: tag_name.clone(),
             pos,
             parent,
             child_index,

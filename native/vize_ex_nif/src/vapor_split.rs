@@ -31,8 +31,9 @@ fn encode_split_block<'a, 'b>(
     env: Env<'a>,
     block: &'b BlockIRNode<'b>,
     ir: &'b RootIRNode<'b>,
+    source: &str,
 ) -> Term<'a> {
-    let (statics, slots) = process_block(env, block, ir);
+    let (statics, slots) = process_block(env, block, ir, source);
     let statics_term: Vec<Term<'a>> = statics
         .iter()
         .map(|static_part| static_part.as_str().encode(env))
@@ -48,17 +49,18 @@ fn encode_slot_if_split<'a, 'b>(
     env: Env<'a>,
     if_node: &'b IfIRNode<'b>,
     ir: &'b RootIRNode<'b>,
+    source: &str,
 ) -> Term<'a> {
     let negative = match &if_node.negative {
-        Some(NegativeBranch::Block(block)) => encode_split_block(env, block, ir),
-        Some(NegativeBranch::If(nested)) => encode_slot_if_split(env, nested, ir),
+        Some(NegativeBranch::Block(block)) => encode_split_block(env, block, ir, source),
+        Some(NegativeBranch::If(nested)) => encode_slot_if_split(env, nested, ir, source),
         None => nil_term(env),
     };
 
     term_map!(env, {
         atoms::kind() => atoms::if_node(),
         atoms::condition() => encode_simple_expr(env, &if_node.condition),
-        atoms::positive() => encode_split_block(env, &if_node.positive, ir),
+        atoms::positive() => encode_split_block(env, &if_node.positive, ir, source),
         atoms::negative() => negative,
     })
 }
@@ -67,6 +69,7 @@ fn encode_slot_for_split<'a, 'b>(
     env: Env<'a>,
     for_node: &'b ForIRNode<'b>,
     ir: &'b RootIRNode<'b>,
+    source: &str,
 ) -> Term<'a> {
     term_map!(env, {
         atoms::kind() => atoms::for_node(),
@@ -81,7 +84,7 @@ fn encode_slot_for_split<'a, 'b>(
             .as_ref()
             .map(|key_prop| encode_simple_expr(env, key_prop))
             .unwrap_or_else(|| nil_term(env)),
-        atoms::render() => encode_split_block(env, &for_node.render, ir),
+        atoms::render() => encode_split_block(env, &for_node.render, ir, source),
     })
 }
 
@@ -132,16 +135,87 @@ fn push_slot_marker<'a>(
     slot_marker(index)
 }
 
+fn source_tag_at_offset(tags: &[TagEntry], offset: u32) -> Option<usize> {
+    let offset = offset as usize;
+    tags.iter()
+        .filter(|tag| tag.open_start <= offset && offset < tag.open_end)
+        .max_by_key(|tag| tag.open_start)
+        .map(|tag| tag.pos)
+}
+
+fn structural_source_tags(
+    block: &BlockIRNode<'_>,
+    source_tags: &[TagEntry],
+) -> std::collections::HashSet<usize> {
+    let roots: std::collections::HashSet<usize> = block
+        .operation
+        .iter()
+        .filter_map(|operation| match operation {
+            OperationNode::If(node) => {
+                source_tag_at_offset(source_tags, node.condition.loc.span.start)
+            }
+            OperationNode::For(node) => {
+                source_tag_at_offset(source_tags, node.source.loc.span.start)
+            }
+            _ => None,
+        })
+        .collect();
+
+    source_tags
+        .iter()
+        .filter(|tag| {
+            let mut current = Some(tag.pos);
+            while let Some(pos) = current {
+                if roots.contains(&pos) {
+                    return true;
+                }
+                current = source_tags.get(pos).and_then(|entry| entry.parent);
+            }
+            false
+        })
+        .map(|tag| tag.pos)
+        .collect()
+}
+
+fn align_tag_source_offsets(
+    rendered_tags: &[TagEntry],
+    source: &str,
+    block: &BlockIRNode<'_>,
+) -> Vec<Option<u32>> {
+    let source_tags = parse_tag_tree(source);
+    let excluded = structural_source_tags(block, &source_tags);
+    let mut cursor = 0usize;
+
+    rendered_tags
+        .iter()
+        .map(|rendered| {
+            let match_pos = source_tags[cursor..]
+                .iter()
+                .position(|source_tag| {
+                    !excluded.contains(&source_tag.pos)
+                        && source_tag.tag.eq_ignore_ascii_case(&rendered.tag)
+                })
+                .map(|relative| cursor + relative);
+
+            match_pos.map(|pos| {
+                cursor = pos + 1;
+                source_tags[pos].open_start as u32
+            })
+        })
+        .collect()
+}
+
 fn inject_structural_marker(
     html: &mut String,
     tags: &mut [TagEntry],
     elem_to_tag: &std::collections::HashMap<usize, usize>,
     insertion: (Option<usize>, Option<usize>),
     marker: &str,
-    source_offset: u32,
+    source_position: (&[Option<u32>], u32),
     slots: &[SlotMarker<'_>],
 ) {
     let (parent, anchor) = insertion;
+    let (tag_source_offsets, source_offset) = source_position;
     if let Some(anchor_pos) = anchor.and_then(|id| elem_to_tag.get(&id)).copied() {
         if let Some(entry) = tags.get(anchor_pos) {
             replace_range(html, tags, entry.open_start, 0, marker);
@@ -153,6 +227,18 @@ fn inject_structural_marker(
         .and_then(|id| elem_to_tag.get(&id))
         .and_then(|&tag_pos| tags.get(tag_pos))
         .map(|entry| (entry.open_end, entry.close_start.unwrap_or(entry.open_end)));
+
+    let next_tag_position = tags
+        .iter()
+        .zip(tag_source_offsets)
+        .filter(|(tag, offset)| {
+            offset.is_some_and(|offset| offset > source_offset)
+                && bounds
+                    .map(|(start, end)| tag.open_start >= start && tag.open_start <= end)
+                    .unwrap_or(true)
+        })
+        .map(|(tag, _)| tag.open_start)
+        .min();
 
     let next_marker_position = slots
         .iter()
@@ -166,7 +252,11 @@ fn inject_structural_marker(
         })
         .min();
 
-    if let Some(position) = next_marker_position {
+    if let Some(position) = [next_tag_position, next_marker_position]
+        .into_iter()
+        .flatten()
+        .min()
+    {
         replace_range(html, tags, position, 0, marker);
     } else if let Some(parent_id) = parent {
         if let Some(&tag_pos) = elem_to_tag.get(&parent_id) {
@@ -211,6 +301,7 @@ pub(crate) fn process_block<'a, 'b>(
     env: Env<'a>,
     block: &'b BlockIRNode<'b>,
     ir: &'b RootIRNode<'b>,
+    source: &str,
 ) -> (Vec<String>, Vec<Term<'a>>) {
     let template_html: String = block
         .returns
@@ -227,6 +318,7 @@ pub(crate) fn process_block<'a, 'b>(
 
     let mut html = template_html;
     let mut tags = parse_tag_tree(&html);
+    let tag_source_offsets = align_tag_source_offsets(&tags, source, block);
     let mut elem_to_tag = build_elem_to_tag(&block.returns, &block.operation, &tags);
     let mut slots: Vec<SlotMarker<'a>> = Vec::new();
 
@@ -371,7 +463,7 @@ pub(crate) fn process_block<'a, 'b>(
         match operation {
             OperationNode::If(if_node) => {
                 let source_offset = if_node.condition.loc.span.start;
-                let slot = encode_slot_if_split(env, if_node, ir);
+                let slot = encode_slot_if_split(env, if_node, ir, source);
                 let marker = push_slot_marker(&mut slots, slot, source_offset);
                 inject_structural_marker(
                     &mut html,
@@ -379,13 +471,13 @@ pub(crate) fn process_block<'a, 'b>(
                     &elem_to_tag,
                     (if_node.parent, if_node.anchor),
                     &marker,
-                    source_offset,
+                    (&tag_source_offsets, source_offset),
                     &slots,
                 );
             }
             OperationNode::For(for_node) => {
                 let source_offset = for_node.source.loc.span.start;
-                let slot = encode_slot_for_split(env, for_node, ir);
+                let slot = encode_slot_for_split(env, for_node, ir, source);
                 let marker = push_slot_marker(&mut slots, slot, source_offset);
                 inject_structural_marker(
                     &mut html,
@@ -393,7 +485,7 @@ pub(crate) fn process_block<'a, 'b>(
                     &elem_to_tag,
                     (for_node.parent, for_node.anchor),
                     &marker,
-                    source_offset,
+                    (&tag_source_offsets, source_offset),
                     &slots,
                 );
             }
@@ -413,7 +505,7 @@ pub(crate) fn process_block<'a, 'b>(
                     &elem_to_tag,
                     (component.parent, component.anchor),
                     &marker,
-                    source_offset,
+                    (&tag_source_offsets, source_offset),
                     &slots,
                 );
             }
