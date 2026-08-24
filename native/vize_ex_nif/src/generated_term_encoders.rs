@@ -229,7 +229,7 @@ impl rustler::Encoder for EncodedCompileSfcResult<'_> {
                 env,
                 &[
                     atoms::code().encode(env),
-                    atoms::map().encode(env),
+                    atoms::source_map().encode(env),
                     atoms::css().encode(env),
                     atoms::errors().encode(env),
                     atoms::warnings().encode(env),
@@ -243,7 +243,7 @@ impl rustler::Encoder for EncodedCompileSfcResult<'_> {
                 ],
                 &[
                     self.code_override.unwrap_or(self.result.code.as_str()).encode(env),
-                    self.map.as_deref().encode(env),
+                    self.source_map.as_deref().encode(env),
                     self.result.css.as_deref().encode(env),
                     self
                         .result

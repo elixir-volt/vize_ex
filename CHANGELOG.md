@@ -7,7 +7,7 @@
 ### Added
 
 - Add optional SFC source maps and expose scoped-style, style block, and custom block metadata in compile results.
-- Add `Vize.SFC` helpers for template assets, external block sources, asset rewriting, and deterministic scope IDs.
+- Add `Vize.SFC.collect_template_assets/2`, `Vize.SFC.rewrite_asset_references/2`, `Vize.SFC.external_sources/1`, and `Vize.SFC.scope_id/2` for bundler integrations.
 - Include external block sources and SFC descriptor metadata in `parse_sfc/1` results.
 
 ### Changed

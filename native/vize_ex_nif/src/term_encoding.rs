@@ -190,7 +190,7 @@ pub(crate) struct EncodedCompileSfcResult<'a> {
     pub(crate) result: &'a vize_atelier_sfc::SfcCompileResult,
     pub(crate) descriptor: &'a vize_atelier_sfc::SfcDescriptor<'a>,
     pub(crate) code_override: Option<&'a str>,
-    pub(crate) map: Option<vize_carton::String>,
+    pub(crate) source_map: Option<vize_carton::String>,
     pub(crate) template_hash: Option<vize_carton::CompactString>,
     pub(crate) style_hash: Option<vize_carton::CompactString>,
     pub(crate) script_hash: Option<vize_carton::CompactString>,

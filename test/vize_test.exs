@@ -172,9 +172,9 @@ defmodule VizeTest do
           source_map: true
         )
 
-      assert is_binary(result.map)
-      assert result.map =~ ~s("version":3)
-      assert result.map =~ "src/Counter.vue"
+      assert is_binary(result.source_map)
+      assert result.source_map =~ ~s("version":3)
+      assert result.source_map =~ "src/Counter.vue"
     end
 
     test "returns bundler block metadata" do

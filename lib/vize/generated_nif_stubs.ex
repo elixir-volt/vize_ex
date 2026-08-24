@@ -31,10 +31,6 @@ defmodule Vize.GeneratedNifStubs do
         :erlang.nif_error(:nif_not_loaded)
       end
 
-      def sfc_src_info_nif(_source, _filename) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
       def sfc_scope_id_nif(_filename, _root, _production, _source) do
         :erlang.nif_error(:nif_not_loaded)
       end

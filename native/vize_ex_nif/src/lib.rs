@@ -15,8 +15,7 @@ use vize_atelier_sfc::compile_script::typescript::transform_typescript_to_js;
 use vize_atelier_sfc::croquis::{analyze_sfc_descriptor, SfcCroquisOptions};
 use vize_atelier_sfc::script::analyze_script_setup_to_summary;
 use vize_atelier_sfc::{
-    build_sfc_source_map, collect_template_asset_urls, extract_src_info, generate_bundler_scope_id,
-    TemplateAssetUrl,
+    build_sfc_source_map, collect_template_asset_urls, generate_bundler_scope_id, TemplateAssetUrl,
 };
 use vize_atelier_sfc::{
     bundle_css, compile_css, compile_sfc, parse_css_ast, parse_sfc, print_css_ast,
@@ -252,7 +251,7 @@ fn compile_sfc_nif_impl<'a>(
             let stripped = strip_types.then(|| transform_typescript_to_js(result.code.as_str()));
             let code_override = stripped.as_deref();
             let emitted_code = code_override.unwrap_or(result.code.as_str());
-            let map = source_map
+            let source_map = source_map
                 .then(|| {
                     build_sfc_source_map(
                         emitted_code,
@@ -272,7 +271,7 @@ fn compile_sfc_nif_impl<'a>(
                     result: &result,
                     descriptor: &descriptor,
                     code_override,
-                    map,
+                    source_map,
                     template_hash: descriptor.template_hash(),
                     style_hash: descriptor.style_hash(),
                     script_hash: descriptor.script_hash(),
@@ -317,14 +316,6 @@ fn rewrite_sfc_template_assets_nif_impl<'a>(
         })
         .collect();
     Ok(rewrite_template_asset_references(code, &assets).encode(env))
-}
-
-fn sfc_src_info_nif_impl<'a>(env: Env<'a>, source: &str, filename: &str) -> NifResult<Term<'a>> {
-    let info = extract_src_info(source, (!filename.is_empty()).then_some(filename));
-    Ok(term_map!(env, {
-        atoms::script_src() => info.script_src.as_deref(),
-        atoms::template_src() => info.template_src.as_deref(),
-    }))
 }
 
 fn sfc_scope_id_nif_impl<'a>(

@@ -84,7 +84,7 @@ encoders = [
   {:EncodedCompileSfcResult,
    fields: [
      code: [field: :code_override, fallback: [field: [:result, :code], via: :as_str]],
-     map: [via: :as_deref],
+     source_map: [via: :as_deref],
      css: [field: [:result, :css], via: :as_deref],
      errors: [field: [:result, :errors], map: [convert: :EncodedSfcError]],
      warnings: [field: [:result, :warnings], map: [convert: :EncodedSfcError]],
@@ -129,7 +129,6 @@ nifs = [
   compile_sfc_nif: [attrs: [A.attr(:allow, [A.path([:clippy, :too_many_arguments])])]],
   sfc_template_assets_nif: [],
   rewrite_sfc_template_assets_nif: [],
-  sfc_src_info_nif: [],
   sfc_scope_id_nif: [],
   compile_template_nif: [],
   compile_ssr_nif: [],

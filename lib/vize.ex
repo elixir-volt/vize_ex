@@ -38,7 +38,7 @@ defmodule Vize do
 
   @type sfc_result :: %{
           code: String.t(),
-          map: String.t() | nil,
+          source_map: String.t() | nil,
           css: String.t() | nil,
           errors: [map()],
           warnings: [map()],

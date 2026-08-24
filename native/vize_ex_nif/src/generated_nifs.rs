@@ -50,14 +50,6 @@ fn rewrite_sfc_template_assets_nif<'a>(
     rewrite_sfc_template_assets_nif_impl(env, code, assets)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
-fn sfc_src_info_nif<'a>(
-    env: Env<'a>,
-    source: &str,
-    filename: &str,
-) -> NifResult<Term<'a>> {
-    sfc_src_info_nif_impl(env, source, filename)
-}
-#[rustler::nif(schedule = "DirtyCpu")]
 fn sfc_scope_id_nif<'a>(
     env: Env<'a>,
     filename: &str,
