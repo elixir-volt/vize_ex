@@ -22,7 +22,7 @@ use vize_atelier_vapor::{
     compile_vapor, compile_vapor_with_template_syntax_and_diagnostics, ir::*, transform_to_ir,
     VaporCompilerOptions,
 };
-use vize_carton::Bump;
+use vize_carton::{line_index::LineIndex, Allocator};
 
 #[macro_use]
 mod macros;
@@ -70,7 +70,7 @@ fn analyze_sfc_nif_impl<'a>(env: Env<'a>, source: &str, mode: &str) -> NifResult
         Err(error) => return Ok(error_term(env, error.message.as_str())),
     };
 
-    let allocator = Bump::new();
+    let allocator = Allocator::new();
     let template_ast = descriptor.template.as_ref().map(|template| {
         let (root, _errors) = parse_with_options(
             &allocator,
@@ -274,7 +274,7 @@ fn compile_template_nif_impl<'a>(
     mode: &str,
     ssr: bool,
 ) -> NifResult<Term<'a>> {
-    let allocator = Bump::new();
+    let allocator = Allocator::new();
     let (mut root, errors) = parse(&allocator, source);
 
     if !errors.is_empty() {
@@ -316,7 +316,7 @@ fn compile_template_nif_impl<'a>(
 // ── SSR Compilation ──
 
 fn compile_ssr_nif_impl<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
-    let allocator = Bump::new();
+    let allocator = Allocator::new();
     let (_root, errors, result) = compile_ssr(&allocator, source);
 
     if !errors.is_empty() {
@@ -335,26 +335,34 @@ fn compile_ssr_nif_impl<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
 
 // ── Vapor Compilation ──
 
-fn encode_position<'a>(env: Env<'a>, position: &vize_atelier_core::Position) -> Term<'a> {
+fn encode_position<'a>(env: Env<'a>, line_index: &LineIndex<'_>, offset: u32) -> Term<'a> {
+    let (line, column) = line_index.line_col(offset as usize);
     term_map!(env, {
-        atoms::offset() => position.offset,
-        atoms::line() => position.line,
-        atoms::column() => position.column,
+        atoms::offset() => offset,
+        atoms::line() => line + 1,
+        atoms::column() => column + 1,
     })
 }
 
 fn encode_source_location<'a>(
     env: Env<'a>,
     location: &vize_atelier_core::SourceLocation,
+    source: &str,
+    line_index: &LineIndex<'_>,
 ) -> Term<'a> {
     term_map!(env, {
-        atoms::start() => encode_position(env, &location.start),
-        atoms::end_() => encode_position(env, &location.end),
-        atoms::source() => location.source.as_str(),
+        atoms::start() => encode_position(env, line_index, location.span.start),
+        atoms::end_() => encode_position(env, line_index, location.span.end),
+        atoms::source() => location.span.slice(source),
     })
 }
 
-fn encode_compiler_error<'a>(env: Env<'a>, error: &vize_atelier_core::CompilerError) -> Term<'a> {
+fn encode_compiler_error<'a>(
+    env: Env<'a>,
+    error: &vize_atelier_core::CompilerError,
+    source: &str,
+    line_index: &LineIndex<'_>,
+) -> Term<'a> {
     term_map!(env, {
         atoms::code() => format!("{:?}", error.code),
         atoms::message() => error.message.as_str(),
@@ -362,7 +370,7 @@ fn encode_compiler_error<'a>(env: Env<'a>, error: &vize_atelier_core::CompilerEr
         atoms::location() => error
             .loc
             .as_ref()
-            .map(|location| encode_source_location(env, location))
+            .map(|location| encode_source_location(env, location, source, line_index))
             .unwrap_or_else(|| nil_term(env)),
     })
 }
@@ -381,7 +389,7 @@ fn compile_vapor_nif_impl<'a>(
     diagnostics: bool,
     template_syntax: &str,
 ) -> NifResult<Term<'a>> {
-    let allocator = Bump::new();
+    let allocator = Allocator::new();
     let opts = VaporCompilerOptions {
         ssr,
         ..Default::default()
@@ -392,9 +400,10 @@ fn compile_vapor_nif_impl<'a>(
         let (result, parser_diagnostics) =
             compile_vapor_with_template_syntax_and_diagnostics(&allocator, source, opts, syntax);
 
+        let line_index = LineIndex::new(source);
         let mut diagnostic_terms: Vec<Term<'a>> = parser_diagnostics
             .iter()
-            .map(|diagnostic| encode_compiler_error(env, diagnostic))
+            .map(|diagnostic| encode_compiler_error(env, diagnostic, source, &line_index))
             .collect();
 
         if !result.error_messages.is_empty() {
@@ -450,7 +459,7 @@ fn encode_operation<'a>(env: Env<'a>, op: &OperationNode) -> Term<'a> {
             term_map!(env, {
                 atoms::kind() => atoms::set_prop(),
                 atoms::element() => node.element,
-                atoms::tag() => node.tag.as_str(),
+                atoms::tag() => node.tag,
                 atoms::camel() => node.camel,
                 atoms::prop_modifier() => node.prop_modifier,
                 atoms::value() => prop,
@@ -503,7 +512,7 @@ fn encode_operation<'a>(env: Env<'a>, op: &OperationNode) -> Term<'a> {
             atoms::value() => encode_simple_expr(env, &node.value),
         }),
         OperationNode::InsertNode(node) => {
-            let elements: Vec<usize> = node.elements.clone();
+            let elements: Vec<usize> = node.elements.iter().copied().collect();
             term_map!(env, {
                 atoms::kind() => atoms::insert_node(),
                 atoms::element() => elements,
@@ -512,7 +521,7 @@ fn encode_operation<'a>(env: Env<'a>, op: &OperationNode) -> Term<'a> {
             })
         }
         OperationNode::PrependNode(node) => {
-            let elements: Vec<usize> = node.elements.clone();
+            let elements: Vec<usize> = node.elements.iter().copied().collect();
             term_map!(env, {
                 atoms::kind() => atoms::prepend_node(),
                 atoms::element() => elements,
@@ -536,7 +545,7 @@ fn encode_operation<'a>(env: Env<'a>, op: &OperationNode) -> Term<'a> {
             };
             term_map!(env, {
                 atoms::kind() => atoms::create_component(),
-                atoms::tag() => node.tag.as_str(),
+                atoms::tag() => node.tag,
                 atoms::props() => props,
                 atoms::asset() => node.asset,
                 atoms::once() => node.once,
@@ -586,8 +595,8 @@ fn encode_operation<'a>(env: Env<'a>, op: &OperationNode) -> Term<'a> {
             term_map!(env, {
                 atoms::kind() => atoms::directive(),
                 atoms::element() => node.element,
-                atoms::name() => node.name.as_str(),
-                atoms::tag() => node.tag.as_str(),
+                atoms::name() => node.name,
+                atoms::tag() => node.tag,
                 atoms::value() => exp,
             })
         }
@@ -689,7 +698,7 @@ fn encode_for_node<'a>(env: Env<'a>, for_node: &ForIRNode) -> Term<'a> {
 }
 
 fn vapor_ir_nif_impl<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
-    let allocator = Bump::new();
+    let allocator = Allocator::new();
     let parser_opts = ParserOptions::default();
     let (mut root, errors) = parse_with_options(&allocator, source, parser_opts);
 
@@ -704,11 +713,11 @@ fn vapor_ir_nif_impl<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
     };
     transform(&allocator, &mut root, transform_opts, None);
 
-    let ir = transform_to_ir(&allocator, &root);
+    let ir = transform_to_ir(&allocator, &root, source);
 
-    let templates: Vec<&str> = ir.templates.iter().map(|s| s.as_str()).collect();
-    let components: Vec<&str> = ir.component.iter().map(|s| s.as_str()).collect();
-    let directives: Vec<&str> = ir.directive.iter().map(|s| s.as_str()).collect();
+    let templates: Vec<&str> = ir.templates.iter().copied().collect();
+    let components: Vec<&str> = ir.component.iter().copied().collect();
+    let directives: Vec<&str> = ir.directive.iter().copied().collect();
 
     let etm_keys: Vec<usize> = ir.element_template_map.keys().copied().collect();
     let etm_vals: Vec<usize> = etm_keys
@@ -830,7 +839,7 @@ fn css_parser_options<'a>(
     filename: &'a str,
     custom_media: bool,
     css_modules: bool,
-) -> CssParserOptions<'a, 'a> {
+) -> CssParserOptions<'a> {
     let mut flags = CssParserFlags::NESTING | CssParserFlags::DEEP_SELECTOR_COMBINATOR;
     if custom_media {
         flags |= CssParserFlags::CUSTOM_MEDIA;
@@ -1228,7 +1237,7 @@ fn bundle_css_nif_impl<'a>(
 }
 
 fn vapor_split_nif_impl<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
-    let allocator = Bump::new();
+    let allocator = Allocator::new();
     let parser_opts = ParserOptions::default();
     let (mut root, errors) = parse_with_options(&allocator, source, parser_opts);
 
@@ -1244,13 +1253,13 @@ fn vapor_split_nif_impl<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
     };
     transform(&allocator, &mut root, transform_opts, None);
 
-    let ir = transform_to_ir(&allocator, &root);
+    let ir = transform_to_ir(&allocator, &root, source);
 
     let (statics, slots) = process_block(env, &ir.block, &ir);
 
     let statics_term: std::vec::Vec<Term<'a>> =
         statics.iter().map(|s| s.as_str().encode(env)).collect();
-    let templates: std::vec::Vec<&str> = ir.templates.iter().map(|s| s.as_str()).collect();
+    let templates: std::vec::Vec<&str> = ir.templates.iter().copied().collect();
     let element_template_map: std::vec::Vec<(usize, usize)> = ir
         .element_template_map
         .iter()

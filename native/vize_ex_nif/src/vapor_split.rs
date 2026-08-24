@@ -101,7 +101,7 @@ fn encode_slot_component<'a>(env: Env<'a>, node: &CreateComponentIRNode) -> Term
 
     term_map!(env, {
         atoms::kind() => atoms::create_component(),
-        atoms::tag() => node.tag.as_str(),
+        atoms::tag() => node.tag,
         atoms::props() => props,
         atoms::value() => kind_atom,
     })
@@ -145,37 +145,6 @@ fn split_on_markers(html: &str) -> Vec<String> {
     statics
 }
 
-#[cfg(test)]
-mod tests {
-    use super::{split_on_markers, PROP_MARKER, STRUCT_MARKER, TEXT_MARKER};
-
-    #[test]
-    fn split_on_markers_preserves_segment_order() {
-        let html = format!(
-            "<div>{}middle{}tail{}</div>",
-            PROP_MARKER, TEXT_MARKER, STRUCT_MARKER
-        );
-
-        assert_eq!(
-            split_on_markers(&html),
-            vec![
-                "<div>".to_string(),
-                "middle".to_string(),
-                "tail".to_string(),
-                "</div>".to_string()
-            ]
-        );
-    }
-
-    #[test]
-    fn split_on_markers_handles_marker_free_html() {
-        assert_eq!(
-            split_on_markers("<div>plain</div>"),
-            vec!["<div>plain</div>".to_string()]
-        );
-    }
-}
-
 pub(crate) fn process_block<'a, 'b>(
     env: Env<'a>,
     block: &'b BlockIRNode<'b>,
@@ -190,10 +159,7 @@ pub(crate) fn process_block<'a, 'b>(
                 .get(&elem_id)
                 .copied()
                 .unwrap_or(elem_id);
-            ir.templates
-                .get(template_idx)
-                .map(|template| template.as_str())
-                .unwrap_or("")
+            ir.templates.get(template_idx).copied().unwrap_or("")
         })
         .collect();
 
@@ -205,11 +171,11 @@ pub(crate) fn process_block<'a, 'b>(
     for op in &block.operation {
         if let OperationNode::SetEvent(event) = op {
             if let Some(&tag_pos) = elem_to_tag.get(&event.element) {
-                let event_name = event.key.content.as_str();
+                let event_name = event.key.content;
                 let handler = event
                     .value
                     .as_ref()
-                    .map(|value| value.content.as_str())
+                    .map(|value| value.content)
                     .unwrap_or(event_name);
                 let attr = format!(" phx-{}=\"{}\"", event_name, handler);
                 inject_attr(&mut html, &mut tags, tag_pos, &attr);
@@ -240,7 +206,7 @@ pub(crate) fn process_block<'a, 'b>(
 
     for prop in &prop_effects {
         if let Some(&tag_pos) = elem_to_tag.get(&prop.element) {
-            let attr_name = prop.prop.key.content.as_str();
+            let attr_name = prop.prop.key.content;
             let marker = format!(" {}=\"{}\"", attr_name, PROP_MARKER);
             inject_attr(&mut html, &mut tags, tag_pos, &marker);
 
@@ -261,7 +227,7 @@ pub(crate) fn process_block<'a, 'b>(
     for op in &block.operation {
         if let OperationNode::Directive(dir) = op {
             if let Some(&tag_pos) = elem_to_tag.get(&dir.element) {
-                match dir.name.as_str() {
+                match dir.name {
                     "vShow" => {
                         let marker = format!(" style=\"{}\"", PROP_MARKER);
                         inject_attr(&mut html, &mut tags, tag_pos, &marker);
@@ -282,7 +248,7 @@ pub(crate) fn process_block<'a, 'b>(
                                 atoms::v_model().encode(env),
                                 simple,
                             ));
-                            let handler_name = format!("{}_changed", simple.content.as_str());
+                            let handler_name = format!("{}_changed", simple.content);
                             let change_attr = format!(" phx-change=\"{}\"", handler_name);
                             inject_attr(&mut html, &mut tags, tag_pos, &change_attr);
                         }
@@ -358,4 +324,35 @@ pub(crate) fn process_block<'a, 'b>(
     }
 
     (split_on_markers(&html), slots)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{split_on_markers, PROP_MARKER, STRUCT_MARKER, TEXT_MARKER};
+
+    #[test]
+    fn split_on_markers_preserves_segment_order() {
+        let html = format!(
+            "<div>{}middle{}tail{}</div>",
+            PROP_MARKER, TEXT_MARKER, STRUCT_MARKER
+        );
+
+        assert_eq!(
+            split_on_markers(&html),
+            vec![
+                "<div>".to_string(),
+                "middle".to_string(),
+                "tail".to_string(),
+                "</div>".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn split_on_markers_handles_marker_free_html() {
+        assert_eq!(
+            split_on_markers("<div>plain</div>"),
+            vec!["<div>plain</div>".to_string()]
+        );
+    }
 }

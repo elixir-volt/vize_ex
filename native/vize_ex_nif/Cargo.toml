@@ -12,22 +12,20 @@ rustler = { version = "0.38", default-features = false, features = ["derive", "n
 rustler_match_spec = { version = "0.1", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-lightningcss = { version = "=1.0.0-alpha.71", features = ["visitor"] }
+lightningcss = { version = "=1.0.0-alpha.72", features = ["visitor"] }
 grass = { version = "0.13.4", default-features = false }
 
-# Keep every Vize crate on one upstream revision. Patina is no longer published
-# independently, so mixing crates.io packages with it would compile two copies
-# of the Vize workspace and allow their APIs to drift apart.
-vize_carton = { git = "https://github.com/ubugeeei-prod/vize", rev = "c1b679074414bc3925651e64c96d316a89d27e8c" }
-vize_relief = { git = "https://github.com/ubugeeei-prod/vize", rev = "c1b679074414bc3925651e64c96d316a89d27e8c" }
-vize_armature = { git = "https://github.com/ubugeeei-prod/vize", rev = "c1b679074414bc3925651e64c96d316a89d27e8c" }
-vize_atelier_core = { git = "https://github.com/ubugeeei-prod/vize", rev = "c1b679074414bc3925651e64c96d316a89d27e8c" }
-vize_atelier_dom = { git = "https://github.com/ubugeeei-prod/vize", rev = "c1b679074414bc3925651e64c96d316a89d27e8c" }
-vize_atelier_vapor = { git = "https://github.com/ubugeeei-prod/vize", rev = "c1b679074414bc3925651e64c96d316a89d27e8c" }
-vize_atelier_ssr = { git = "https://github.com/ubugeeei-prod/vize", rev = "c1b679074414bc3925651e64c96d316a89d27e8c" }
-vize_atelier_sfc = { git = "https://github.com/ubugeeei-prod/vize", rev = "c1b679074414bc3925651e64c96d316a89d27e8c", features = ["native"] }
-vize_patina = { git = "https://github.com/ubugeeei-prod/vize", rev = "c1b679074414bc3925651e64c96d316a89d27e8c" }
-vize_croquis = { git = "https://github.com/ubugeeei-prod/vize", rev = "c1b679074414bc3925651e64c96d316a89d27e8c" }
+# Keep every Vize crate on one published release so their internal APIs stay in sync.
+vize_carton = "=0.362.0"
+vize_relief = "=0.362.0"
+vize_armature = "=0.362.0"
+vize_atelier_core = "=0.362.0"
+vize_atelier_dom = "=0.362.0"
+vize_atelier_vapor = "=0.362.0"
+vize_atelier_ssr = "=0.362.0"
+vize_atelier_sfc = { version = "=0.362.0", features = ["native"] }
+vize_patina = "=0.362.0"
+vize_croquis = "=0.362.0"
 
 [dev-dependencies]
 proptest = "1.6"

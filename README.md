@@ -26,7 +26,7 @@ def deps do
 end
 ```
 
-Requires a Rust toolchain (`rustup` recommended). The NIF compiles automatically on `mix compile`.
+Requires Rust 1.95 or later (`rustup` recommended). The NIF compiles automatically on `mix compile`.
 
 ## Usage
 

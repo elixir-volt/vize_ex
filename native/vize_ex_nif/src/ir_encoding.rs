@@ -10,13 +10,10 @@ pub(crate) fn encode_simple_expr<'a>(
     if expr.is_static {
         rustler::types::tuple::make_tuple(
             env,
-            &[
-                atoms::static_().encode(env),
-                expr.content.as_str().encode(env),
-            ],
+            &[atoms::static_().encode(env), expr.content.encode(env)],
         )
     } else {
-        expr.content.as_str().encode(env)
+        expr.content.encode(env)
     }
 }
 
