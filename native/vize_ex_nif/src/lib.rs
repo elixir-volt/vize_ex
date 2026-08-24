@@ -10,9 +10,14 @@ use vize_atelier_core::options::{
 };
 use vize_atelier_core::parser::{parse, parse_with_options};
 use vize_atelier_core::transform;
+use vize_atelier_sfc::bundler::rewrite_template_asset_references;
 use vize_atelier_sfc::compile_script::typescript::transform_typescript_to_js;
 use vize_atelier_sfc::croquis::{analyze_sfc_descriptor, SfcCroquisOptions};
 use vize_atelier_sfc::script::analyze_script_setup_to_summary;
+use vize_atelier_sfc::{
+    build_sfc_source_map, collect_template_asset_urls, extract_src_info, generate_bundler_scope_id,
+    TemplateAssetUrl,
+};
 use vize_atelier_sfc::{
     bundle_css, compile_css, compile_sfc, parse_css_ast, parse_sfc, print_css_ast,
     CssCompileOptions, CssTargets, SfcCompileOptions, SfcParseOptions,
@@ -214,6 +219,7 @@ fn compile_sfc_nif_impl<'a>(
     ssr: bool,
     custom_renderer: bool,
     strip_types: bool,
+    source_map: bool,
 ) -> NifResult<Term<'a>> {
     let mut parse_opts = SfcParseOptions::default();
     if !filename.is_empty() {
@@ -243,19 +249,30 @@ fn compile_sfc_nif_impl<'a>(
 
     match compile_sfc(&descriptor, compile_opts) {
         Ok(result) => {
-            let stripped;
-            let code_override = if strip_types {
-                stripped = transform_typescript_to_js(result.code.as_str());
-                Some(stripped.as_str())
-            } else {
-                None
-            };
+            let stripped = strip_types.then(|| transform_typescript_to_js(result.code.as_str()));
+            let code_override = stripped.as_deref();
+            let emitted_code = code_override.unwrap_or(result.code.as_str());
+            let map = source_map
+                .then(|| {
+                    build_sfc_source_map(
+                        emitted_code,
+                        &descriptor,
+                        if filename.is_empty() {
+                            "anonymous.vue"
+                        } else {
+                            filename
+                        },
+                    )
+                })
+                .flatten();
 
             Ok(ok_term(
                 env,
                 EncodedCompileSfcResult {
                     result: &result,
+                    descriptor: &descriptor,
                     code_override,
+                    map,
                     template_hash: descriptor.template_hash(),
                     style_hash: descriptor.style_hash(),
                     script_hash: descriptor.script_hash(),
@@ -264,6 +281,66 @@ fn compile_sfc_nif_impl<'a>(
         }
         Err(e) => Ok(error_term(env, e.message.as_str())),
     }
+}
+
+// ── SFC Bundler Helpers ──
+
+fn sfc_template_assets_nif_impl<'a>(
+    env: Env<'a>,
+    source: &str,
+    filename: &str,
+) -> NifResult<Term<'a>> {
+    let assets =
+        collect_template_asset_urls(source, None, (!filename.is_empty()).then_some(filename));
+    let terms: Vec<Term<'a>> = assets
+        .iter()
+        .map(|asset| {
+            term_map!(env, {
+                atoms::url() => asset.url.as_str(),
+                atoms::var_name() => asset.var_name.as_str(),
+            })
+        })
+        .collect();
+    Ok(terms.encode(env))
+}
+
+fn rewrite_sfc_template_assets_nif_impl<'a>(
+    env: Env<'a>,
+    code: &str,
+    assets: Vec<(String, String)>,
+) -> NifResult<Term<'a>> {
+    let assets: Vec<TemplateAssetUrl> = assets
+        .into_iter()
+        .map(|(url, var_name)| TemplateAssetUrl {
+            url: url.into(),
+            var_name: var_name.into(),
+        })
+        .collect();
+    Ok(rewrite_template_asset_references(code, &assets).encode(env))
+}
+
+fn sfc_src_info_nif_impl<'a>(env: Env<'a>, source: &str, filename: &str) -> NifResult<Term<'a>> {
+    let info = extract_src_info(source, (!filename.is_empty()).then_some(filename));
+    Ok(term_map!(env, {
+        atoms::script_src() => info.script_src.as_deref(),
+        atoms::template_src() => info.template_src.as_deref(),
+    }))
+}
+
+fn sfc_scope_id_nif_impl<'a>(
+    env: Env<'a>,
+    filename: &str,
+    root: &str,
+    production: bool,
+    source: &str,
+) -> NifResult<Term<'a>> {
+    let scope_id = generate_bundler_scope_id(
+        filename,
+        (!root.is_empty()).then_some(root),
+        production,
+        (!source.is_empty()).then_some(source),
+    );
+    Ok(scope_id.encode(env))
 }
 
 // ── Template Compilation ──

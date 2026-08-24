@@ -19,6 +19,7 @@ encoders = [
   {:EncodedTemplateBlock,
    fields: [
      content: [field: [0, :content], via: :as_ref],
+     src: [field: [0, :src], via: :as_deref],
      lang: [field: [0, :lang], via: :as_deref],
      loc: [field: [0, :loc], with: :loc_to_term],
      attrs: [field: [0, :attrs], with: :attrs_to_term]
@@ -27,6 +28,7 @@ encoders = [
   {:EncodedScriptBlock,
    fields: [
      content: [field: [0, :content], via: :as_ref],
+     src: [field: [0, :src], via: :as_deref],
      lang: [field: [0, :lang], via: :as_deref],
      setup: [field: [0, :setup]],
      loc: [field: [0, :loc], with: :loc_to_term],
@@ -36,6 +38,7 @@ encoders = [
   {:EncodedStyleBlock,
    fields: [
      content: [field: [0, :content], via: :as_ref],
+     src: [field: [0, :src], via: :as_deref],
      lang: [field: [0, :lang], via: :as_deref],
      scoped: [field: [0, :scoped]],
      module: [field: [0, :module], via: :as_deref],
@@ -47,6 +50,7 @@ encoders = [
    fields: [
      block_type: [field: [0, :block_type], via: :as_ref],
      content: [field: [0, :content], via: :as_ref],
+     src: [field: [0, :attrs], with: :src_attr_to_term],
      loc: [field: [0, :loc], with: :loc_to_term],
      attrs: [field: [0, :attrs], with: :attrs_to_term]
    ],
@@ -71,18 +75,25 @@ encoders = [
      script: [field: [:descriptor, :script], optional: [wrap: :EncodedScriptBlock]],
      script_setup: [field: [:descriptor, :script_setup], optional: [wrap: :EncodedScriptBlock]],
      styles: [field: [:descriptor, :styles], map: [wrap: :EncodedStyleBlock]],
-     custom_blocks: [field: [:descriptor, :custom_blocks], map: [wrap: :EncodedCustomBlock]]
+     custom_blocks: [field: [:descriptor, :custom_blocks], map: [wrap: :EncodedCustomBlock]],
+     css_vars: [field: [:descriptor, :css_vars], map: [via: :as_ref]],
+     slotted: [field: [:descriptor, :slotted]],
+     should_force_reload: [field: [:descriptor, :should_force_reload]]
    ],
    target_lifetimes: [:_]},
   {:EncodedCompileSfcResult,
    fields: [
      code: [field: :code_override, fallback: [field: [:result, :code], via: :as_str]],
+     map: [via: :as_deref],
      css: [field: [:result, :css], via: :as_deref],
      errors: [field: [:result, :errors], map: [convert: :EncodedSfcError]],
      warnings: [field: [:result, :warnings], map: [convert: :EncodedSfcError]],
      template_hash: [via: :as_deref],
      style_hash: [via: :as_deref],
      script_hash: [via: :as_deref],
+     has_scoped: [field: [:descriptor, :styles], with: :has_scoped_styles],
+     styles: [field: [:descriptor, :styles], map: [wrap: :EncodedStyleBlock]],
+     custom_blocks: [field: [:descriptor, :custom_blocks], map: [wrap: :EncodedCustomBlock]],
      macro_artifacts: [field: [:result, :macro_artifacts], map: [wrap: :EncodedMacroArtifact]]
    ],
    target_lifetimes: [:_]},
@@ -116,6 +127,10 @@ nifs = [
   parse_sfc_nif: [],
   analyze_sfc_nif: [],
   compile_sfc_nif: [attrs: [A.attr(:allow, [A.path([:clippy, :too_many_arguments])])]],
+  sfc_template_assets_nif: [],
+  rewrite_sfc_template_assets_nif: [],
+  sfc_src_info_nif: [],
+  sfc_scope_id_nif: [],
   compile_template_nif: [],
   compile_ssr_nif: [],
   compile_vapor_nif: [],

@@ -27,12 +27,14 @@ impl rustler::Encoder for EncodedTemplateBlock<'_> {
                 env,
                 &[
                     atoms::content().encode(env),
+                    atoms::src().encode(env),
                     atoms::lang().encode(env),
                     atoms::loc().encode(env),
                     atoms::attrs().encode(env),
                 ],
                 &[
                     self.0.content.as_ref().encode(env),
+                    self.0.src.as_deref().encode(env),
                     self.0.lang.as_deref().encode(env),
                     loc_to_term(env, &self.0.loc),
                     attrs_to_term(env, &self.0.attrs),
@@ -47,6 +49,7 @@ impl rustler::Encoder for EncodedScriptBlock<'_> {
                 env,
                 &[
                     atoms::content().encode(env),
+                    atoms::src().encode(env),
                     atoms::lang().encode(env),
                     atoms::setup().encode(env),
                     atoms::loc().encode(env),
@@ -54,6 +57,7 @@ impl rustler::Encoder for EncodedScriptBlock<'_> {
                 ],
                 &[
                     self.0.content.as_ref().encode(env),
+                    self.0.src.as_deref().encode(env),
                     self.0.lang.as_deref().encode(env),
                     self.0.setup.encode(env),
                     loc_to_term(env, &self.0.loc),
@@ -69,6 +73,7 @@ impl rustler::Encoder for EncodedStyleBlock<'_> {
                 env,
                 &[
                     atoms::content().encode(env),
+                    atoms::src().encode(env),
                     atoms::lang().encode(env),
                     atoms::scoped().encode(env),
                     atoms::module().encode(env),
@@ -77,6 +82,7 @@ impl rustler::Encoder for EncodedStyleBlock<'_> {
                 ],
                 &[
                     self.0.content.as_ref().encode(env),
+                    self.0.src.as_deref().encode(env),
                     self.0.lang.as_deref().encode(env),
                     self.0.scoped.encode(env),
                     self.0.module.as_deref().encode(env),
@@ -94,12 +100,14 @@ impl rustler::Encoder for EncodedCustomBlock<'_> {
                 &[
                     atoms::block_type().encode(env),
                     atoms::content().encode(env),
+                    atoms::src().encode(env),
                     atoms::loc().encode(env),
                     atoms::attrs().encode(env),
                 ],
                 &[
                     self.0.block_type.as_ref().encode(env),
                     self.0.content.as_ref().encode(env),
+                    src_attr_to_term(env, &self.0.attrs),
                     loc_to_term(env, &self.0.loc),
                     attrs_to_term(env, &self.0.attrs),
                 ],
@@ -164,6 +172,9 @@ impl rustler::Encoder for EncodedParseSfcResult<'_> {
                     atoms::script_setup().encode(env),
                     atoms::styles().encode(env),
                     atoms::custom_blocks().encode(env),
+                    atoms::css_vars().encode(env),
+                    atoms::slotted().encode(env),
+                    atoms::should_force_reload().encode(env),
                 ],
                 &[
                     self
@@ -198,6 +209,15 @@ impl rustler::Encoder for EncodedParseSfcResult<'_> {
                         .map(|value| EncodedCustomBlock(value).encode(env))
                         .collect::<Vec<Term<'a>>>()
                         .encode(env),
+                    self
+                        .descriptor
+                        .css_vars
+                        .iter()
+                        .map(|value| value.as_ref().encode(env))
+                        .collect::<Vec<Term<'a>>>()
+                        .encode(env),
+                    self.descriptor.slotted.encode(env),
+                    self.descriptor.should_force_reload.encode(env),
                 ],
             )
             .unwrap()
@@ -209,16 +229,21 @@ impl rustler::Encoder for EncodedCompileSfcResult<'_> {
                 env,
                 &[
                     atoms::code().encode(env),
+                    atoms::map().encode(env),
                     atoms::css().encode(env),
                     atoms::errors().encode(env),
                     atoms::warnings().encode(env),
                     atoms::template_hash().encode(env),
                     atoms::style_hash().encode(env),
                     atoms::script_hash().encode(env),
+                    atoms::has_scoped().encode(env),
+                    atoms::styles().encode(env),
+                    atoms::custom_blocks().encode(env),
                     atoms::macro_artifacts().encode(env),
                 ],
                 &[
                     self.code_override.unwrap_or(self.result.code.as_str()).encode(env),
+                    self.map.as_deref().encode(env),
                     self.result.css.as_deref().encode(env),
                     self
                         .result
@@ -237,6 +262,21 @@ impl rustler::Encoder for EncodedCompileSfcResult<'_> {
                     self.template_hash.as_deref().encode(env),
                     self.style_hash.as_deref().encode(env),
                     self.script_hash.as_deref().encode(env),
+                    has_scoped_styles(env, &self.descriptor.styles),
+                    self
+                        .descriptor
+                        .styles
+                        .iter()
+                        .map(|value| EncodedStyleBlock(value).encode(env))
+                        .collect::<Vec<Term<'a>>>()
+                        .encode(env),
+                    self
+                        .descriptor
+                        .custom_blocks
+                        .iter()
+                        .map(|value| EncodedCustomBlock(value).encode(env))
+                        .collect::<Vec<Term<'a>>>()
+                        .encode(env),
                     self
                         .result
                         .macro_artifacts

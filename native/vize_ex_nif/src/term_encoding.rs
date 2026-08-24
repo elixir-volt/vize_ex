@@ -24,10 +24,9 @@ pub(crate) fn loc_to_term<'a>(env: Env<'a>, loc: &vize_atelier_sfc::BlockLocatio
     EncodedLoc::from(loc).encode(env)
 }
 
-pub(crate) fn attrs_to_term<'a>(
-    env: Env<'a>,
-    attrs: &vize_carton::FxHashMap<std::borrow::Cow<'_, str>, std::borrow::Cow<'_, str>>,
-) -> Term<'a> {
+type SfcAttrs<'a> = vize_carton::FxHashMap<std::borrow::Cow<'a, str>, std::borrow::Cow<'a, str>>;
+
+pub(crate) fn attrs_to_term<'a>(env: Env<'a>, attrs: &SfcAttrs<'_>) -> Term<'a> {
     let keys: Vec<Term<'a>> = attrs.keys().map(|k| k.as_ref().encode(env)).collect();
     let vals: Vec<Term<'a>> = attrs.values().map(|v| v.as_ref().encode(env)).collect();
     if keys.is_empty() {
@@ -35,6 +34,17 @@ pub(crate) fn attrs_to_term<'a>(
     } else {
         Term::map_from_arrays(env, &keys, &vals).unwrap()
     }
+}
+
+pub(crate) fn src_attr_to_term<'a>(env: Env<'a>, attrs: &SfcAttrs<'_>) -> Term<'a> {
+    attrs.get("src").map(|src| src.as_ref()).encode(env)
+}
+
+pub(crate) fn has_scoped_styles<'a>(
+    env: Env<'a>,
+    styles: &[vize_atelier_sfc::SfcStyleBlock<'_>],
+) -> Term<'a> {
+    styles.iter().any(|style| style.scoped).encode(env)
 }
 
 struct EncodedSfcError<'a> {
@@ -178,7 +188,9 @@ pub(crate) struct EncodedParseSfcResult<'a> {
 
 pub(crate) struct EncodedCompileSfcResult<'a> {
     pub(crate) result: &'a vize_atelier_sfc::SfcCompileResult,
+    pub(crate) descriptor: &'a vize_atelier_sfc::SfcDescriptor<'a>,
     pub(crate) code_override: Option<&'a str>,
+    pub(crate) map: Option<vize_carton::String>,
     pub(crate) template_hash: Option<vize_carton::CompactString>,
     pub(crate) style_hash: Option<vize_carton::CompactString>,
     pub(crate) script_hash: Option<vize_carton::CompactString>,

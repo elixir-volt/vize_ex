@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+
+- Add optional SFC source maps and expose scoped-style, style block, and custom block metadata in compile results.
+- Add `Vize.SFC` helpers for template assets, external block sources, asset rewriting, and deterministic scope IDs.
+- Include external block sources and SFC descriptor metadata in `parse_sfc/1` results.
+
 ### Changed
 
 - Upgrade the upstream Vize workspace from 0.290 to 0.362 and consume its published crates instead of the monorepo git revision.

@@ -27,8 +27,17 @@ defmodule Vize.Native do
           boolean(),
           boolean(),
           boolean(),
+          boolean(),
           boolean()
         ) :: {:ok, map()} | {:error, String.t()}
+
+  @spec sfc_template_assets_nif(String.t(), String.t()) :: [map()]
+
+  @spec rewrite_sfc_template_assets_nif(String.t(), [{String.t(), String.t()}]) :: String.t()
+
+  @spec sfc_src_info_nif(String.t(), String.t()) :: map()
+
+  @spec sfc_scope_id_nif(String.t(), String.t(), boolean(), String.t()) :: String.t()
 
   @spec compile_template_nif(String.t(), String.t(), boolean()) ::
           {:ok, map()} | {:error, list()}

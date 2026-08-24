@@ -38,12 +38,16 @@ defmodule Vize do
 
   @type sfc_result :: %{
           code: String.t(),
+          map: String.t() | nil,
           css: String.t() | nil,
           errors: [map()],
           warnings: [map()],
           template_hash: String.t() | nil,
           style_hash: String.t() | nil,
           script_hash: String.t() | nil,
+          has_scoped: boolean(),
+          styles: [map()],
+          custom_blocks: [map()],
           macro_artifacts: [macro_artifact()]
         }
 
@@ -153,6 +157,8 @@ defmodule Vize do
       elements instead of Vue components (default: `false`)
     * `:strip_types` — strip TypeScript type annotations from the output
       using OXC, returning plain JavaScript (default: `false`)
+    * `:source_map` — include a Source Map v3 JSON document for the emitted
+      JavaScript when authored script lines can be mapped (default: `false`)
 
   ## Examples
 
@@ -176,6 +182,7 @@ defmodule Vize do
     scope_id = Keyword.get(opts, :scope_id, "")
     custom_renderer = Keyword.get(opts, :custom_renderer, false)
     strip_types = Keyword.get(opts, :strip_types, false)
+    source_map = Keyword.get(opts, :source_map, false)
 
     Vize.Native.compile_sfc_nif(
       source,
@@ -184,7 +191,8 @@ defmodule Vize do
       vapor,
       ssr,
       custom_renderer,
-      strip_types
+      strip_types,
+      source_map
     )
   end
 

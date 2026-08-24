@@ -17,8 +17,25 @@ defmodule Vize.GeneratedNifStubs do
             _vapor,
             _ssr,
             _custom_renderer,
-            _strip_types
+            _strip_types,
+            _source_map
           ) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def sfc_template_assets_nif(_source, _filename) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def rewrite_sfc_template_assets_nif(_code, _assets) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def sfc_src_info_nif(_source, _filename) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def sfc_scope_id_nif(_filename, _root, _production, _source) do
         :erlang.nif_error(:nif_not_loaded)
       end
 

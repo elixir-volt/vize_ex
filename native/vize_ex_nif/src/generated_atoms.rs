@@ -8,16 +8,17 @@ mod atoms {
         delegate, diagnostics, directive, directives, dts, dynamic, dynamic_slots,
         effect, effects, element, element_template_map, emits, end_ = "end", end_column,
         end_line, error, errors, events, exports, for_node, get_text_child, handler,
-        has_spread_attrs, helpers, if_node, index, insert_node, is_component, is_dynamic,
-        keep_alive, key, key_prop, kind, lang, line, loc, location, macro_artifacts,
-        media, message, models, module, name, negative, next_ref, offset, ok, once,
-        operations, parent, parent_id, positive, preamble, prepend_node, prop_modifier,
-        props, range, recoverable, regular, render, required, returns, scoped, script,
-        script_hash, script_setup, set_dynamic_props, set_event, set_html, set_prop,
-        set_template_ref, set_text, setup, slot_outlet, slots, source, start,
+        has_scoped, has_spread_attrs, helpers, if_node, index, insert_node, is_component,
+        is_dynamic, keep_alive, key, key_prop, kind, lang, line, loc, location,
+        macro_artifacts, map, media, message, models, module, name, negative, next_ref,
+        offset, ok, once, operations, parent, parent_id, positive, preamble,
+        prepend_node, prop_modifier, props, range, recoverable, regular, render,
+        required, returns, scoped, script, script_hash, script_setup, script_src,
+        set_dynamic_props, set_event, set_html, set_prop, set_template_ref, set_text,
+        setup, should_force_reload, slot_outlet, slots, slotted, source, src, start,
         start_column, start_line, static_, statics, stats, style_hash, styles, supports,
         suspense, tag, teleport, template, template_expressions, template_hash,
-        templates, undefined_refs, url, used_components, used_directives, v_model,
-        v_show, value, values, warnings
+        template_src, templates, undefined_refs, url, used_components, used_directives,
+        v_model, v_show, value, values, var_name, warnings
     }
 }

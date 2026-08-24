@@ -70,6 +70,23 @@ defmodule VizeTest do
       assert descriptor.script_setup == nil
       assert descriptor.styles == []
     end
+
+    test "returns external sources and descriptor metadata" do
+      source = """
+      <template src="./template.html"></template>
+      <script src="./component.js"></script>
+      <style src="./component.css" scoped></style>
+      """
+
+      {:ok, descriptor} = Vize.parse_sfc(source)
+
+      assert descriptor.template.src == "./template.html"
+      assert descriptor.script.src == "./component.js"
+      assert [%{src: "./component.css", scoped: true}] = descriptor.styles
+      assert descriptor.css_vars == []
+      refute descriptor.slotted
+      refute descriptor.should_force_reload
+    end
   end
 
   describe "parse_sfc!/1" do
@@ -145,6 +162,40 @@ defmodule VizeTest do
       {:ok, result} = Vize.compile_sfc("<template><div>hi</div></template>")
       assert result.template_hash != nil
       assert result.style_hash == nil
+    end
+
+    test "returns source maps for the final emitted JavaScript" do
+      {:ok, result} =
+        Vize.compile_sfc(@setup_sfc,
+          filename: "src/Counter.vue",
+          strip_types: true,
+          source_map: true
+        )
+
+      assert is_binary(result.map)
+      assert result.map =~ ~s("version":3)
+      assert result.map =~ "src/Counter.vue"
+    end
+
+    test "returns bundler block metadata" do
+      source = """
+      <template><div class="container">Styled</div></template>
+      <style src="./base.css"></style>
+      <style scoped module="theme">.container { color: blue; }</style>
+      <docs src="./readme.md">fallback</docs>
+      """
+
+      {:ok, result} = Vize.compile_sfc(source, filename: "App.vue")
+
+      assert result.has_scoped
+
+      assert [
+               %{src: "./base.css", scoped: false, module: nil},
+               %{src: nil, scoped: true, module: "theme"}
+             ] = result.styles
+
+      assert [%{block_type: "docs", src: "./readme.md", content: "fallback"}] =
+               result.custom_blocks
     end
   end
 

@@ -19,6 +19,7 @@ fn compile_sfc_nif<'a>(
     ssr: bool,
     custom_renderer: bool,
     strip_types: bool,
+    source_map: bool,
 ) -> NifResult<Term<'a>> {
     compile_sfc_nif_impl(
         env,
@@ -29,7 +30,42 @@ fn compile_sfc_nif<'a>(
         ssr,
         custom_renderer,
         strip_types,
+        source_map,
     )
+}
+#[rustler::nif(schedule = "DirtyCpu")]
+fn sfc_template_assets_nif<'a>(
+    env: Env<'a>,
+    source: &str,
+    filename: &str,
+) -> NifResult<Term<'a>> {
+    sfc_template_assets_nif_impl(env, source, filename)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
+fn rewrite_sfc_template_assets_nif<'a>(
+    env: Env<'a>,
+    code: &str,
+    assets: Vec<(String, String)>,
+) -> NifResult<Term<'a>> {
+    rewrite_sfc_template_assets_nif_impl(env, code, assets)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
+fn sfc_src_info_nif<'a>(
+    env: Env<'a>,
+    source: &str,
+    filename: &str,
+) -> NifResult<Term<'a>> {
+    sfc_src_info_nif_impl(env, source, filename)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
+fn sfc_scope_id_nif<'a>(
+    env: Env<'a>,
+    filename: &str,
+    root: &str,
+    production: bool,
+    source: &str,
+) -> NifResult<Term<'a>> {
+    sfc_scope_id_nif_impl(env, filename, root, production, source)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
 fn compile_template_nif<'a>(
