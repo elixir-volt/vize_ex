@@ -1,7 +1,3 @@
-pub(crate) const PROP_MARKER: &str = "\x00PROP\x00";
-pub(crate) const STRUCT_MARKER: &str = "\x00STRUCT\x00";
-pub(crate) const TEXT_MARKER: &str = "\x00TEXT\x00";
-
 #[derive(Debug, Clone)]
 pub(crate) struct TagEntry {
     pub(crate) pos: usize,

@@ -61,4 +61,30 @@ defmodule VizeIntegrationTest do
     assert Enum.map(split.slots, & &1.kind) == [:set_prop, :set_text, :if_node]
     assert length(split.statics) == length(split.slots) + 1
   end
+
+  test "vapor_split/1 orders nested property slots by document position" do
+    {:ok, split} =
+      Vize.vapor_split("<div :class=\"outer\"><i :class=\"inner\"></i></div>")
+
+    assert [
+             %{kind: :set_prop, values: ["outer"]},
+             %{kind: :set_prop, values: ["inner"]}
+           ] = split.slots
+
+    assert split.statics == ["<div class=\"", "\"><i class=\"", "\"></i></div>"]
+  end
+
+  test "vapor_split/1 orders structural and text slots by document position" do
+    {:ok, leading_if} =
+      Vize.vapor_split("<div><p v-if=\"show\">visible</p>{{ message }}</div>")
+
+    assert Enum.map(leading_if.slots, & &1.kind) == [:if_node, :set_text]
+    assert length(leading_if.statics) == length(leading_if.slots) + 1
+
+    {:ok, trailing_if} =
+      Vize.vapor_split("<div>{{ message }}<p v-if=\"show\">visible</p></div>")
+
+    assert Enum.map(trailing_if.slots, & &1.kind) == [:set_text, :if_node]
+    assert length(trailing_if.statics) == length(trailing_if.slots) + 1
+  end
 end

@@ -7,6 +7,10 @@
 - Upgrade the upstream Vize workspace from 0.290 to 0.362 and consume its published crates instead of the monorepo git revision.
 - Require Rust 1.95 or later when compiling the NIF from source.
 
+### Fixed
+
+- Preserve document order when pairing Vapor statics with nested property, text, and structural slots.
+
 ## 0.14.1 - 2026-07-20
 
 ### Added
