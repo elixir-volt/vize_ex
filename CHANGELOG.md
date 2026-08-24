@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.14.2 - 2026-08-24
+
 ### Added
 
 - Add optional SFC source maps and expose scoped-style, style block, and custom block metadata in compile results.
@@ -11,11 +13,14 @@
 ### Changed
 
 - Upgrade the upstream Vize workspace from 0.290 to 0.362 and consume its published crates instead of the monorepo git revision.
-- Require Rust 1.95 or later when compiling the NIF from source.
 
 ### Fixed
 
 - Preserve document order when pairing Vapor statics with nested property, text, and structural slots.
+
+### Compatibility
+
+- Require Rust 1.95 or later when compiling the NIF from source.
 
 ## 0.14.1 - 2026-07-20
 
