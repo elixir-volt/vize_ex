@@ -1,6 +1,6 @@
-Code.require_file("../codegen/vize/codegen/native_types.ex", __DIR__)
+Code.require_file("../../../codegen/vize/codegen/native_types.ex", __DIR__)
 
-defmodule Vize.RustQCodegenTest do
+defmodule Vize.Codegen.NativeTypesTest do
   use RustQ.Test, async: true
 
   test "derives the source-location NIF map for the existing crate" do

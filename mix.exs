@@ -61,6 +61,8 @@ defmodule Vize.MixProject do
         "cmd cargo fmt --manifest-path native/vize_ex_nif/Cargo.toml -- --check",
         "cmd cargo clippy --manifest-path native/vize_ex_nif/Cargo.toml -- -D warnings"
       ],
+      "test.unit": ["test --exclude integration"],
+      "test.integration": ["test test/integration"],
       ci: ["lint", "cmd env MIX_ENV=test mix test"]
     ]
   end
