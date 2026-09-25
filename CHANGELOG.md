@@ -2,19 +2,27 @@
 
 ## Unreleased
 
+## 0.15.0 - 2026-09-30
+
 ### Added
 
 - Encode the new `set_merged_props` Vapor IR operation in `vapor_ir/1`, with `:object` and `:group` sources.
+- Report `:transition` and `:transition_group` component kinds in `vapor_ir/1` and `vapor_split/1`.
 
 ### Changed
 
-- Upgrade the upstream Vize workspace from 0.362 to 0.426.3. Vapor output now registers delegated events with `delegateEvents(...)`, so native `@click` handlers on plain elements fire again under Vue 3.6 RCs.
+- Upgrade the upstream Vize workspace from 0.362 to 0.429.1. Vapor output now registers delegated events with `delegateEvents(...)`, so native `@click` handlers on plain elements fire again, and hydrates Vue 3.6.0-rc.9 SSR markup: it no longer passes a sibling index to `next()` and creates components and slots in document order.
+- `vapor_ir/1` encodes a component, `v-if`, or `v-for` insertion anchor as the placeholder node id (as before) or, when the block is appended, as `{:index, n}` with its hydration start unit.
 - Build SFC source maps through upstream codegen options instead of the removed `build_sfc_source_map`.
 
 ### Fixed
 
 - Replace Vapor's `<!---->` anchor comments with structural slots in `vapor_split/1`, so they no longer leak into statics and element offsets after an anchor stay aligned.
 - Replace the whole text node for mixed static and dynamic text in `vapor_split/1`. Previously the static parts were rendered twice, e.g. `Hello {{ name }}` produced `HelloHello Ada `.
+
+### Compatibility
+
+- Declare `rust-version = "1.95"` for the NIF crate, so building from source with an older toolchain fails with a clear error.
 
 ## 0.14.2 - 2026-08-24
 
