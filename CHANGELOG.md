@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Added
+
+- Encode the new `set_merged_props` Vapor IR operation in `vapor_ir/1`, with `:object` and `:group` sources.
+
+### Changed
+
+- Upgrade the upstream Vize workspace from 0.362 to 0.426.3. Vapor output now registers delegated events with `delegateEvents(...)`, so native `@click` handlers on plain elements fire again under Vue 3.6 RCs.
+- Build SFC source maps through upstream codegen options instead of the removed `build_sfc_source_map`.
+
+### Fixed
+
+- Replace Vapor's `<!---->` anchor comments with structural slots in `vapor_split/1`, so they no longer leak into statics and element offsets after an anchor stay aligned.
+- Replace the whole text node for mixed static and dynamic text in `vapor_split/1`. Previously the static parts were rendered twice, e.g. `Hello {{ name }}` produced `HelloHello Ada `.
+
 ## 0.14.2 - 2026-08-24
 
 ### Added

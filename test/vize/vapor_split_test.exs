@@ -88,4 +88,46 @@ defmodule Vize.VaporSplitTest do
     assert Enum.map(split.slots, & &1.kind) == [:for_node]
     assert split.statics == ["<ul><li>before</li>", "<li>after</li></ul>"]
   end
+
+  test "replaces the whole text node for mixed static and dynamic text" do
+    {:ok, split} = Vize.vapor_split("<span>Hello {{ a }}, you have {{ n }} items</span>")
+
+    assert split.statics == ["<span>", "</span>"]
+
+    assert [
+             %{
+               kind: :set_text,
+               values: [
+                 {:static_, "Hello "},
+                 "a",
+                 {:static_, ", you have "},
+                 "n",
+                 {:static_, " items"}
+               ]
+             }
+           ] =
+             split.slots
+  end
+
+  test "matches HTML-escaped static text" do
+    {:ok, split} = Vize.vapor_split("<p>\"Tom\" & {{ x }} <3</p>")
+
+    assert split.statics == ["<p>", "</p>"]
+  end
+
+  test "places text slots after sibling elements" do
+    {:ok, split} = Vize.vapor_split("<div><b>bold</b> hi {{ x }}</div>")
+
+    assert split.statics == ["<div><b>bold</b>", "</div>"]
+  end
+
+  test "replaces Vapor anchor comments with structural slots" do
+    {:ok, split} =
+      Vize.vapor_split(
+        "<div><p v-if=\"a\">A</p><p v-if=\"b\">B</p><i :id=\"k\">{{ x }}</i></div>"
+      )
+
+    assert Enum.map(split.slots, & &1.kind) == [:if_node, :if_node, :set_prop, :set_text]
+    assert split.statics == ["<div>", "", "<i id=\"", "\">", "</i></div>"]
+  end
 end

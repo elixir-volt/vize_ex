@@ -15,12 +15,10 @@ use vize_atelier_sfc::compile_script::typescript::transform_typescript_to_js;
 use vize_atelier_sfc::croquis::{analyze_sfc_descriptor, SfcCroquisOptions};
 use vize_atelier_sfc::script::analyze_script_setup_to_summary;
 use vize_atelier_sfc::{
-    build_sfc_source_map, collect_template_asset_urls, generate_bundler_scope_id, TemplateAssetUrl,
+    bundle_css, compile_css, compile_sfc_with_template_syntax_and_codegen_options, parse_css_ast,
+    parse_sfc, print_css_ast, CssCompileOptions, CssTargets, SfcCompileOptions, SfcParseOptions,
 };
-use vize_atelier_sfc::{
-    bundle_css, compile_css, compile_sfc, parse_css_ast, parse_sfc, print_css_ast,
-    CssCompileOptions, CssTargets, SfcCompileOptions, SfcParseOptions,
-};
+use vize_atelier_sfc::{collect_template_asset_urls, generate_bundler_scope_id, TemplateAssetUrl};
 use vize_atelier_ssr::compile_ssr;
 use vize_atelier_vapor::{
     compile_vapor, compile_vapor_with_template_syntax_and_diagnostics, ir::*, transform_to_ir,
@@ -35,7 +33,9 @@ mod ir_encoding;
 mod term_encoding;
 mod vapor_split;
 
-use crate::ir_encoding::{encode_ir_prop, encode_simple_expr};
+use crate::ir_encoding::{
+    encode_insertion_anchor, encode_ir_prop, encode_merged_props_source, encode_simple_expr,
+};
 use crate::term_encoding::{
     decode_json_value, error_term, nil_term, ok_term, EncodedBundleCssResult,
     EncodedCompileSfcResult, EncodedCssAstResult, EncodedCssCompileResult, EncodedLintDiagnostic,
@@ -246,24 +246,25 @@ fn compile_sfc_nif_impl<'a>(
         compile_opts.script.id = Some(filename.into());
     }
 
-    match compile_sfc(&descriptor, compile_opts) {
+    let codegen_opts = CodegenOptions {
+        source_map,
+        ..Default::default()
+    };
+
+    match compile_sfc_with_template_syntax_and_codegen_options(
+        &descriptor,
+        compile_opts,
+        TemplateSyntaxMode::Standard,
+        codegen_opts,
+    ) {
         Ok(result) => {
             let stripped = strip_types.then(|| transform_typescript_to_js(result.code.as_str()));
             let code_override = stripped.as_deref();
-            let emitted_code = code_override.unwrap_or(result.code.as_str());
             let source_map = source_map
-                .then(|| {
-                    build_sfc_source_map(
-                        emitted_code,
-                        &descriptor,
-                        if filename.is_empty() {
-                            "anonymous.vue"
-                        } else {
-                            filename
-                        },
-                    )
-                })
-                .flatten();
+                .then_some(result.map.as_ref())
+                .flatten()
+                .and_then(|map| serde_json::to_string(map).ok())
+                .map(Into::into);
 
             Ok(ok_term(
                 env,
@@ -545,6 +546,18 @@ fn encode_operation<'a>(env: Env<'a>, op: &OperationNode) -> Term<'a> {
                 atoms::props() => props,
             })
         }
+        OperationNode::SetMergedProps(node) => {
+            let sources: Vec<Term<'a>> = node
+                .sources
+                .iter()
+                .map(|source| encode_merged_props_source(env, source))
+                .collect();
+            term_map!(env, {
+                atoms::kind() => atoms::set_merged_props(),
+                atoms::element() => node.element,
+                atoms::sources() => sources,
+            })
+        }
         OperationNode::SetText(node) => {
             let values: Vec<Term<'a>> = node
                 .values
@@ -609,6 +622,8 @@ fn encode_operation<'a>(env: Env<'a>, op: &OperationNode) -> Term<'a> {
                 ComponentKind::Teleport => atoms::teleport(),
                 ComponentKind::KeepAlive => atoms::keep_alive(),
                 ComponentKind::Suspense => atoms::suspense(),
+                ComponentKind::Transition => atoms::transition(),
+                ComponentKind::TransitionGroup => atoms::transition_group(),
                 ComponentKind::Dynamic => atoms::dynamic(),
             };
             term_map!(env, {
@@ -619,7 +634,7 @@ fn encode_operation<'a>(env: Env<'a>, op: &OperationNode) -> Term<'a> {
                 atoms::once() => node.once,
                 atoms::dynamic_slots() => node.dynamic_slots,
                 atoms::parent() => node.parent,
-                atoms::anchor() => node.anchor,
+                atoms::anchor() => encode_insertion_anchor(env, node.anchor),
                 atoms::value() => kind_atom,
             })
         }
@@ -730,7 +745,7 @@ fn encode_if_node<'a>(env: Env<'a>, if_node: &IfIRNode) -> Term<'a> {
         atoms::negative() => negative,
         atoms::once() => if_node.once,
         atoms::parent() => if_node.parent,
-        atoms::anchor() => if_node.anchor,
+        atoms::anchor() => encode_insertion_anchor(env, if_node.anchor),
     })
 }
 
@@ -761,7 +776,7 @@ fn encode_for_node<'a>(env: Env<'a>, for_node: &ForIRNode) -> Term<'a> {
         atoms::render() => encode_block(env, &for_node.render),
         atoms::once() => for_node.once,
         atoms::parent() => for_node.parent,
-        atoms::anchor() => for_node.anchor,
+        atoms::anchor() => encode_insertion_anchor(env, for_node.anchor),
     })
 }
 

@@ -220,21 +220,6 @@ checksum = "b9e769b5c8c8283982a987c6e948e540254f1058d5a74b8794914d4ef5fc2a24"
 
 [[package]]
 name = "compact_str"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3fdb1325a1cece981e8a296ab8f0f9b63ae357bd0784a9faaf548cc7b480707a"
-dependencies = [
- "castaway",
- "cfg-if",
- "itoa",
- "rustversion",
- "ryu",
- "serde",
- "static_assertions",
-]
-
-[[package]]
-name = "compact_str"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "79fcda08c33bb58b97008b2cdada6622500e949e060f5913361763121abd2416"
@@ -270,9 +255,9 @@ dependencies = [
 
 [[package]]
 name = "corsa"
-version = "1.12.1"
+version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a00b007d178d7616e02f68cdf09fb92902a16ef647ef28ba7e9b66960754dfd4"
+checksum = "d581851ddaa32172c3e87cb394446cae00814fc069fd6204bb5336b8a1db3f66"
 dependencies = [
  "base64",
  "corsa_client",
@@ -287,9 +272,9 @@ dependencies = [
 
 [[package]]
 name = "corsa_client"
-version = "1.12.4"
+version = "1.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9cd892299ca61b803e4048d437f7b46b6ff99851f742ac3084524f8540be1313"
+checksum = "6802ed0ecfaa0b996876aa53aa4a60b632672615e36875730448a32c337c60a6"
 dependencies = [
  "base64",
  "corsa_core",
@@ -305,13 +290,12 @@ dependencies = [
 
 [[package]]
 name = "corsa_core"
-version = "1.12.4"
+version = "1.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa72dc2a0abab3e50acfb9a09c77eca7c7bbd1ba513afd19e4ead44b78dc194e"
+checksum = "4eeeb06c2dd6362c03dd2af55c3f321ab126aa82552a2149a2400d83f8b25f5c"
 dependencies = [
  "base64",
- "bumpalo",
- "compact_str 0.10.0",
+ "compact_str",
  "memchr",
  "rustc-hash",
  "serde",
@@ -322,9 +306,9 @@ dependencies = [
 
 [[package]]
 name = "corsa_jsonrpc"
-version = "1.12.4"
+version = "1.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f20de8527be25e407c76a02d10bc1a8d8d2f07d702985f9efb5f0c3c62ec0f80"
+checksum = "0bccf76530df29150679711819ab037359ac4a73c5e659bbc5f36de9c385e72a"
 dependencies = [
  "corsa_core",
  "corsa_runtime",
@@ -336,14 +320,13 @@ dependencies = [
 
 [[package]]
 name = "corsa_lsp"
-version = "1.12.4"
+version = "1.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b245f4a1940f3e116bd50cdf25491bd099f20d899e9a7eea6eb5e8c7e8e765d1"
+checksum = "c29b42affe811a611edf26f4139a62e13ca45fa32db2a03ba5a67c766ecc6897"
 dependencies = [
  "corsa_core",
  "corsa_jsonrpc",
  "corsa_runtime",
- "log",
  "lsp-types",
  "parking_lot",
  "serde",
@@ -351,16 +334,15 @@ dependencies = [
 
 [[package]]
 name = "corsa_orchestrator"
-version = "1.12.4"
+version = "1.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "360419c5fbac25e249ef2f9330c3f751c24761845da3e689061daec0d955d4b2"
+checksum = "264c942f415c1492f85ff92a2ba501bb7f0e0d9ca47a68503b54ef2415cc9cc8"
 dependencies = [
  "corsa_client",
  "corsa_core",
  "corsa_lsp",
  "corsa_runtime",
  "log",
- "lsp-types",
  "parking_lot",
  "serde",
  "serde_json",
@@ -368,9 +350,9 @@ dependencies = [
 
 [[package]]
 name = "corsa_runtime"
-version = "1.12.4"
+version = "1.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1ce727cf6474d680d720db9eca53e2dc0618019b0b1802645b4abb82b9d81e6"
+checksum = "35bcb047a3255175e69a14cd495c779f6828e8fed916f2456c737d7e4ed5aafb"
 dependencies = [
  "smallvec",
 ]
@@ -454,7 +436,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "10a2a99df6e410a8ff4245aa2006499ea662245f967cc7c0a38c83ef8eb44dbf"
 dependencies = [
  "quote",
- "syn 2.0.119",
+ "syn 2.0.117",
 ]
 
 [[package]]
@@ -472,9 +454,9 @@ dependencies = [
 
 [[package]]
 name = "dashmap"
-version = "6.1.0"
+version = "6.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5041cc499144891f3790297212f32a74fb938e5136a14943f338ef9e0ae276cf"
+checksum = "e6361d5c062261c78a176addb82d4c821ae42bed6089de0e12603cd25de2059c"
 dependencies = [
  "cfg-if",
  "crossbeam-utils",
@@ -659,6 +641,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "glob"
+version = "0.3.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e4eba85ea1d0a966a983acd07deee566e67395d2d96b6fb39e62b5a833f1eb0b"
+
+[[package]]
 name = "grass"
 version = "0.13.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -744,6 +732,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "index_vec"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "44faf5bb8861a9c72e20d3fb0fdbd59233e43056e2b80475ab0aacdc2e781355"
+
+[[package]]
 name = "indexmap"
 version = "2.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -804,6 +798,16 @@ name = "json-escape-simd"
 version = "3.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c22a2041e3874a055a4eb03ea2395aaccdefa84ce75b31d542d72a741c3c6ad3"
+
+[[package]]
+name = "junction"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cde48f36530cbd91b65f050101e6c056d6eb743cea2a8f0f19beef69c6742ff8"
+dependencies = [
+ "scopeguard",
+ "windows-sys",
+]
 
 [[package]]
 name = "lasso"
@@ -1045,7 +1049,7 @@ checksum = "acc072d11d45ebe7801459b4e829184ba0934d68027fdc51d327335b53a95a49"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 2.0.117",
 ]
 
 [[package]]
@@ -1271,7 +1275,7 @@ version = "0.142.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "890589be8c87e7c0f7a1f0331a9b8d362ebcd3e543125815daa942fd550b0121"
 dependencies = [
- "compact_str 0.10.0",
+ "compact_str",
  "oxc-miette",
  "oxc_allocator",
  "oxc_ast_macros",
@@ -1285,7 +1289,7 @@ version = "0.142.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "91f2b9a92f74a8231f21fccfb4eef937d266a7323d9597ccdcd74c7ad0f951b1"
 dependencies = [
- "compact_str 0.10.0",
+ "compact_str",
  "hashbrown 0.17.1",
  "oxc_allocator",
  "oxc_estree",
@@ -1318,7 +1322,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e74da984fb38c22be1d251a73ade35359eab4400292f28e50cf7f1432f2b12b8"
 dependencies = [
  "base64",
- "compact_str 0.10.0",
+ "compact_str",
  "hmac-sha1-compact",
  "indexmap",
  "itoa",
@@ -1525,7 +1529,7 @@ dependencies = [
  "phf_shared 0.11.3",
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 2.0.117",
 ]
 
 [[package]]
@@ -1538,7 +1542,7 @@ dependencies = [
  "phf_shared 0.13.1",
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 2.0.117",
 ]
 
 [[package]]
@@ -1551,7 +1555,7 @@ dependencies = [
  "phf_shared 0.14.0",
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 2.0.117",
 ]
 
 [[package]]
@@ -1610,7 +1614,7 @@ checksum = "249ee2f18cfc814e6a1d36472f64eb79a85dcb279b95b4b5c92f5b3824c5e863"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 2.0.117",
 ]
 
 [[package]]
@@ -1642,9 +1646,9 @@ checksum = "925383efa346730478fb4838dbe9137d2a47675ad789c546d150a6e1dd4ab31c"
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.107"
+version = "1.0.106"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9"
+checksum = "8fd00f0bb2e90d81d1044c2b32617f68fcb9fa3bb7640c23e9c748e53fb30934"
 dependencies = [
  "unicode-ident",
 ]
@@ -1706,9 +1710,9 @@ checksum = "a1d01941d82fa2ab50be1e79e6714289dd7cde78eba4c074bc5a4374f650dfe0"
 
 [[package]]
 name = "quote"
-version = "1.0.47"
+version = "1.0.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001"
+checksum = "41f2619966050689382d2b44f664f4bc593e129785a36d6ee376ddf37259b924"
 dependencies = [
  "proc-macro2",
 ]
@@ -1968,7 +1972,7 @@ dependencies = [
  "inventory",
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 2.0.117",
 ]
 
 [[package]]
@@ -1997,12 +2001,6 @@ dependencies = [
  "tempfile",
  "wait-timeout",
 ]
-
-[[package]]
-name = "ryu"
-version = "1.0.23"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9774ba4a74de5f7b1c1451ed6cd5285a32eddb5cccb8cc655a4e50009e06477f"
 
 [[package]]
 name = "scopeguard"
@@ -2074,7 +2072,7 @@ checksum = "d540f220d3187173da220f885ab66608367b6574e925011a9353e4badda91d79"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 2.0.117",
 ]
 
 [[package]]
@@ -2220,9 +2218,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.119"
+version = "2.0.117"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "872831b642d1a07999a962a351ed35b955ea2cfc8f3862091e2a240a84f17297"
+checksum = "e665b8803e7b1d2a727f4023456bbbbe74da67099c585258af0ad9c5013b9b99"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2271,6 +2269,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "thin-vec"
+version = "0.2.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4568d7e143ec86d2021c338bae2afa88699e84b8e0af523626654fe6f03a1748"
+
+[[package]]
 name = "thiserror"
 version = "2.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2304,6 +2308,37 @@ name = "tinyvec_macros"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
+
+[[package]]
+name = "tracing"
+version = "0.1.44"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "63e71662fa4b2a2c3a26f570f037eb95bb1f85397f3cd8076caed2f026a6d100"
+dependencies = [
+ "pin-project-lite",
+ "tracing-attributes",
+ "tracing-core",
+]
+
+[[package]]
+name = "tracing-attributes"
+version = "0.1.31"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7490cfa5ec963746568740651ac6781f701c9c5ea257c58e057f3ba8cf69e8da"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
+name = "tracing-core"
+version = "0.1.36"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db97caf9d906fbde555dd62fa95ddba9eecfd14cb388e4f491a66d74cd5fb79a"
+dependencies = [
+ "once_cell",
+]
 
 [[package]]
 name = "typenum"
@@ -2365,15 +2400,17 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "vize_armature"
-version = "0.362.0"
+version = "0.429.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "183c92788103f64f4333e9fb1023d57bce590cfc78fccd448f9ba019c479b1d6"
+checksum = "02d15d4b3a3d1bd8c8ed4d15679955327e00c2cc2072a93e83fe6f5854d613a5"
 dependencies = [
- "compact_str 0.9.0",
+ "compact_str",
  "htmlize",
  "oxc_allocator",
+ "oxc_ast",
  "oxc_parser",
  "oxc_span",
+ "oxc_syntax",
  "serde",
  "thiserror",
  "vize_carton",
@@ -2382,11 +2419,11 @@ dependencies = [
 
 [[package]]
 name = "vize_atelier_core"
-version = "0.362.0"
+version = "0.429.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f842b0067c7640b7ce0b1f0ce3b69c9a705cc7fe29eccc0a015216bcab107580"
+checksum = "3387d944fbcc51950bbd0a4fda0b529c5db512fd3ad567b3cb961ca8b955cdd2"
 dependencies = [
- "compact_str 0.9.0",
+ "compact_str",
  "memoffset",
  "oxc_allocator",
  "oxc_ast",
@@ -2409,9 +2446,9 @@ dependencies = [
 
 [[package]]
 name = "vize_atelier_dom"
-version = "0.362.0"
+version = "0.429.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e0323879d71f35723dbaa03192e53d10f282b8618a82e73b57161dab7f51d93"
+checksum = "f6cfeb8fe2f25d6ca4f65ba0453f47b3321ac4cc37a4bd9b64b8ebab093d561b"
 dependencies = [
  "phf 0.13.1",
  "serde",
@@ -2419,13 +2456,14 @@ dependencies = [
  "vize_atelier_core",
  "vize_carton",
  "vize_croquis",
+ "vize_l1_to_l2",
 ]
 
 [[package]]
 name = "vize_atelier_jsx"
-version = "0.362.0"
+version = "0.429.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59c328b6f3ac659496a217d9b029afd3601b9ac2d9eb0cb4e3492a8cd78e3e95"
+checksum = "09c2b3da510985a4e206a7528aa05fc8b9dd648b13150cf1348e57c1b2720e7d"
 dependencies = [
  "oxc_allocator",
  "oxc_ast",
@@ -2433,6 +2471,7 @@ dependencies = [
  "oxc_diagnostics",
  "oxc_parser",
  "oxc_semantic",
+ "oxc_sourcemap",
  "oxc_span",
  "oxc_syntax",
  "vize_atelier_core",
@@ -2441,14 +2480,17 @@ dependencies = [
  "vize_atelier_vapor",
  "vize_carton",
  "vize_croquis",
+ "vize_davinci",
+ "vize_l1_to_l2",
+ "vize_l2",
  "vize_relief",
 ]
 
 [[package]]
 name = "vize_atelier_sfc"
-version = "0.362.0"
+version = "0.429.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "00ce6adccf8c043a2e7b933a69040304c83d746d613b67a72d6f959ef57c739d"
+checksum = "60bdf307caf21ad368c7960a14cdb647638a35a388b701793891ea3e17d40756"
 dependencies = [
  "lightningcss",
  "memchr",
@@ -2458,6 +2500,7 @@ dependencies = [
  "oxc_codegen",
  "oxc_parser",
  "oxc_semantic",
+ "oxc_sourcemap",
  "oxc_span",
  "oxc_syntax",
  "oxc_transformer",
@@ -2473,27 +2516,34 @@ dependencies = [
  "vize_atelier_vapor",
  "vize_carton",
  "vize_croquis",
+ "vize_l1_to_l2",
 ]
 
 [[package]]
 name = "vize_atelier_ssr"
-version = "0.362.0"
+version = "0.429.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09d11b17fe3a1a4478842d0e9d3307140cd35798b33dff103118b5b0379915ac"
+checksum = "83a2d09ae5dfca4b4aecc5b3ffeb2bd7af83d90ccd3ae534b8a092514af0005f"
 dependencies = [
  "serde",
  "vize_armature",
  "vize_atelier_core",
  "vize_carton",
  "vize_croquis",
+ "vize_davinci",
+ "vize_impeto",
+ "vize_l1",
+ "vize_l1_to_l2",
+ "vize_l2",
+ "vize_l2_to_l3",
  "vize_relief",
 ]
 
 [[package]]
 name = "vize_atelier_vapor"
-version = "0.362.0"
+version = "0.429.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e02bea3cd5308c82f60ba17069ce8d131c5b8d4cad6208fe81c78c763872102"
+checksum = "6800135436ad872963e3219793f3392bfb288cd7088da7fc4eeac81a2659e524"
 dependencies = [
  "oxc_allocator",
  "oxc_ast",
@@ -2506,16 +2556,56 @@ dependencies = [
  "vize_atelier_core",
  "vize_carton",
  "vize_croquis",
+ "vize_impeto",
+ "vize_l1",
+ "vize_l1_to_l2",
+ "vize_l2",
+ "vize_l2_to_l3",
+]
+
+[[package]]
+name = "vize_canon"
+version = "0.429.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bec1ccdb32f7d0dd68835c2994098850069f397c8f568b48b88e4567f3c85625"
+dependencies = [
+ "dashmap 6.2.1",
+ "glob",
+ "junction",
+ "libc",
+ "oxc_allocator",
+ "oxc_ast",
+ "oxc_ast_visit",
+ "oxc_diagnostics",
+ "oxc_parser",
+ "oxc_semantic",
+ "oxc_span",
+ "oxc_syntax",
+ "rayon",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror",
+ "tracing",
+ "vize_armature",
+ "vize_atelier_core",
+ "vize_atelier_jsx",
+ "vize_atelier_sfc",
+ "vize_carton",
+ "vize_croquis",
+ "vize_davinci",
+ "vize_relief",
 ]
 
 [[package]]
 name = "vize_carton"
-version = "0.362.0"
+version = "0.429.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2fc583674b02709a4e2efd398551fd30781a8bf3e83e18052d173b4acba64abe"
+checksum = "b6aa358d0d76c8953d849f159e8bcd330e341cfe3f712183ca861cf967007f46"
 dependencies = [
  "bitflags 2.13.1",
- "compact_str 0.9.0",
+ "compact_str",
+ "memchr",
  "once_cell",
  "oxc_allocator",
  "oxc_syntax",
@@ -2524,6 +2614,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "serde_json",
+ "simdutf8",
  "smallvec",
  "stacker",
  "which",
@@ -2532,16 +2623,19 @@ dependencies = [
 
 [[package]]
 name = "vize_croquis"
-version = "0.362.0"
+version = "0.429.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07ddd04c0b2c7e1deea2743db995cdb7b46865e7431c0d2f8be36df95a23fdab"
+checksum = "2ceb9b937b49a2adea28b696d6957361cb50208675986d4fe8ace43946325a34"
 dependencies = [
- "dashmap 6.1.0",
+ "dashmap 6.2.1",
+ "index_vec",
+ "memchr",
  "once_cell",
  "oxc_allocator",
  "oxc_ast",
  "oxc_ast_visit",
  "oxc_parser",
+ "oxc_semantic",
  "oxc_span",
  "oxc_syntax",
  "phf 0.13.1",
@@ -2549,8 +2643,34 @@ dependencies = [
  "rustc-hash",
  "serde",
  "serde_json",
+ "thin-vec",
+ "vize_armature",
  "vize_carton",
+ "vize_davinci",
+ "vize_impeto",
  "vize_relief",
+]
+
+[[package]]
+name = "vize_davinci"
+version = "0.429.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1edc9c9c5f21d63be35f8c2e85668079fa975ee29dd027d84d947cf98dfd6f29"
+dependencies = [
+ "unicode-width",
+ "vize_carton",
+ "vize_davinci_derive",
+]
+
+[[package]]
+name = "vize_davinci_derive"
+version = "0.429.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e874f36b3fafdc8d2a048d221b800bd2d15af127a7718dd0d21e8f54a1a8aba2"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
 ]
 
 [[package]]
@@ -2577,10 +2697,81 @@ dependencies = [
 ]
 
 [[package]]
-name = "vize_patina"
-version = "0.362.0"
+name = "vize_impeto"
+version = "0.429.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f55f7bfc2f046fcab155511e6f2b4593c9388e0af20af510f810f6c1a40f110"
+checksum = "f985c0b92f113107476734a5e8a40ca9f9860249cc84cceee1f6e1c89b1a2a66"
+dependencies = [
+ "serde_json",
+ "vize_carton",
+ "vize_davinci",
+]
+
+[[package]]
+name = "vize_l1"
+version = "0.429.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e0a204f1aa630af7cf84304051a398b5274a0deb52692b87cf05e5703dc1c4e7"
+dependencies = [
+ "vize_armature",
+ "vize_carton",
+ "vize_relief",
+]
+
+[[package]]
+name = "vize_l1_to_l2"
+version = "0.429.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "796f3eaf7325ef6d07b1407813b3626934616deea4570dfe1598577c60abafe7"
+dependencies = [
+ "htmlize",
+ "oxc_ast",
+ "oxc_ast_visit",
+ "oxc_codegen",
+ "oxc_parser",
+ "oxc_semantic",
+ "oxc_span",
+ "oxc_syntax",
+ "oxc_transformer",
+ "smallvec",
+ "vize_carton",
+ "vize_davinci",
+ "vize_impeto",
+ "vize_l1",
+ "vize_l2",
+ "vize_relief",
+]
+
+[[package]]
+name = "vize_l2"
+version = "0.429.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c927e945389b108a0911636c960afac3305ffb0d918d1e97a6f0913fdffa2c50"
+dependencies = [
+ "oxc_ast",
+ "oxc_parser",
+ "oxc_span",
+ "vize_carton",
+ "vize_davinci",
+]
+
+[[package]]
+name = "vize_l2_to_l3"
+version = "0.429.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "409daaf118ed7be331e58082ddacf2fc66968d4fa26feed2474147e669a42004"
+dependencies = [
+ "vize_carton",
+ "vize_davinci",
+ "vize_impeto",
+ "vize_l2",
+]
+
+[[package]]
+name = "vize_patina"
+version = "0.429.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a12543eba6a7acc53abf079984ff8297c21e5486ea8b7dce46eec0d367c1d5d"
 dependencies = [
  "corsa",
  "libc",
@@ -2600,21 +2791,29 @@ dependencies = [
  "vize_armature",
  "vize_atelier_jsx",
  "vize_atelier_sfc",
+ "vize_canon",
  "vize_carton",
  "vize_croquis",
+ "vize_davinci",
+ "vize_l1",
+ "vize_l1_to_l2",
+ "vize_l2",
  "vize_relief",
 ]
 
 [[package]]
 name = "vize_relief"
-version = "0.362.0"
+version = "0.429.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "20503bb49c0474fb804b078ee6389886f85d7bb31a84437b7fe100e3003b2d3b"
+checksum = "117af1d4984727e6b0d8a0a4b641f5c1b80c476e3d46253060854aa1946113d3"
 dependencies = [
  "oxc_ast",
+ "oxc_ast_visit",
+ "oxc_syntax",
  "serde",
  "thiserror",
  "vize_carton",
+ "vize_davinci",
 ]
 
 [[package]]
@@ -2685,7 +2884,7 @@ dependencies = [
  "bumpalo",
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 2.0.117",
  "wasm-bindgen-shared",
 ]
 
@@ -2760,7 +2959,7 @@ checksum = "f2ab42fc20575779bd240faa45f94a74256f755c0fa9e89f0ede20d91d0cdfc1"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 2.0.117",
 ]
 
 [[package]]

@@ -4,7 +4,7 @@ use vize_atelier_vapor::ir::*;
 use crate::atoms;
 use crate::html_inject::{
     build_elem_to_tag, inject_attr, inject_before_close, parse_tag_tree,
-    replace_first_space_in_content, replace_range, TagEntry,
+    replace_first_space_in_content, replace_range, replace_text_in_content, TagEntry,
 };
 use crate::ir_encoding::{encode_ir_prop, encode_simple_expr};
 use crate::term_encoding::nil_term;
@@ -99,6 +99,8 @@ fn encode_slot_component<'a>(env: Env<'a>, node: &CreateComponentIRNode) -> Term
         ComponentKind::Teleport => atoms::teleport(),
         ComponentKind::KeepAlive => atoms::keep_alive(),
         ComponentKind::Suspense => atoms::suspense(),
+        ComponentKind::Transition => atoms::transition(),
+        ComponentKind::TransitionGroup => atoms::transition_group(),
         ComponentKind::Dynamic => atoms::dynamic(),
     };
 
@@ -116,6 +118,39 @@ const SLOT_MARKER_SUFFIX: char = '\0';
 struct SlotMarker<'a> {
     term: Option<Term<'a>>,
     source_offset: u32,
+}
+
+/// The text node Vapor bakes into its template for a `setText` target: static
+/// parts HTML-escaped and a single space in place of each dynamic value.
+fn text_node_template<'b>(
+    values: impl IntoIterator<Item = &'b vize_atelier_core::SimpleExpressionNode<'b>>,
+) -> String {
+    let mut text = String::new();
+    for value in values {
+        if !value.is_static {
+            text.push(' ');
+            continue;
+        }
+        for ch in value.content.chars() {
+            match ch {
+                '&' => text.push_str("&amp;"),
+                '<' => text.push_str("&lt;"),
+                '>' => text.push_str("&gt;"),
+                '"' => text.push_str("&quot;"),
+                '\'' => text.push_str("&#39;"),
+                _ => text.push(ch),
+            }
+        }
+    }
+    text
+}
+
+/// Only a `Node` anchor points at a `<!---->` placeholder; `Index` appends.
+fn placeholder_anchor(anchor: Option<InsertionAnchor>) -> Option<usize> {
+    match anchor {
+        Some(InsertionAnchor::Node(id)) => Some(id),
+        Some(InsertionAnchor::Index(_)) | None => None,
+    }
 }
 
 fn slot_marker(index: usize) -> String {
@@ -189,10 +224,14 @@ fn align_tag_source_offsets(
     rendered_tags
         .iter()
         .map(|rendered| {
+            if rendered.is_anchor() {
+                return None;
+            }
             let match_pos = source_tags[cursor..]
                 .iter()
                 .position(|source_tag| {
                     !excluded.contains(&source_tag.pos)
+                        && !source_tag.is_anchor()
                         && source_tag.tag.eq_ignore_ascii_case(&rendered.tag)
                 })
                 .map(|relative| cursor + relative);
@@ -218,7 +257,13 @@ fn inject_structural_marker(
     let (tag_source_offsets, source_offset) = source_position;
     if let Some(anchor_pos) = anchor.and_then(|id| elem_to_tag.get(&id)).copied() {
         if let Some(entry) = tags.get(anchor_pos) {
-            replace_range(html, tags, entry.open_start, 0, marker);
+            // The marker takes the place of Vapor's own anchor comment.
+            let anchor_len = if entry.is_anchor() {
+                entry.open_end - entry.open_start
+            } else {
+                0
+            };
+            replace_range(html, tags, entry.open_start, anchor_len, marker);
             return;
         }
     }
@@ -447,7 +492,10 @@ pub(crate) fn process_block<'a, 'b>(
                 .map(|value| value.loc.span.start)
                 .unwrap_or(u32::MAX);
             let marker = push_slot_marker(&mut slots, slot, source_offset);
-            replace_first_space_in_content(&mut html, &mut tags, tag_pos, &marker);
+            let template_text = text_node_template(text.values.iter().map(|value| &**value));
+            if !replace_text_in_content(&mut html, &mut tags, tag_pos, &template_text, &marker) {
+                replace_first_space_in_content(&mut html, &mut tags, tag_pos, &marker);
+            }
         }
     }
 
@@ -469,7 +517,7 @@ pub(crate) fn process_block<'a, 'b>(
                     &mut html,
                     &mut tags,
                     &elem_to_tag,
-                    (if_node.parent, if_node.anchor),
+                    (if_node.parent, placeholder_anchor(if_node.anchor)),
                     &marker,
                     (&tag_source_offsets, source_offset),
                     &slots,
@@ -483,7 +531,7 @@ pub(crate) fn process_block<'a, 'b>(
                     &mut html,
                     &mut tags,
                     &elem_to_tag,
-                    (for_node.parent, for_node.anchor),
+                    (for_node.parent, placeholder_anchor(for_node.anchor)),
                     &marker,
                     (&tag_source_offsets, source_offset),
                     &slots,
@@ -503,7 +551,7 @@ pub(crate) fn process_block<'a, 'b>(
                     &mut html,
                     &mut tags,
                     &elem_to_tag,
-                    (component.parent, component.anchor),
+                    (component.parent, placeholder_anchor(component.anchor)),
                     &marker,
                     (&tag_source_offsets, source_offset),
                     &slots,

@@ -9,6 +9,16 @@ pub(crate) struct TagEntry {
     pub(crate) close_start: Option<usize>,
 }
 
+/// Empty comment Vapor templates use as the anchor for a structural node.
+pub(crate) const VAPOR_ANCHOR: &str = "<!---->";
+const VAPOR_ANCHOR_TAG: &str = "!--";
+
+impl TagEntry {
+    pub(crate) fn is_anchor(&self) -> bool {
+        self.tag == VAPOR_ANCHOR_TAG
+    }
+}
+
 fn is_void_element(tag: &str) -> bool {
     matches!(
         tag,
@@ -51,6 +61,13 @@ fn skip_declaration(bytes: &[u8], i: &mut usize) {
     }
 }
 
+fn sibling_count(entries: &[TagEntry], parent: Option<usize>) -> usize {
+    entries
+        .iter()
+        .filter(|entry| entry.parent == parent)
+        .count()
+}
+
 pub(crate) fn parse_tag_tree(html: &str) -> Vec<TagEntry> {
     let bytes = html.as_bytes();
     let len = bytes.len();
@@ -61,6 +78,24 @@ pub(crate) fn parse_tag_tree(html: &str) -> Vec<TagEntry> {
     while i < len {
         if bytes[i] != b'<' {
             i += 1;
+            continue;
+        }
+
+        if html[i..].starts_with(VAPOR_ANCHOR) {
+            // Anchors are DOM nodes at runtime, so child/next offsets count them.
+            let parent = stack.last().copied();
+            let child_index = sibling_count(&entries, parent);
+            let pos = entries.len();
+            entries.push(TagEntry {
+                tag: VAPOR_ANCHOR_TAG.to_string(),
+                pos,
+                parent,
+                child_index,
+                open_start: i,
+                open_end: i + VAPOR_ANCHOR.len(),
+                close_start: None,
+            });
+            i += VAPOR_ANCHOR.len();
             continue;
         }
 
@@ -124,17 +159,7 @@ pub(crate) fn parse_tag_tree(html: &str) -> Vec<TagEntry> {
         let open_end = i;
 
         let parent = stack.last().copied();
-        let child_index = if let Some(parent_pos) = parent {
-            entries
-                .iter()
-                .filter(|entry| entry.parent == Some(parent_pos))
-                .count()
-        } else {
-            entries
-                .iter()
-                .filter(|entry| entry.parent.is_none())
-                .count()
-        };
+        let child_index = sibling_count(&entries, parent);
 
         let pos = entries.len();
         entries.push(TagEntry {
@@ -251,6 +276,37 @@ pub(crate) fn replace_range(
             shift_offset(close_start, replaced_end, delta);
         }
     }
+}
+
+/// Replaces the first occurrence of `text` inside the element's content.
+pub(crate) fn replace_text_in_content(
+    html: &mut String,
+    tags: &mut [TagEntry],
+    tag_pos: usize,
+    text: &str,
+    replacement: &str,
+) -> bool {
+    let Some(entry) = tags.get(tag_pos) else {
+        return false;
+    };
+    if text.is_empty() {
+        return false;
+    }
+
+    let content_start = entry.open_end;
+    let content_end = entry.close_start.unwrap_or(content_start);
+    let Some(relative_pos) = html[content_start..content_end].find(text) else {
+        return false;
+    };
+
+    replace_range(
+        html,
+        tags,
+        content_start + relative_pos,
+        text.len(),
+        replacement,
+    );
+    true
 }
 
 pub(crate) fn replace_first_space_in_content(
