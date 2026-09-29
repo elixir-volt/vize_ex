@@ -13,6 +13,7 @@ rustler = { version = "0.38", default-features = false, features = ["derive", "n
 rustler_match_spec = { version = "0.1", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+html-escape = "0.2"
 lightningcss = { version = "=1.0.0-alpha.72", features = ["visitor"] }
 grass = { version = "0.13.4", default-features = false }
 

@@ -130,4 +130,30 @@ defmodule Vize.VaporSplitTest do
     assert Enum.map(split.slots, & &1.kind) == [:if_node, :if_node, :set_prop, :set_text]
     assert split.statics == ["<div>", "", "<i id=\"", "\">", "</i></div>"]
   end
+
+  test "matches text nodes by decoded content, not by a substring" do
+    {:ok, split} = Vize.vapor_split("<div>static <b>x</b> hi {{ a }}</div>")
+    assert split.statics == ["<div>static <b>x</b>", "</div>"]
+
+    {:ok, split} = Vize.vapor_split("<div>x {{ a }}<b>x </b>x {{ c }}</div>")
+    assert split.statics == ["<div>", "<b>x </b>", "</div>"]
+  end
+
+  # https://github.com/elixir-volt/vize_ex/issues/3
+  test "orders slots by document position across nesting and structural nodes" do
+    {:ok, split} = Vize.vapor_split(~s(<a :class="l1"><b :class="l2"><c :class="l3"></c></b></a>))
+    assert Enum.map(split.slots, & &1.values) == [["l1"], ["l2"], ["l3"]]
+
+    {:ok, split} = Vize.vapor_split(~s(<div><b v-if="on">Y</b><span>{{ label }}</span></div>))
+    assert Enum.map(split.slots, & &1.kind) == [:if_node, :set_text]
+    assert split.statics == ["<div>", "<span>", "</span></div>"]
+
+    {:ok, split} =
+      Vize.vapor_split(
+        ~s(<div><section><b v-if="on">Y</b></section><span>{{ label }}</span></div>)
+      )
+
+    assert Enum.map(split.slots, & &1.kind) == [:if_node, :set_text]
+    assert split.statics == ["<div><section>", "</section><span>", "</span></div>"]
+  end
 end

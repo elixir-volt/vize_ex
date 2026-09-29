@@ -278,8 +278,17 @@ pub(crate) fn replace_range(
     }
 }
 
-/// Replaces the first occurrence of `text` inside the element's content.
-pub(crate) fn replace_text_in_content(
+/// End offset of a node, past its closing tag when it has one.
+fn node_end(html: &str, entry: &TagEntry) -> usize {
+    entry
+        .close_start
+        .and_then(|close| html[close..].find('>').map(|gt| close + gt + 1))
+        .unwrap_or(entry.open_end)
+}
+
+/// Replaces the direct text node of an element whose decoded content equals
+/// `text`. Text nodes are the runs between the element's child nodes.
+pub(crate) fn replace_text_node(
     html: &mut String,
     tags: &mut [TagEntry],
     tag_pos: usize,
@@ -289,23 +298,27 @@ pub(crate) fn replace_text_in_content(
     let Some(entry) = tags.get(tag_pos) else {
         return false;
     };
-    if text.is_empty() {
-        return false;
-    }
+    let content_end = entry.close_start.unwrap_or(entry.open_end);
 
-    let content_start = entry.open_end;
-    let content_end = entry.close_start.unwrap_or(content_start);
-    let Some(relative_pos) = html[content_start..content_end].find(text) else {
+    let mut run_start = entry.open_end;
+    let mut boundaries: Vec<(usize, usize)> = tags
+        .iter()
+        .filter(|child| child.parent == Some(tag_pos))
+        .map(|child| (child.open_start, node_end(html, child)))
+        .collect();
+    boundaries.push((content_end, content_end));
+
+    let target = boundaries.into_iter().find_map(|(child_start, child_end)| {
+        let run = (run_start, child_start);
+        run_start = child_end;
+        let content = &html[run.0..run.1];
+        (!content.is_empty() && html_escape::decode_html_entities(content) == text).then_some(run)
+    });
+
+    let Some((start, end)) = target else {
         return false;
     };
-
-    replace_range(
-        html,
-        tags,
-        content_start + relative_pos,
-        text.len(),
-        replacement,
-    );
+    replace_range(html, tags, start, end - start, replacement);
     true
 }
 

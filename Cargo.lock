@@ -710,6 +710,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b0b3ba31f6dc772cc8221ce81dbbbd64fa1e668255a6737d95eeace59b5a8823"
 
 [[package]]
+name = "html-escape"
+version = "0.2.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c9356095b4b41197bba32173600e1582792cda618f65d12f68e2e77d273413c5"
+
+[[package]]
 name = "htmlize"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2678,6 +2684,7 @@ name = "vize_ex_nif"
 version = "0.1.0"
 dependencies = [
  "grass",
+ "html-escape",
  "lightningcss",
  "proptest",
  "rustler",

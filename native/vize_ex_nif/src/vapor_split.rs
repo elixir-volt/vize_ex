@@ -4,7 +4,7 @@ use vize_atelier_vapor::ir::*;
 use crate::atoms;
 use crate::html_inject::{
     build_elem_to_tag, inject_attr, inject_before_close, parse_tag_tree,
-    replace_first_space_in_content, replace_range, replace_text_in_content, TagEntry,
+    replace_first_space_in_content, replace_range, replace_text_node, TagEntry,
 };
 use crate::ir_encoding::{encode_ir_prop, encode_simple_expr};
 use crate::term_encoding::nil_term;
@@ -121,28 +121,14 @@ struct SlotMarker<'a> {
 }
 
 /// The text node Vapor bakes into its template for a `setText` target: static
-/// parts HTML-escaped and a single space in place of each dynamic value.
+/// parts verbatim and a single space in place of each dynamic value.
 fn text_node_template<'b>(
     values: impl IntoIterator<Item = &'b vize_atelier_core::SimpleExpressionNode<'b>>,
 ) -> String {
-    let mut text = String::new();
-    for value in values {
-        if !value.is_static {
-            text.push(' ');
-            continue;
-        }
-        for ch in value.content.chars() {
-            match ch {
-                '&' => text.push_str("&amp;"),
-                '<' => text.push_str("&lt;"),
-                '>' => text.push_str("&gt;"),
-                '"' => text.push_str("&quot;"),
-                '\'' => text.push_str("&#39;"),
-                _ => text.push(ch),
-            }
-        }
-    }
-    text
+    values
+        .into_iter()
+        .map(|value| if value.is_static { value.content } else { " " })
+        .collect()
 }
 
 /// Only a `Node` anchor points at a `<!---->` placeholder; `Index` appends.
@@ -493,7 +479,7 @@ pub(crate) fn process_block<'a, 'b>(
                 .unwrap_or(u32::MAX);
             let marker = push_slot_marker(&mut slots, slot, source_offset);
             let template_text = text_node_template(text.values.iter().map(|value| &**value));
-            if !replace_text_in_content(&mut html, &mut tags, tag_pos, &template_text, &marker) {
+            if !replace_text_node(&mut html, &mut tags, tag_pos, &template_text, &marker) {
                 replace_first_space_in_content(&mut html, &mut tags, tag_pos, &marker);
             }
         }
