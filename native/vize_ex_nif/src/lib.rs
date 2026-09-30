@@ -21,7 +21,7 @@ use vize_atelier_sfc::{
 use vize_atelier_sfc::{collect_template_asset_urls, generate_bundler_scope_id, TemplateAssetUrl};
 use vize_atelier_ssr::compile_ssr;
 use vize_atelier_vapor::{
-    compile_vapor, compile_vapor_with_template_syntax_and_diagnostics, ir::*, transform_to_ir,
+    compile_vapor, compile_vapor_with_template_syntax_and_diagnostics, transform_to_ir,
     VaporCompilerOptions,
 };
 use vize_carton::{line_index::LineIndex, Allocator};
@@ -30,12 +30,21 @@ use vize_carton::{line_index::LineIndex, Allocator};
 mod macros;
 mod html_inject;
 mod ir_encoding;
+
+mod ir_encoders {
+    use rustler::Encoder;
+    use vize_atelier_vapor::ir::*;
+
+    use crate::atoms;
+    use crate::ir_encoding::{
+        encode_directive_expression, encode_insertion_anchor, encode_simple_expr,
+    };
+
+    include!("generated_ir_encoders.rs");
+}
 mod term_encoding;
 mod vapor_split;
 
-use crate::ir_encoding::{
-    encode_insertion_anchor, encode_ir_prop, encode_merged_props_source, encode_simple_expr,
-};
 use crate::term_encoding::{
     decode_json_value, error_term, nil_term, ok_term, EncodedBundleCssResult,
     EncodedCompileSfcResult, EncodedCssAstResult, EncodedCssCompileResult, EncodedLintDiagnostic,
@@ -521,265 +530,6 @@ fn compile_vapor_nif_impl<'a>(
 
 // ── Vapor IR ──
 
-fn encode_operation<'a>(env: Env<'a>, op: &OperationNode) -> Term<'a> {
-    match op {
-        OperationNode::SetProp(node) => {
-            let prop = encode_ir_prop(env, &node.prop);
-            term_map!(env, {
-                atoms::kind() => atoms::set_prop(),
-                atoms::element() => node.element,
-                atoms::tag() => node.tag,
-                atoms::camel() => node.camel,
-                atoms::prop_modifier() => node.prop_modifier,
-                atoms::value() => prop,
-            })
-        }
-        OperationNode::SetDynamicProps(node) => {
-            let props: Vec<Term<'a>> = node
-                .props
-                .iter()
-                .map(|prop| encode_simple_expr(env, prop))
-                .collect();
-            term_map!(env, {
-                atoms::kind() => atoms::set_dynamic_props(),
-                atoms::element() => node.element,
-                atoms::props() => props,
-            })
-        }
-        OperationNode::SetMergedProps(node) => {
-            let sources: Vec<Term<'a>> = node
-                .sources
-                .iter()
-                .map(|source| encode_merged_props_source(env, source))
-                .collect();
-            term_map!(env, {
-                atoms::kind() => atoms::set_merged_props(),
-                atoms::element() => node.element,
-                atoms::sources() => sources,
-            })
-        }
-        OperationNode::SetText(node) => {
-            let values: Vec<Term<'a>> = node
-                .values
-                .iter()
-                .map(|value| encode_simple_expr(env, value))
-                .collect();
-            term_map!(env, {
-                atoms::kind() => atoms::set_text(),
-                atoms::element() => node.element,
-                atoms::values() => values,
-            })
-        }
-        OperationNode::SetEvent(node) => term_map!(env, {
-            atoms::kind() => atoms::set_event(),
-            atoms::element() => node.element,
-            atoms::key() => encode_simple_expr(env, &node.key),
-            atoms::value() => node
-                .value
-                .as_ref()
-                .map(|value| encode_simple_expr(env, value))
-                .unwrap_or_else(|| nil_term(env)),
-            atoms::delegate() => node.delegate,
-            atoms::effect() => node.effect,
-        }),
-        OperationNode::SetHtml(node) => term_map!(env, {
-            atoms::kind() => atoms::set_html(),
-            atoms::element() => node.element,
-            atoms::value() => encode_simple_expr(env, &node.value),
-        }),
-        OperationNode::SetTemplateRef(node) => term_map!(env, {
-            atoms::kind() => atoms::set_template_ref(),
-            atoms::element() => node.element,
-            atoms::value() => encode_simple_expr(env, &node.value),
-        }),
-        OperationNode::InsertNode(node) => {
-            let elements: Vec<usize> = node.elements.iter().copied().collect();
-            term_map!(env, {
-                atoms::kind() => atoms::insert_node(),
-                atoms::element() => elements,
-                atoms::parent() => node.parent,
-                atoms::anchor() => node.anchor,
-            })
-        }
-        OperationNode::PrependNode(node) => {
-            let elements: Vec<usize> = node.elements.iter().copied().collect();
-            term_map!(env, {
-                atoms::kind() => atoms::prepend_node(),
-                atoms::element() => elements,
-                atoms::parent() => node.parent,
-            })
-        }
-        OperationNode::If(if_node) => encode_if_node(env, if_node),
-        OperationNode::For(for_node) => encode_for_node(env, for_node),
-        OperationNode::CreateComponent(node) => {
-            let props: Vec<Term<'a>> = node
-                .props
-                .iter()
-                .map(|prop| encode_ir_prop(env, prop))
-                .collect();
-            let kind_atom = match node.kind {
-                ComponentKind::Regular => atoms::regular(),
-                ComponentKind::Teleport => atoms::teleport(),
-                ComponentKind::KeepAlive => atoms::keep_alive(),
-                ComponentKind::Suspense => atoms::suspense(),
-                ComponentKind::Transition => atoms::transition(),
-                ComponentKind::TransitionGroup => atoms::transition_group(),
-                ComponentKind::Dynamic => atoms::dynamic(),
-            };
-            term_map!(env, {
-                atoms::kind() => atoms::create_component(),
-                atoms::tag() => node.tag,
-                atoms::props() => props,
-                atoms::asset() => node.asset,
-                atoms::once() => node.once,
-                atoms::dynamic_slots() => node.dynamic_slots,
-                atoms::parent() => node.parent,
-                atoms::anchor() => encode_insertion_anchor(env, node.anchor),
-                atoms::value() => kind_atom,
-            })
-        }
-        OperationNode::SlotOutlet(node) => term_map!(env, {
-            atoms::kind() => atoms::slot_outlet(),
-            atoms::name() => encode_simple_expr(env, &node.name),
-            atoms::props() => node
-                .props
-                .iter()
-                .map(|prop| encode_ir_prop(env, prop))
-                .collect::<Vec<_>>(),
-        }),
-        OperationNode::Directive(node) => {
-            let exp = node
-                .dir
-                .exp
-                .as_ref()
-                .map(|expr| match expr {
-                    vize_atelier_core::ExpressionNode::Simple(simple) => {
-                        encode_simple_expr(env, simple)
-                    }
-                    vize_atelier_core::ExpressionNode::Compound(compound) => {
-                        let content: std::string::String = compound
-                            .children
-                            .iter()
-                            .map(|child| match child {
-                                vize_atelier_core::CompoundExpressionChild::Simple(simple) => {
-                                    simple.content.to_string()
-                                }
-                                vize_atelier_core::CompoundExpressionChild::String(string) => {
-                                    string.to_string()
-                                }
-                                _ => std::string::String::new(),
-                            })
-                            .collect();
-                        content.as_str().encode(env)
-                    }
-                })
-                .unwrap_or_else(|| nil_term(env));
-
-            term_map!(env, {
-                atoms::kind() => atoms::directive(),
-                atoms::element() => node.element,
-                atoms::name() => node.name,
-                atoms::tag() => node.tag,
-                atoms::value() => exp,
-            })
-        }
-        OperationNode::GetTextChild(node) => term_map!(env, {
-            atoms::kind() => atoms::get_text_child(),
-            atoms::parent() => node.parent,
-        }),
-        OperationNode::ChildRef(node) => term_map!(env, {
-            atoms::kind() => atoms::child_ref(),
-            atoms::child_id() => node.child_id,
-            atoms::parent_id() => node.parent_id,
-            atoms::offset() => node.offset,
-        }),
-        OperationNode::NextRef(node) => term_map!(env, {
-            atoms::kind() => atoms::next_ref(),
-            atoms::child_id() => node.child_id,
-            atoms::parent_id() => node.prev_id,
-            atoms::offset() => node.offset,
-        }),
-    }
-}
-
-fn encode_block<'a>(env: Env<'a>, block: &BlockIRNode) -> Term<'a> {
-    let operations: Vec<Term<'a>> = block
-        .operation
-        .iter()
-        .map(|operation| encode_operation(env, operation))
-        .collect();
-
-    let effects: Vec<Term<'a>> = block
-        .effect
-        .iter()
-        .map(|effect| {
-            effect
-                .operations
-                .iter()
-                .map(|operation| encode_operation(env, operation))
-                .collect::<Vec<_>>()
-                .encode(env)
-        })
-        .collect();
-
-    let returns: Vec<usize> = block.returns.iter().copied().collect();
-
-    term_map!(env, {
-        atoms::operations() => operations,
-        atoms::effects() => effects,
-        atoms::returns() => returns,
-    })
-}
-
-fn encode_if_node<'a>(env: Env<'a>, if_node: &IfIRNode) -> Term<'a> {
-    let negative = match &if_node.negative {
-        Some(NegativeBranch::Block(block)) => encode_block(env, block),
-        Some(NegativeBranch::If(nested)) => encode_if_node(env, nested),
-        None => nil_term(env),
-    };
-
-    term_map!(env, {
-        atoms::kind() => atoms::if_node(),
-        atoms::condition() => encode_simple_expr(env, &if_node.condition),
-        atoms::positive() => encode_block(env, &if_node.positive),
-        atoms::negative() => negative,
-        atoms::once() => if_node.once,
-        atoms::parent() => if_node.parent,
-        atoms::anchor() => encode_insertion_anchor(env, if_node.anchor),
-    })
-}
-
-fn encode_for_node<'a>(env: Env<'a>, for_node: &ForIRNode) -> Term<'a> {
-    term_map!(env, {
-        atoms::kind() => atoms::for_node(),
-        atoms::source() => encode_simple_expr(env, &for_node.source),
-        atoms::value() => for_node
-            .value
-            .as_ref()
-            .map(|value| encode_simple_expr(env, value))
-            .unwrap_or_else(|| nil_term(env)),
-        atoms::key() => for_node
-            .key
-            .as_ref()
-            .map(|key| encode_simple_expr(env, key))
-            .unwrap_or_else(|| nil_term(env)),
-        atoms::index() => for_node
-            .index
-            .as_ref()
-            .map(|index| encode_simple_expr(env, index))
-            .unwrap_or_else(|| nil_term(env)),
-        atoms::key_prop() => for_node
-            .key_prop
-            .as_ref()
-            .map(|key_prop| encode_simple_expr(env, key_prop))
-            .unwrap_or_else(|| nil_term(env)),
-        atoms::render() => encode_block(env, &for_node.render),
-        atoms::once() => for_node.once,
-        atoms::parent() => for_node.parent,
-        atoms::anchor() => encode_insertion_anchor(env, for_node.anchor),
-    })
-}
-
 fn vapor_ir_nif_impl<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
     let allocator = Allocator::new();
     let parser_opts = ParserOptions::default();
@@ -822,7 +572,7 @@ fn vapor_ir_nif_impl<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
             templates.encode(env),
             components.encode(env),
             directives.encode(env),
-            encode_block(env, &ir.block),
+            ir_encoders::encode_block_ir_node(env, &ir.block),
             element_template_map.encode(env),
         ],
     )

@@ -6,7 +6,8 @@ use crate::html_inject::{
     build_elem_to_tag, inject_attr, inject_before_close, parse_tag_tree,
     replace_first_space_in_content, replace_range, replace_text_node, TagEntry,
 };
-use crate::ir_encoding::{encode_ir_prop, encode_simple_expr};
+use crate::ir_encoders::encode_ir_prop;
+use crate::ir_encoding::encode_simple_expr;
 use crate::term_encoding::nil_term;
 
 fn encode_slot_values<'a>(env: Env<'a>, kind: Term<'a>, values: Term<'a>) -> Term<'a> {

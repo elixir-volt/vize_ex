@@ -7,6 +7,10 @@ unless Code.ensure_loaded?(Vize.Codegen.NativeTypes) do
   Code.require_file("codegen/vize/codegen/native_types.ex")
 end
 
+unless Code.ensure_loaded?(Vize.Codegen.VaporIR) do
+  Code.require_file("codegen/vize/codegen/vapor_ir.ex")
+end
+
 derived_encoders = [
   {:EncodedLoc,
    fields: [:start, {:end_, :end}, :start_line, :start_column, :end_line, :end_column]}
@@ -157,7 +161,7 @@ source_atoms =
   |> Enum.flat_map(fn path -> path |> File.read!() |> RustQ.Syn.atom_references!() end)
 
 atoms =
-  (source_atoms ++ encoder_atoms)
+  (source_atoms ++ encoder_atoms ++ Vize.Codegen.VaporIR.atoms())
   |> Enum.uniq()
   |> Enum.sort()
   |> Enum.map(fn
@@ -167,6 +171,10 @@ atoms =
 
 rust "native/vize_ex_nif/src/generated_atoms.rs" do
   Atom.declaration(atoms)
+end
+
+rust "native/vize_ex_nif/src/generated_ir_encoders.rs" do
+  Vize.Codegen.VaporIR.encoders()
 end
 
 rust "native/vize_ex_nif/src/generated_types.rs" do
