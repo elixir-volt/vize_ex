@@ -156,4 +156,14 @@ defmodule Vize.VaporSplitTest do
     assert Enum.map(split.slots, & &1.kind) == [:if_node, :set_text]
     assert split.statics == ["<div><section>", "</section><span>", "</span></div>"]
   end
+
+  test "places v-html slots inside their element" do
+    {:ok, split} = Vize.vapor_split(~s(<div v-html="raw"></div>))
+    assert split.statics == ["<div>", "</div>"]
+    assert [%{kind: :set_html, value: "raw"}] = split.slots
+
+    {:ok, split} = Vize.vapor_split(~s(<section><p v-html="raw"></p><b>{{ x }}</b></section>))
+    assert split.statics == ["<section><p>", "</p><b>", "</b></section>"]
+    assert Enum.map(split.slots, & &1.kind) == [:set_html, :set_text]
+  end
 end

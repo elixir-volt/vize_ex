@@ -489,7 +489,10 @@ pub(crate) fn process_block<'a, 'b>(
         if let Some(&tag_pos) = elem_to_tag.get(&html_effect.element) {
             let slot = encode_slot_value(env, atoms::set_html().encode(env), &html_effect.value);
             let marker = push_slot_marker(&mut slots, slot, html_effect.value.loc.span.start);
-            replace_first_space_in_content(&mut html, &mut tags, tag_pos, &marker);
+            // `v-html` owns the element's content, which the template leaves empty.
+            if !replace_first_space_in_content(&mut html, &mut tags, tag_pos, &marker) {
+                inject_before_close(&mut html, &mut tags, tag_pos, &marker);
+            }
         }
     }
 

@@ -17,6 +17,7 @@
 
 ### Fixed
 
+- Keep `v-html` in `vapor_split/1`. The element's template content is empty, so the slot marker had no placeholder to replace and the `set_html` slot was dropped; the rendered element stayed empty.
 - Replace Vapor's `<!---->` anchor comments with structural slots in `vapor_split/1`, so they no longer leak into statics and element offsets after an anchor stay aligned.
 - Replace the whole text node for mixed static and dynamic text in `vapor_split/1`. Previously the static parts were rendered twice, e.g. `Hello {{ name }}` produced `HelloHello Ada `.
 
