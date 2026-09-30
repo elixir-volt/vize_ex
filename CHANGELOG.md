@@ -2,18 +2,11 @@
 
 ## Unreleased
 
-### Changed
-
-- Generate the `vapor_ir/1` encoders from `vize_atelier_vapor`'s Rust source with RustQ instead of maintaining them by hand. Every existing key and value is unchanged. The output now also includes the IR fields the handwritten encoders dropped, such as component `slots`, `v_show`, and `is_expr`, event `modifiers`, directive `builtin` and `input_type`, slot outlet `fallback`, node `id`s, `dynamic` info, and prop `value_kind`.
-- `set_merged_props` group sources carry their props under `:value`, like object sources.
-- `vapor_split/1` component props include `value_kind`.
-- Derive the NIF result maps (`analyze_sfc`, `compile_vapor`, `vapor_ir`, `vapor_split` and its slots, template assets, `generate_dts`, and Sass) from Elixir typespecs instead of building them by hand. Their keys and values are unchanged, except that `compile_vapor/2` compile errors in a diagnostics list now carry `code: nil` and `location: nil`, like parser diagnostics.
-
 ## 0.15.0 - 2026-09-30
 
 ### Added
 
-- Encode the new `set_merged_props` Vapor IR operation in `vapor_ir/1`, with `:object` and `:group` sources.
+- Encode the new `set_merged_props` Vapor IR operation in `vapor_ir/1`, with `:object` and `:group` sources that carry their value under `:value`.
 - Report `:transition` and `:transition_group` component kinds in `vapor_ir/1` and `vapor_split/1`.
 
 ### Changed
@@ -21,6 +14,9 @@
 - Upgrade the upstream Vize workspace from 0.362 to 0.429.1. Vapor output now registers delegated events with `delegateEvents(...)`, so native `@click` handlers on plain elements fire again, and hydrates Vue 3.6.0-rc.9 SSR markup: it no longer passes a sibling index to `next()` and creates components and slots in document order.
 - `vapor_ir/1` encodes a component, `v-if`, or `v-for` insertion anchor as the placeholder node id (as before) or, when the block is appended, as `{:index, n}` with its hydration start unit.
 - Build SFC source maps through upstream codegen options instead of the removed `build_sfc_source_map`.
+- Generate the `vapor_ir/1` encoders from `vize_atelier_vapor`'s Rust source with RustQ instead of maintaining them by hand. Every existing key and value is unchanged. The output now also includes the IR fields the handwritten encoders dropped, such as component `slots`, `v_show`, and `is_expr`, event `modifiers`, directive `builtin` and `input_type`, slot outlet `fallback`, node `id`s, `dynamic` info, and prop `value_kind`.
+- `vapor_split/1` component props include `value_kind`.
+- Derive the NIF result maps (`analyze_sfc`, `compile_vapor`, `vapor_ir`, `vapor_split` and its slots, template assets, `generate_dts`, and Sass) from Elixir typespecs instead of building them by hand. Their keys and values are unchanged, except that `compile_vapor/2` compile errors in a diagnostics list now carry `code: nil` and `location: nil`, like parser diagnostics.
 
 ### Fixed
 
