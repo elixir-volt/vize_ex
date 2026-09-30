@@ -69,6 +69,56 @@ defmodule Vize.Codegen.NativeTypes do
           required(:element_template_map) => [{R.usize(), R.usize()}]
         }
 
+  ## vapor_split slots
+  #
+  # Each slot fills the hole between two statics. Expressions (`R.term()`) are
+  # a string, or `{:static, string}` for static values.
+
+  @type encoded_split_block :: %{
+          required(:statics) => [String.t()],
+          required(:slots) => [R.term()]
+        }
+
+  @type encoded_values_slot :: %{
+          required(:kind) => :set_prop | :set_text,
+          required(:values) => [R.term()]
+        }
+
+  @type encoded_value_slot :: %{
+          required(:kind) => :v_show | :v_model | :set_html,
+          required(:value) => R.term()
+        }
+
+  # `negative` is a split block, a nested if slot, or nil.
+  @type encoded_if_slot :: %{
+          required(:kind) => :if_node,
+          required(:condition) => R.term(),
+          required(:positive) => encoded_split_block(),
+          required(:negative) => R.term() | nil
+        }
+
+  @type encoded_for_slot :: %{
+          required(:kind) => :for_node,
+          required(:source) => R.term(),
+          required(:value) => R.term() | nil,
+          required(:key_prop) => R.term() | nil,
+          required(:render) => encoded_split_block()
+        }
+
+  @type encoded_component_slot :: %{
+          required(:kind) => :create_component,
+          required(:tag) => String.t(),
+          required(:props) => [R.term()],
+          required(:value) =>
+            :regular
+            | :teleport
+            | :keep_alive
+            | :suspense
+            | :transition
+            | :transition_group
+            | :dynamic
+        }
+
   ## SFC
 
   @type encoded_template_asset :: %{

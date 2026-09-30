@@ -6,6 +6,13 @@ pub struct EncodedBinding {
     pub kind: String,
 }
 #[derive(Clone, Debug, rustler::NifMap)]
+pub struct EncodedComponentSlot<'a> {
+    pub kind: Atom,
+    pub tag: String,
+    pub props: Vec<Term<'a>>,
+    pub value: Atom,
+}
+#[derive(Clone, Debug, rustler::NifMap)]
 pub struct EncodedComponentUsage {
     pub name: String,
     pub props: Vec<EncodedPassedProp>,
@@ -27,6 +34,21 @@ pub struct EncodedDts {
 pub struct EncodedEventListener {
     pub name: String,
     pub handler: Option<String>,
+}
+#[derive(Clone, Debug, rustler::NifMap)]
+pub struct EncodedForSlot<'a> {
+    pub kind: Atom,
+    pub source: Term<'a>,
+    pub value: Option<Term<'a>>,
+    pub key_prop: Option<Term<'a>>,
+    pub render: EncodedSplitBlock<'a>,
+}
+#[derive(Clone, Debug, rustler::NifMap)]
+pub struct EncodedIfSlot<'a> {
+    pub kind: Atom,
+    pub condition: Term<'a>,
+    pub positive: EncodedSplitBlock<'a>,
+    pub negative: Option<Term<'a>>,
 }
 #[derive(Clone, Debug, rustler::NifMap)]
 pub struct EncodedLoc {
@@ -93,6 +115,11 @@ pub struct EncodedSourceLocation {
     pub source: String,
 }
 #[derive(Clone, Debug, rustler::NifMap)]
+pub struct EncodedSplitBlock<'a> {
+    pub statics: Vec<String>,
+    pub slots: Vec<Term<'a>>,
+}
+#[derive(Clone, Debug, rustler::NifMap)]
 pub struct EncodedTemplateAsset {
     pub url: String,
     pub var_name: String,
@@ -108,6 +135,16 @@ pub struct EncodedUndefinedRef {
     pub name: String,
     pub offset: u32,
     pub context: String,
+}
+#[derive(Clone, Debug, rustler::NifMap)]
+pub struct EncodedValueSlot<'a> {
+    pub kind: Atom,
+    pub value: Term<'a>,
+}
+#[derive(Clone, Debug, rustler::NifMap)]
+pub struct EncodedValuesSlot<'a> {
+    pub kind: Atom,
+    pub values: Vec<Term<'a>>,
 }
 #[derive(Clone, Debug, rustler::NifMap)]
 pub struct EncodedVaporDiagnosticsOutput {

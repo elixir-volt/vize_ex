@@ -1,5 +1,5 @@
 use rustler::types::map::MapIterator;
-use rustler::{Encoder, Env, Error, NifResult, Term};
+use rustler::{Atom, Encoder, Env, Error, NifResult, Term};
 use serde_json::{Map, Number, Value};
 
 use crate::atoms;

@@ -26,8 +26,6 @@ use vize_atelier_vapor::{
 };
 use vize_carton::{line_index::LineIndex, Allocator};
 
-#[macro_use]
-mod macros;
 mod html_inject;
 mod ir_encoding;
 

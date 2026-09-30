@@ -1,4 +1,4 @@
-use rustler::{Encoder, Env, Term};
+use rustler::{Atom, Encoder, Env, Term};
 use vize_atelier_vapor::ir::*;
 
 use crate::atoms;
@@ -8,42 +8,35 @@ use crate::html_inject::{
 };
 use crate::ir_encoders::encode_ir_prop;
 use crate::ir_encoding::encode_simple_expr;
-use crate::term_encoding::nil_term;
+use crate::term_encoding::{
+    EncodedComponentSlot, EncodedForSlot, EncodedIfSlot, EncodedSplitBlock, EncodedValueSlot,
+    EncodedValuesSlot,
+};
 
-fn encode_slot_values<'a>(env: Env<'a>, kind: Term<'a>, values: Term<'a>) -> Term<'a> {
-    term_map!(env, {
-        atoms::kind() => kind,
-        atoms::values() => values,
-    })
+fn encode_slot_values<'a>(env: Env<'a>, kind: Atom, values: Vec<Term<'a>>) -> Term<'a> {
+    EncodedValuesSlot { kind, values }.encode(env)
 }
 
 fn encode_slot_value<'a>(
     env: Env<'a>,
-    kind: Term<'a>,
+    kind: Atom,
     expr: &vize_atelier_core::SimpleExpressionNode,
 ) -> Term<'a> {
-    term_map!(env, {
-        atoms::kind() => kind,
-        atoms::value() => encode_simple_expr(env, expr),
-    })
+    EncodedValueSlot {
+        kind,
+        value: encode_simple_expr(env, expr),
+    }
+    .encode(env)
 }
 
-fn encode_split_block<'a, 'b>(
+fn split_block<'a, 'b>(
     env: Env<'a>,
     block: &'b BlockIRNode<'b>,
     ir: &'b RootIRNode<'b>,
     source: &str,
-) -> Term<'a> {
+) -> EncodedSplitBlock<'a> {
     let (statics, slots) = process_block(env, block, ir, source);
-    let statics_term: Vec<Term<'a>> = statics
-        .iter()
-        .map(|static_part| static_part.as_str().encode(env))
-        .collect();
-
-    term_map!(env, {
-        atoms::statics() => statics_term,
-        atoms::slots() => slots,
-    })
+    EncodedSplitBlock { statics, slots }
 }
 
 fn encode_slot_if_split<'a, 'b>(
@@ -53,17 +46,18 @@ fn encode_slot_if_split<'a, 'b>(
     source: &str,
 ) -> Term<'a> {
     let negative = match &if_node.negative {
-        Some(NegativeBranch::Block(block)) => encode_split_block(env, block, ir, source),
-        Some(NegativeBranch::If(nested)) => encode_slot_if_split(env, nested, ir, source),
-        None => nil_term(env),
+        Some(NegativeBranch::Block(block)) => Some(split_block(env, block, ir, source).encode(env)),
+        Some(NegativeBranch::If(nested)) => Some(encode_slot_if_split(env, nested, ir, source)),
+        None => None,
     };
 
-    term_map!(env, {
-        atoms::kind() => atoms::if_node(),
-        atoms::condition() => encode_simple_expr(env, &if_node.condition),
-        atoms::positive() => encode_split_block(env, &if_node.positive, ir, source),
-        atoms::negative() => negative,
-    })
+    EncodedIfSlot {
+        kind: atoms::if_node(),
+        condition: encode_simple_expr(env, &if_node.condition),
+        positive: split_block(env, &if_node.positive, ir, source),
+        negative,
+    }
+    .encode(env)
 }
 
 fn encode_slot_for_split<'a, 'b>(
@@ -72,30 +66,24 @@ fn encode_slot_for_split<'a, 'b>(
     ir: &'b RootIRNode<'b>,
     source: &str,
 ) -> Term<'a> {
-    term_map!(env, {
-        atoms::kind() => atoms::for_node(),
-        atoms::source() => encode_simple_expr(env, &for_node.source),
-        atoms::value() => for_node
+    EncodedForSlot {
+        kind: atoms::for_node(),
+        source: encode_simple_expr(env, &for_node.source),
+        value: for_node
             .value
             .as_ref()
-            .map(|value| encode_simple_expr(env, value))
-            .unwrap_or_else(|| nil_term(env)),
-        atoms::key_prop() => for_node
+            .map(|value| encode_simple_expr(env, value)),
+        key_prop: for_node
             .key_prop
             .as_ref()
-            .map(|key_prop| encode_simple_expr(env, key_prop))
-            .unwrap_or_else(|| nil_term(env)),
-        atoms::render() => encode_split_block(env, &for_node.render, ir, source),
-    })
+            .map(|key_prop| encode_simple_expr(env, key_prop)),
+        render: split_block(env, &for_node.render, ir, source),
+    }
+    .encode(env)
 }
 
 fn encode_slot_component<'a>(env: Env<'a>, node: &CreateComponentIRNode) -> Term<'a> {
-    let props: Vec<Term<'a>> = node
-        .props
-        .iter()
-        .map(|prop| encode_ir_prop(env, prop))
-        .collect();
-    let kind_atom = match node.kind {
+    let kind = match node.kind {
         ComponentKind::Regular => atoms::regular(),
         ComponentKind::Teleport => atoms::teleport(),
         ComponentKind::KeepAlive => atoms::keep_alive(),
@@ -105,12 +93,17 @@ fn encode_slot_component<'a>(env: Env<'a>, node: &CreateComponentIRNode) -> Term
         ComponentKind::Dynamic => atoms::dynamic(),
     };
 
-    term_map!(env, {
-        atoms::kind() => atoms::create_component(),
-        atoms::tag() => node.tag,
-        atoms::props() => props,
-        atoms::value() => kind_atom,
-    })
+    EncodedComponentSlot {
+        kind: atoms::create_component(),
+        tag: node.tag.to_string(),
+        props: node
+            .props
+            .iter()
+            .map(|prop| encode_ir_prop(env, prop))
+            .collect(),
+        value: kind,
+    }
+    .encode(env)
 }
 
 const SLOT_MARKER_PREFIX: &str = "\0VIZE_SLOT_";
@@ -418,7 +411,7 @@ pub(crate) fn process_block<'a, 'b>(
                 .iter()
                 .map(|value| encode_simple_expr(env, value))
                 .collect();
-            let slot = encode_slot_values(env, atoms::set_prop().encode(env), values.encode(env));
+            let slot = encode_slot_values(env, atoms::set_prop(), values);
             let source_offset = prop
                 .prop
                 .values
@@ -440,7 +433,7 @@ pub(crate) fn process_block<'a, 'b>(
                         if let Some(vize_atelier_core::ExpressionNode::Simple(simple)) =
                             &dir.dir.exp
                         {
-                            let slot = encode_slot_value(env, atoms::v_show().encode(env), simple);
+                            let slot = encode_slot_value(env, atoms::v_show(), simple);
                             let marker = push_slot_marker(&mut slots, slot, dir.dir.loc.span.start);
                             let attr = format!(" style=\"{marker}\"");
                             inject_attr(&mut html, &mut tags, tag_pos, &attr);
@@ -450,7 +443,7 @@ pub(crate) fn process_block<'a, 'b>(
                         if let Some(vize_atelier_core::ExpressionNode::Simple(simple)) =
                             &dir.dir.exp
                         {
-                            let slot = encode_slot_value(env, atoms::v_model().encode(env), simple);
+                            let slot = encode_slot_value(env, atoms::v_model(), simple);
                             let marker = push_slot_marker(&mut slots, slot, dir.dir.loc.span.start);
                             let attr = format!(" value=\"{marker}\"");
                             inject_attr(&mut html, &mut tags, tag_pos, &attr);
@@ -472,7 +465,7 @@ pub(crate) fn process_block<'a, 'b>(
                 .iter()
                 .map(|value| encode_simple_expr(env, value))
                 .collect();
-            let slot = encode_slot_values(env, atoms::set_text().encode(env), values.encode(env));
+            let slot = encode_slot_values(env, atoms::set_text(), values);
             let source_offset = text
                 .values
                 .first()
@@ -488,7 +481,7 @@ pub(crate) fn process_block<'a, 'b>(
 
     for html_effect in &html_effects {
         if let Some(&tag_pos) = elem_to_tag.get(&html_effect.element) {
-            let slot = encode_slot_value(env, atoms::set_html().encode(env), &html_effect.value);
+            let slot = encode_slot_value(env, atoms::set_html(), &html_effect.value);
             let marker = push_slot_marker(&mut slots, slot, html_effect.value.loc.span.start);
             // `v-html` owns the element's content, which the template leaves empty.
             if !replace_first_space_in_content(&mut html, &mut tags, tag_pos, &marker) {

@@ -17,8 +17,8 @@ mod atoms {
         script, script_hash, script_setup, set_dynamic_props, set_event, set_html,
         set_merged_props, set_prop, set_template_ref, set_text, setup,
         should_force_reload, slot_outlet, slots, slotted, source, source_map, sources,
-        src, start, start_column, start_line, static_, statics, style_hash, styles,
-        supports, suspense, tag, teleport, temp_id, template, template_hash, transition,
+        src, start, start_column, start_line, static_, style_hash, styles, supports,
+        suspense, tag, teleport, temp_id, template, template_hash, transition,
         transition_group, url, v_model, v_show, value, value_kind, values, warnings
     }
 }
