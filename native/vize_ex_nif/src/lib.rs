@@ -46,9 +46,14 @@ mod term_encoding;
 mod vapor_split;
 
 use crate::term_encoding::{
-    decode_json_value, error_term, nil_term, ok_term, EncodedBundleCssResult,
-    EncodedCompileSfcResult, EncodedCssAstResult, EncodedCssCompileResult, EncodedLintDiagnostic,
-    EncodedParseSfcResult, EncodedSsrCompileResult, EncodedTemplateCompileResult,
+    decode_json_value, error_term, ok_term, EncodedBinding, EncodedBundleCssResult,
+    EncodedCompileSfcResult, EncodedComponentUsage, EncodedCssAstResult, EncodedCssCompileResult,
+    EncodedDiagnostic, EncodedDts, EncodedEventListener, EncodedLintDiagnostic,
+    EncodedParseSfcResult, EncodedPassedProp, EncodedPosition, EncodedPropDeclaration,
+    EncodedRange, EncodedSass, EncodedSfcAnalysis, EncodedSfcStats, EncodedSourceLocation,
+    EncodedSsrCompileResult, EncodedTemplateAsset, EncodedTemplateCompileResult,
+    EncodedTemplateExpression, EncodedUndefinedRef, EncodedVaporDiagnosticsOutput, EncodedVaporIr,
+    EncodedVaporOutput, EncodedVaporSplit,
 };
 use crate::vapor_split::process_block;
 
@@ -103,116 +108,92 @@ fn analyze_sfc_nif_impl<'a>(env: Env<'a>, source: &str, mode: &str) -> NifResult
     let croquis = analyze_sfc_descriptor(&descriptor, template_ast.as_ref(), options);
     let stats = croquis.stats();
 
-    let bindings: Vec<Term<'a>> = croquis
-        .bindings
-        .iter()
-        .map(|(name, binding_type)| {
-            term_map!(env, {
-                atoms::name() => name,
-                atoms::kind() => format!("{:?}", binding_type),
+    let analysis = EncodedSfcAnalysis {
+        stats: EncodedSfcStats {
+            bindings: stats.binding_count,
+            props: stats.prop_count,
+            emits: stats.emit_count,
+            models: stats.model_count,
+            used_components: stats.used_components,
+            used_directives: stats.used_directives,
+            undefined_refs: stats.undefined_ref_count,
+        },
+        bindings: croquis
+            .bindings
+            .iter()
+            .map(|(name, binding_type)| EncodedBinding {
+                name: name.to_string(),
+                kind: format!("{:?}", binding_type),
             })
-        })
-        .collect();
-
-    let props: Vec<Term<'a>> = croquis
-        .get_props()
-        .map(|(name, required)| {
-            term_map!(env, {
-                atoms::name() => name,
-                atoms::required() => required,
+            .collect(),
+        props: croquis
+            .get_props()
+            .map(|(name, required)| EncodedPropDeclaration {
+                name: name.to_string(),
+                required,
             })
-        })
-        .collect();
-
-    let emits: Vec<&str> = croquis.get_emits().collect();
-    let models: Vec<&str> = croquis.get_models().collect();
-    let used_components: Vec<&str> = croquis.used_components.iter().map(|s| s.as_str()).collect();
-    let used_directives: Vec<&str> = croquis.used_directives.iter().map(|s| s.as_str()).collect();
-
-    let undefined_refs: Vec<Term<'a>> = croquis
-        .undefined_refs
-        .iter()
-        .map(|reference| {
-            term_map!(env, {
-                atoms::name() => reference.name.as_str(),
-                atoms::offset() => reference.offset,
-                atoms::context() => reference.context.as_str(),
+            .collect(),
+        emits: croquis.get_emits().map(ToString::to_string).collect(),
+        models: croquis.get_models().map(ToString::to_string).collect(),
+        used_components: croquis
+            .used_components
+            .iter()
+            .map(ToString::to_string)
+            .collect(),
+        used_directives: croquis
+            .used_directives
+            .iter()
+            .map(ToString::to_string)
+            .collect(),
+        undefined_refs: croquis
+            .undefined_refs
+            .iter()
+            .map(|reference| EncodedUndefinedRef {
+                name: reference.name.to_string(),
+                offset: reference.offset,
+                context: reference.context.to_string(),
             })
-        })
-        .collect();
-
-    let component_usages: Vec<Term<'a>> = croquis
-        .component_usages
-        .iter()
-        .map(|usage| {
-            let props: Vec<Term<'a>> = usage
-                .props
-                .iter()
-                .map(|prop| {
-                    term_map!(env, {
-                        atoms::name() => prop.name.as_str(),
-                        atoms::value() => prop.value.as_ref().map(|v| v.as_str()),
-                        atoms::is_dynamic() => prop.is_dynamic,
+            .collect(),
+        component_usages: croquis
+            .component_usages
+            .iter()
+            .map(|usage| EncodedComponentUsage {
+                name: usage.name.to_string(),
+                props: usage
+                    .props
+                    .iter()
+                    .map(|prop| EncodedPassedProp {
+                        name: prop.name.to_string(),
+                        value: prop.value.as_ref().map(ToString::to_string),
+                        is_dynamic: prop.is_dynamic,
                     })
-                })
-                .collect();
-            let events: Vec<Term<'a>> = usage
-                .events
-                .iter()
-                .map(|event| {
-                    term_map!(env, {
-                        atoms::name() => event.name.as_str(),
-                        atoms::handler() => event.handler.as_ref().map(|h| h.as_str()),
+                    .collect(),
+                events: usage
+                    .events
+                    .iter()
+                    .map(|event| EncodedEventListener {
+                        name: event.name.to_string(),
+                        handler: event.handler.as_ref().map(ToString::to_string),
                     })
-                })
-                .collect();
-
-            term_map!(env, {
-                atoms::name() => usage.name.as_str(),
-                atoms::props() => props,
-                atoms::events() => events,
-                atoms::has_spread_attrs() => usage.has_spread_attrs,
+                    .collect(),
+                has_spread_attrs: usage.has_spread_attrs,
             })
-        })
-        .collect();
-
-    let template_expressions: Vec<Term<'a>> = croquis
-        .template_expressions
-        .iter()
-        .map(|expression| {
-            term_map!(env, {
-                atoms::source() => expression.content.as_str(),
-                atoms::kind() => expression.kind.as_str(),
-                atoms::range() => term_map!(env, {
-                    atoms::start() => expression.start,
-                    atoms::end_() => expression.end,
-                }),
+            .collect(),
+        template_expressions: croquis
+            .template_expressions
+            .iter()
+            .map(|expression| EncodedTemplateExpression {
+                source: expression.content.to_string(),
+                kind: expression.kind.as_str().to_owned(),
+                range: EncodedRange {
+                    start: expression.start,
+                    end: expression.end,
+                },
             })
-        })
-        .collect();
+            .collect(),
+    };
 
-    let result = term_map!(env, {
-        atoms::stats() => term_map!(env, {
-            atoms::bindings() => stats.binding_count,
-            atoms::props() => stats.prop_count,
-            atoms::emits() => stats.emit_count,
-            atoms::models() => stats.model_count,
-            atoms::used_components() => stats.used_components,
-            atoms::used_directives() => stats.used_directives,
-            atoms::undefined_refs() => stats.undefined_ref_count,
-        }),
-        atoms::bindings() => bindings,
-        atoms::props() => props,
-        atoms::emits() => emits,
-        atoms::models() => models,
-        atoms::used_components() => used_components,
-        atoms::used_directives() => used_directives,
-        atoms::undefined_refs() => undefined_refs,
-        atoms::component_usages() => component_usages,
-        atoms::template_expressions() => template_expressions,
-    });
-
-    Ok(ok_term(env, result))
+    Ok(ok_term(env, analysis))
 }
 
 // ── SFC Compilation ──
@@ -301,16 +282,14 @@ fn sfc_template_assets_nif_impl<'a>(
 ) -> NifResult<Term<'a>> {
     let assets =
         collect_template_asset_urls(source, None, (!filename.is_empty()).then_some(filename));
-    let terms: Vec<Term<'a>> = assets
+    let assets: Vec<EncodedTemplateAsset> = assets
         .iter()
-        .map(|asset| {
-            term_map!(env, {
-                atoms::url() => asset.url.as_str(),
-                atoms::var_name() => asset.var_name.as_str(),
-            })
+        .map(|asset| EncodedTemplateAsset {
+            url: asset.url.to_string(),
+            var_name: asset.var_name.to_string(),
         })
         .collect();
-    Ok(terms.encode(env))
+    Ok(assets.encode(env))
 }
 
 fn rewrite_sfc_template_assets_nif_impl<'a>(
@@ -413,44 +392,41 @@ fn compile_ssr_nif_impl<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
 
 // ── Vapor Compilation ──
 
-fn encode_position<'a>(env: Env<'a>, line_index: &LineIndex<'_>, offset: u32) -> Term<'a> {
+fn position(line_index: &LineIndex<'_>, offset: u32) -> EncodedPosition {
     let (line, column) = line_index.line_col(offset as usize);
-    term_map!(env, {
-        atoms::offset() => offset,
-        atoms::line() => line + 1,
-        atoms::column() => column + 1,
-    })
+    EncodedPosition {
+        offset,
+        line: line + 1,
+        column: column + 1,
+    }
 }
 
-fn encode_source_location<'a>(
-    env: Env<'a>,
+fn source_location(
     location: &vize_atelier_core::SourceLocation,
     source: &str,
     line_index: &LineIndex<'_>,
-) -> Term<'a> {
-    term_map!(env, {
-        atoms::start() => encode_position(env, line_index, location.span.start),
-        atoms::end_() => encode_position(env, line_index, location.span.end),
-        atoms::source() => location.span.slice(source),
-    })
+) -> EncodedSourceLocation {
+    EncodedSourceLocation {
+        start: position(line_index, location.span.start),
+        end: position(line_index, location.span.end),
+        source: location.span.slice(source).to_owned(),
+    }
 }
 
-fn encode_compiler_error<'a>(
-    env: Env<'a>,
+fn compiler_diagnostic(
     error: &vize_atelier_core::CompilerError,
     source: &str,
     line_index: &LineIndex<'_>,
-) -> Term<'a> {
-    term_map!(env, {
-        atoms::code() => format!("{:?}", error.code),
-        atoms::message() => error.message.as_str(),
-        atoms::recoverable() => error.is_recoverable(),
-        atoms::location() => error
+) -> EncodedDiagnostic {
+    EncodedDiagnostic {
+        code: Some(format!("{:?}", error.code)),
+        message: error.message.to_string(),
+        recoverable: error.is_recoverable(),
+        location: error
             .loc
             .as_ref()
-            .map(|location| encode_source_location(env, location, source, line_index))
-            .unwrap_or_else(|| nil_term(env)),
-    })
+            .map(|location| source_location(location, source, line_index)),
+    }
 }
 
 fn template_syntax_mode(value: &str) -> TemplateSyntaxMode {
@@ -479,34 +455,32 @@ fn compile_vapor_nif_impl<'a>(
             compile_vapor_with_template_syntax_and_diagnostics(&allocator, source, opts, syntax);
 
         let line_index = LineIndex::new(source);
-        let mut diagnostic_terms: Vec<Term<'a>> = parser_diagnostics
+        let mut diagnostics: Vec<EncodedDiagnostic> = parser_diagnostics
             .iter()
-            .map(|diagnostic| encode_compiler_error(env, diagnostic, source, &line_index))
+            .map(|diagnostic| compiler_diagnostic(diagnostic, source, &line_index))
             .collect();
 
         if !result.error_messages.is_empty() {
-            let mut errors: Vec<Term<'a>> = result
-                .error_messages
-                .iter()
-                .map(|message| {
-                    term_map!(env, {
-                        atoms::message() => message.as_str(),
-                        atoms::recoverable() => false,
-                    })
-                })
-                .collect();
-            diagnostic_terms.append(&mut errors);
-            return Ok(error_term(env, diagnostic_terms));
+            diagnostics.extend(
+                result
+                    .error_messages
+                    .iter()
+                    .map(|message| EncodedDiagnostic {
+                        code: None,
+                        message: message.to_string(),
+                        recoverable: false,
+                        location: None,
+                    }),
+            );
+            return Ok(error_term(env, diagnostics));
         }
 
-        let templates: Vec<&str> = result.templates.iter().map(|s| s.as_str()).collect();
-        let map = term_map!(env, {
-            atoms::code() => result.code.as_str(),
-            atoms::templates() => templates,
-            atoms::diagnostics() => diagnostic_terms,
-        });
-
-        return Ok(ok_term(env, map));
+        let output = EncodedVaporDiagnosticsOutput {
+            code: result.code.to_string(),
+            templates: result.templates.iter().map(ToString::to_string).collect(),
+            diagnostics,
+        };
+        return Ok(ok_term(env, output));
     }
 
     let result = compile_vapor(&allocator, source, opts);
@@ -516,16 +490,11 @@ fn compile_vapor_nif_impl<'a>(
         return Ok(error_term(env, msgs));
     }
 
-    let templates: Vec<&str> = result.templates.iter().map(|s| s.as_str()).collect();
-
-    let map = Term::map_from_arrays(
-        env,
-        &[atoms::code().encode(env), atoms::templates().encode(env)],
-        &[result.code.as_str().encode(env), templates.encode(env)],
-    )
-    .unwrap();
-
-    Ok(ok_term(env, map))
+    let output = EncodedVaporOutput {
+        code: result.code.to_string(),
+        templates: result.templates.iter().map(ToString::to_string).collect(),
+    };
+    Ok(ok_term(env, output))
 }
 
 // ── Vapor IR ──
@@ -548,37 +517,19 @@ fn vapor_ir_nif_impl<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
 
     let ir = transform_to_ir(&allocator, &root, source);
 
-    let templates: Vec<&str> = ir.templates.iter().copied().collect();
-    let components: Vec<&str> = ir.component.iter().copied().collect();
-    let directives: Vec<&str> = ir.directive.iter().copied().collect();
+    let output = EncodedVaporIr {
+        templates: ir.templates.iter().map(ToString::to_string).collect(),
+        components: ir.component.iter().map(ToString::to_string).collect(),
+        directives: ir.directive.iter().map(ToString::to_string).collect(),
+        block: ir_encoders::encode_block_ir_node(env, &ir.block),
+        element_template_map: ir
+            .element_template_map
+            .iter()
+            .map(|(&element, &template)| (element, template))
+            .collect(),
+    };
 
-    let etm_keys: Vec<usize> = ir.element_template_map.keys().copied().collect();
-    let etm_vals: Vec<usize> = etm_keys
-        .iter()
-        .map(|k| ir.element_template_map[k])
-        .collect();
-    let element_template_map: Vec<(usize, usize)> = etm_keys.into_iter().zip(etm_vals).collect();
-
-    let map = Term::map_from_arrays(
-        env,
-        &[
-            atoms::templates().encode(env),
-            atoms::components().encode(env),
-            atoms::directives().encode(env),
-            atoms::block().encode(env),
-            atoms::element_template_map().encode(env),
-        ],
-        &[
-            templates.encode(env),
-            components.encode(env),
-            directives.encode(env),
-            ir_encoders::encode_block_ir_node(env, &ir.block),
-            element_template_map.encode(env),
-        ],
-    )
-    .unwrap();
-
-    Ok(ok_term(env, map))
+    Ok(ok_term(env, output))
 }
 
 // ── Linting ──
@@ -638,7 +589,7 @@ fn compile_sass_nif_impl<'a>(
     }
 
     match grass::from_string(source.to_owned(), &options) {
-        Ok(code) => Ok(ok_term(env, term_map!(env, { atoms::code() => code }))),
+        Ok(code) => Ok(ok_term(env, EncodedSass { code })),
         Err(error) => Ok(error_term(env, error.to_string())),
     }
 }
@@ -1090,33 +1041,17 @@ fn vapor_split_nif_impl<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
 
     let (statics, slots) = process_block(env, &ir.block, &ir, source);
 
-    let statics_term: std::vec::Vec<Term<'a>> =
-        statics.iter().map(|s| s.as_str().encode(env)).collect();
-    let templates: std::vec::Vec<&str> = ir.templates.iter().copied().collect();
-    let element_template_map: std::vec::Vec<(usize, usize)> = ir
-        .element_template_map
-        .iter()
-        .map(|(&k, &v)| (k, v))
-        .collect();
-
-    let result = Term::map_from_arrays(
-        env,
-        &[
-            atoms::statics().encode(env),
-            atoms::slots().encode(env),
-            atoms::templates().encode(env),
-            atoms::element_template_map().encode(env),
-        ],
-        &[
-            statics_term.encode(env),
-            slots.encode(env),
-            templates.encode(env),
-            element_template_map.encode(env),
-        ],
-    )
-    .unwrap();
-
-    Ok(ok_term(env, result))
+    let split = EncodedVaporSplit {
+        statics,
+        slots,
+        templates: ir.templates.iter().map(ToString::to_string).collect(),
+        element_template_map: ir
+            .element_template_map
+            .iter()
+            .map(|(&element, &template)| (element, template))
+            .collect(),
+    };
+    Ok(ok_term(env, split))
 }
 
 // ── Declaration .d.ts Generation ──
@@ -1159,11 +1094,10 @@ fn generate_dts_nif_impl<'a>(env: Env<'a>, source: &str, filename: &str) -> NifR
         (None, None) => vize_croquis::declaration_ts::generate_declaration_ts(&summary, None),
     };
 
-    let result = term_map!(env, {
-        atoms::dts() => output.content.as_str(),
-    });
-
-    Ok(ok_term(env, result))
+    let dts = EncodedDts {
+        dts: output.content.to_string(),
+    };
+    Ok(ok_term(env, dts))
 }
 
 rustler::init!("Elixir.Vize.Native");

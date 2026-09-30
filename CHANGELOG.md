@@ -7,6 +7,7 @@
 - Generate the `vapor_ir/1` encoders from `vize_atelier_vapor`'s Rust source with RustQ instead of maintaining them by hand. Every existing key and value is unchanged. The output now also includes the IR fields the handwritten encoders dropped, such as component `slots`, `v_show`, and `is_expr`, event `modifiers`, directive `builtin` and `input_type`, slot outlet `fallback`, node `id`s, `dynamic` info, and prop `value_kind`.
 - `set_merged_props` group sources carry their props under `:value`, like object sources.
 - `vapor_split/1` component props include `value_kind`.
+- Derive the NIF result maps (`analyze_sfc`, `compile_vapor`, `vapor_ir`, `vapor_split`, template assets, `generate_dts`, and Sass) from Elixir typespecs instead of building them by hand. Their keys and values are unchanged, except that `compile_vapor/2` compile errors in a diagnostics list now carry `code: nil` and `location: nil`, like parser diagnostics.
 
 ## 0.15.0 - 2026-09-30
 
