@@ -173,8 +173,8 @@ fn bundle_css_nif<'a>(
     bundle_css_nif_impl(env, entry_path, minify, chrome, firefox, safari, css_modules)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
-fn vapor_split_nif<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
-    vapor_split_nif_impl(env, source)
+fn vapor_split_nif<'a>(env: Env<'a>, source: &str, events: bool) -> NifResult<Term<'a>> {
+    vapor_split_nif_impl(env, source, events)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
 fn generate_dts_nif<'a>(

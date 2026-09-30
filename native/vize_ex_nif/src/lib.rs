@@ -1018,7 +1018,7 @@ fn bundle_css_nif_impl<'a>(
     Ok(ok_term(env, EncodedBundleCssResult { result: &result }))
 }
 
-fn vapor_split_nif_impl<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
+fn vapor_split_nif_impl<'a>(env: Env<'a>, source: &str, events: bool) -> NifResult<Term<'a>> {
     let allocator = Allocator::new();
     let parser_opts = ParserOptions::default();
     let (mut root, errors) = parse_with_options(&allocator, source, parser_opts);
@@ -1037,7 +1037,7 @@ fn vapor_split_nif_impl<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
 
     let ir = transform_to_ir(&allocator, &root, source);
 
-    let (statics, slots) = process_block(env, &ir.block, &ir, source);
+    let (statics, slots) = process_block(env, &ir.block, &ir, source, events);
 
     let split = EncodedVaporSplit {
         statics,

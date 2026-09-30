@@ -89,7 +89,7 @@ defmodule Vize.GeneratedNifStubs do
         :erlang.nif_error(:nif_not_loaded)
       end
 
-      def vapor_split_nif(_source) do
+      def vapor_split_nif(_source, _events) do
         :erlang.nif_error(:nif_not_loaded)
       end
 

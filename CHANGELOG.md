@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Added
+
+- `vapor_split/2` takes `events: false` to leave event handlers out of the statics, for callers whose client code handles the template's events.
+
+### Fixed
+
+- Escape event handlers in the `phx-*` attributes `vapor_split` writes. `@click='say("hi")'` produced `phx-click="say("hi")"`, which ends the attribute early.
+
 ## 0.15.0 - 2026-09-30
 
 ### Added
