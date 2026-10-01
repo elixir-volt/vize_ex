@@ -6,7 +6,7 @@ Add Vize to your dependencies:
 
 ```elixir
 def deps do
-  [{:vize, "~> 0.15"}]
+  [{:vize, "~> 0.16"}]
 end
 ```
 

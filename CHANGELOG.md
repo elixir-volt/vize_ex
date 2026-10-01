@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.16.0 - 2026-10-01
+
 ### Added
 
 - SFC block locations (`loc` in `parse_sfc/1` results) include `tag_start` and `tag_end`, the span of the block's tags. Their encoder is now generated from Vize's `BlockLocation`, which the handwritten one had fallen behind.
