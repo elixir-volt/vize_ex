@@ -371,16 +371,22 @@ defmodule Vize do
   end
 
   @doc """
-  Compile a Vue template into a statics/slots split ready for LiveView `%Rendered{}`.
+  Split a Vue template into static HTML and the dynamic slots between them.
 
   Returns `{:ok, split}` where `split` has:
-  - `"statics"` — list of static HTML strings (interleaved between dynamic slots)
-  - `"slots"` — ordered list of slot descriptors, each with `:kind` and values/sub-IR
-  - `:templates` — raw template strings (for sub-block rendering)
-  - `:element_template_map` — element ID → template index mapping
 
-  The statics + slots can be directly assembled into a `%Phoenix.LiveView.Rendered{}`
-  struct by evaluating each slot against assigns.
+    * `:statics` — static HTML strings, one more than there are slots
+    * `:slots` — slot descriptors in document order, each with a `:kind`.
+      `v-if` and `v-for` slots carry their own split.
+    * `:bindings` — events and `v-model`s, which the split leaves for the caller
+      to render. Each has a `:kind` (`:set_event` or `:directive`), the IR
+      `:node` as `vapor_ir/1` encodes it, and `:at`, a `{static_index, offset}`
+      pair: the byte offset in that static where the element's start tag ends,
+      so attributes can be inserted there.
+    * `:templates` — raw template strings (for sub-block rendering)
+    * `:element_template_map` — element ID → template index mapping
+
+  The statics and slots map directly onto a `%Phoenix.LiveView.Rendered{}`.
   """
   @spec vapor_split(String.t()) :: {:ok, map()} | {:error, [String.t()]}
   def vapor_split(source) do

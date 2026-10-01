@@ -6,10 +6,8 @@ defmodule Vize.VaporSplitTest do
 
     statics = Enum.join(split.statics)
 
-    assert statics =~ "phx-change=\"name_changed\""
     assert statics =~ "<input"
     assert statics =~ "value=\"\""
-    refute statics =~ "/ phx-change"
     refute statics =~ "/ value"
     assert Enum.any?(split.slots, &(&1.kind == :v_model))
   end
@@ -167,9 +165,51 @@ defmodule Vize.VaporSplitTest do
     assert Enum.map(split.slots, & &1.kind) == [:set_html, :set_text]
   end
 
-  test "escapes event handlers in phx-* attributes" do
-    {:ok, split} = Vize.vapor_split(~S|<button @click='say("hi > there")'>x</button>|)
+  describe "bindings" do
+    test "events are reported with where their element's start tag ends" do
+      {:ok, split} =
+        Vize.vapor_split(~S|<div><button @click.prevent='say("hi")'>{{ label }}</button></div>|)
 
-    assert split.statics == [~s|<button phx-click="say(&quot;hi &gt; there&quot;)">x</button>|]
+      assert split.statics == ["<div><button>", "</button></div>"]
+
+      assert [%{kind: :set_event, node: node, at: {0, 12}}] = split.bindings
+      assert node.key == {:static_, "click"}
+      assert node.value == ~s|say("hi")|
+      assert node.modifiers.non_keys == ["prevent"]
+
+      assert binary_part(hd(split.statics), 0, 12) == "<div><button"
+    end
+
+    test "v-model is reported as its directive" do
+      {:ok, split} = Vize.vapor_split(~S|<input v-model="name">|)
+
+      assert split.statics == [~s(<input value="), ~s(">)]
+
+      assert [%{kind: :directive, node: %{name: "model", value: "name"}, at: {1, 1}}] =
+               split.bindings
+
+      assert [%{kind: :v_model}] = split.slots
+    end
+
+    test "positions count from the static they fall in" do
+      {:ok, split} =
+        Vize.vapor_split(~S|<p :class="cls">{{ a }}</p><button @click="go">x</button>|)
+
+      assert [%{at: {index, offset}}] = split.bindings
+      assert binary_part(Enum.at(split.statics, index), 0, offset) =~ ~r/<button\z/
+    end
+
+    test "bindings inside v-if and v-for belong to their block" do
+      {:ok, split} =
+        Vize.vapor_split(
+          ~S|<ul><li v-for="item in items" @click="pick(item)">{{ item }}</li></ul><b v-if="on" @click="off">x</b>|
+        )
+
+      assert split.bindings == []
+
+      [for_slot, if_slot] = split.slots
+      assert [%{kind: :set_event, node: %{value: "pick(item)"}}] = for_slot.render.bindings
+      assert [%{kind: :set_event, node: %{value: "off"}}] = if_slot.positive.bindings
+    end
   end
 end

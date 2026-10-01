@@ -1013,11 +1013,12 @@ fn vapor_split_nif_impl<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
 
     let ir = transform_to_ir(&allocator, &root, source);
 
-    let (statics, slots) = process_block(env, &ir.block, &ir, source);
+    let (statics, slots, bindings) = process_block(env, &ir.block, &ir, source);
 
     let split = EncodedVaporSplit {
         statics,
         slots,
+        bindings,
         templates: ir.templates.iter().map(ToString::to_string).collect(),
         element_template_map: ir
             .element_template_map

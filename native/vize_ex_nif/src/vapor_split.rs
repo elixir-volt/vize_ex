@@ -6,11 +6,11 @@ use crate::html_inject::{
     build_elem_to_tag, inject_attr, inject_before_close, parse_tag_tree,
     replace_first_space_in_content, replace_range, replace_text_node, TagEntry,
 };
-use crate::ir_encoders::encode_ir_prop;
+use crate::ir_encoders::{encode_directive_ir_node, encode_ir_prop, encode_set_event_ir_node};
 use crate::ir_encoding::encode_simple_expr;
 use crate::term_encoding::{
-    EncodedComponentSlot, EncodedForSlot, EncodedIfSlot, EncodedSplitBlock, EncodedValueSlot,
-    EncodedValuesSlot,
+    EncodedComponentSlot, EncodedForSlot, EncodedIfSlot, EncodedSplitBinding, EncodedSplitBlock,
+    EncodedValueSlot, EncodedValuesSlot,
 };
 
 fn encode_slot_values<'a>(env: Env<'a>, kind: Atom, values: Vec<Term<'a>>) -> Term<'a> {
@@ -35,8 +35,12 @@ fn split_block<'a, 'b>(
     ir: &'b RootIRNode<'b>,
     source: &str,
 ) -> EncodedSplitBlock<'a> {
-    let (statics, slots) = process_block(env, block, ir, source);
-    EncodedSplitBlock { statics, slots }
+    let (statics, slots, bindings) = process_block(env, block, ir, source);
+    EncodedSplitBlock {
+        statics,
+        slots,
+        bindings,
+    }
 }
 
 fn encode_slot_if_split<'a, 'b>(
@@ -107,6 +111,7 @@ fn encode_slot_component<'a>(env: Env<'a>, node: &CreateComponentIRNode) -> Term
 }
 
 const SLOT_MARKER_PREFIX: &str = "\0VIZE_SLOT_";
+const BINDING_MARKER_PREFIX: &str = "\0VIZE_BINDING_";
 const SLOT_MARKER_SUFFIX: char = '\0';
 
 struct SlotMarker<'a> {
@@ -135,6 +140,18 @@ fn placeholder_anchor(anchor: Option<InsertionAnchor>) -> Option<usize> {
 
 fn slot_marker(index: usize) -> String {
     format!("{SLOT_MARKER_PREFIX}{index}{SLOT_MARKER_SUFFIX}")
+}
+
+// Marks where an element's start tag ends, for an event or v-model the split
+// reports as a binding instead of rendering.
+fn push_binding_marker<'a>(
+    bindings: &mut Vec<(Atom, Term<'a>)>,
+    kind: Atom,
+    node: Term<'a>,
+) -> String {
+    let index = bindings.len();
+    bindings.push((kind, node));
+    format!("{BINDING_MARKER_PREFIX}{index}{SLOT_MARKER_SUFFIX}")
 }
 
 fn push_slot_marker<'a>(
@@ -292,34 +309,71 @@ fn inject_structural_marker(
     }
 }
 
-fn split_on_slot_markers<'a>(
+// Splits the HTML at slot markers into statics, and turns binding markers into
+// `{static_index, byte_offset}` positions in those statics.
+fn split_on_markers<'a>(
     html: &str,
     mut slots: Vec<SlotMarker<'a>>,
-) -> (Vec<String>, Vec<Term<'a>>) {
+    binding_nodes: Vec<(Atom, Term<'a>)>,
+) -> (Vec<String>, Vec<Term<'a>>, Vec<EncodedSplitBinding<'a>>) {
+    let unsplit = || (vec![html.to_string()], Vec::new(), Vec::new());
     let mut statics = Vec::new();
     let mut ordered_slots = Vec::new();
+    let mut bindings: Vec<(usize, (usize, usize))> = Vec::new();
+    let mut current = String::new();
     let mut rest = html;
 
-    while let Some(position) = rest.find(SLOT_MARKER_PREFIX) {
-        statics.push(rest[..position].to_string());
+    loop {
+        let next_slot = rest
+            .find(SLOT_MARKER_PREFIX)
+            .map(|p| (p, SLOT_MARKER_PREFIX));
+        let next_binding = rest
+            .find(BINDING_MARKER_PREFIX)
+            .map(|p| (p, BINDING_MARKER_PREFIX));
 
-        let marker_body = &rest[position + SLOT_MARKER_PREFIX.len()..];
+        let Some((position, prefix)) = [next_slot, next_binding]
+            .into_iter()
+            .flatten()
+            .min_by_key(|(position, _)| *position)
+        else {
+            break;
+        };
+
+        current.push_str(&rest[..position]);
+
+        let marker_body = &rest[position + prefix.len()..];
         let Some(suffix_position) = marker_body.find(SLOT_MARKER_SUFFIX) else {
-            return (vec![html.to_string()], Vec::new());
+            return unsplit();
         };
         let Ok(index) = marker_body[..suffix_position].parse::<usize>() else {
-            return (vec![html.to_string()], Vec::new());
-        };
-        let Some(slot) = slots.get_mut(index).and_then(|slot| slot.term.take()) else {
-            return (vec![html.to_string()], Vec::new());
+            return unsplit();
         };
 
-        ordered_slots.push(slot);
+        if prefix == SLOT_MARKER_PREFIX {
+            let Some(slot) = slots.get_mut(index).and_then(|slot| slot.term.take()) else {
+                return unsplit();
+            };
+            ordered_slots.push(slot);
+            statics.push(std::mem::take(&mut current));
+        } else {
+            bindings.push((index, (statics.len(), current.len())));
+        }
+
         rest = &marker_body[suffix_position + SLOT_MARKER_SUFFIX.len_utf8()..];
     }
 
-    statics.push(rest.to_string());
-    (statics, ordered_slots)
+    current.push_str(rest);
+    statics.push(current);
+
+    let bindings = bindings
+        .into_iter()
+        .map(|(index, at)| {
+            let (kind, node) = binding_nodes[index];
+            EncodedSplitBinding { kind, node, at }
+        })
+        .collect();
+
+    (statics, ordered_slots, bindings)
 }
 
 pub(crate) fn process_block<'a, 'b>(
@@ -327,7 +381,7 @@ pub(crate) fn process_block<'a, 'b>(
     block: &'b BlockIRNode<'b>,
     ir: &'b RootIRNode<'b>,
     source: &str,
-) -> (Vec<String>, Vec<Term<'a>>) {
+) -> (Vec<String>, Vec<Term<'a>>, Vec<EncodedSplitBinding<'a>>) {
     let template_html: String = block
         .returns
         .iter()
@@ -347,21 +401,17 @@ pub(crate) fn process_block<'a, 'b>(
     let mut elem_to_tag = build_elem_to_tag(&block.returns, &block.operation, &tags);
     let mut slots: Vec<SlotMarker<'a>> = Vec::new();
 
+    let mut binding_nodes: Vec<(Atom, Term<'a>)> = Vec::new();
+
     for op in &block.operation {
         if let OperationNode::SetEvent(event) = op {
             if let Some(&tag_pos) = elem_to_tag.get(&event.element) {
-                let event_name = event.key.content;
-                let handler = event
-                    .value
-                    .as_ref()
-                    .map(|value| value.content)
-                    .unwrap_or(event_name);
-                let attr = format!(
-                    " phx-{}=\"{}\"",
-                    event_name,
-                    html_escape::encode_double_quoted_attribute(handler)
+                let marker = push_binding_marker(
+                    &mut binding_nodes,
+                    atoms::set_event(),
+                    encode_set_event_ir_node(env, event),
                 );
-                inject_attr(&mut html, &mut tags, tag_pos, &attr);
+                inject_attr(&mut html, &mut tags, tag_pos, &marker);
             }
         }
     }
@@ -451,12 +501,12 @@ pub(crate) fn process_block<'a, 'b>(
                             let marker = push_slot_marker(&mut slots, slot, dir.dir.loc.span.start);
                             let attr = format!(" value=\"{marker}\"");
                             inject_attr(&mut html, &mut tags, tag_pos, &attr);
-                            let handler_name = format!("{}_changed", simple.content);
-                            let change_attr = format!(
-                                " phx-change=\"{}\"",
-                                html_escape::encode_double_quoted_attribute(&handler_name)
+                            let marker = push_binding_marker(
+                                &mut binding_nodes,
+                                atoms::directive(),
+                                encode_directive_ir_node(env, dir),
                             );
-                            inject_attr(&mut html, &mut tags, tag_pos, &change_attr);
+                            inject_attr(&mut html, &mut tags, tag_pos, &marker);
                         }
                     }
                     _ => {}
@@ -551,5 +601,5 @@ pub(crate) fn process_block<'a, 'b>(
         }
     }
 
-    split_on_slot_markers(&html, slots)
+    split_on_markers(&html, slots, binding_nodes)
 }

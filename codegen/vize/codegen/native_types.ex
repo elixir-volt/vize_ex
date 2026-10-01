@@ -125,6 +125,7 @@ defmodule Vize.Codegen.NativeTypes do
   @type encoded_vapor_split :: %{
           required(:statics) => [String.t()],
           required(:slots) => [R.term()],
+          required(:bindings) => [encoded_split_binding()],
           required(:templates) => [String.t()],
           required(:element_template_map) => [{R.usize(), R.usize()}]
         }
@@ -136,7 +137,16 @@ defmodule Vize.Codegen.NativeTypes do
 
   @type encoded_split_block :: %{
           required(:statics) => [String.t()],
-          required(:slots) => [R.term()]
+          required(:slots) => [R.term()],
+          required(:bindings) => [encoded_split_binding()]
+        }
+
+  # An event or v-model on an element, left for the caller to render. `at` is
+  # `{static_index, byte_offset}`: where that element's start tag ends.
+  @type encoded_split_binding :: %{
+          required(:kind) => :set_event | :directive,
+          required(:node) => R.term(),
+          required(:at) => {R.usize(), R.usize()}
         }
 
   @type encoded_values_slot :: %{

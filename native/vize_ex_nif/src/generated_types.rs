@@ -155,9 +155,16 @@ pub struct EncodedSourceLocation {
     pub source: String,
 }
 #[derive(Clone, Debug, rustler::NifMap)]
+pub struct EncodedSplitBinding<'a> {
+    pub kind: Atom,
+    pub node: Term<'a>,
+    pub at: (usize, usize),
+}
+#[derive(Clone, Debug, rustler::NifMap)]
 pub struct EncodedSplitBlock<'a> {
     pub statics: Vec<String>,
     pub slots: Vec<Term<'a>>,
+    pub bindings: Vec<EncodedSplitBinding<'a>>,
 }
 #[derive(Clone, Debug, rustler::NifMap)]
 pub struct EncodedTemplateAsset {
@@ -209,6 +216,7 @@ pub struct EncodedVaporOutput {
 pub struct EncodedVaporSplit<'a> {
     pub statics: Vec<String>,
     pub slots: Vec<Term<'a>>,
+    pub bindings: Vec<EncodedSplitBinding<'a>>,
     pub templates: Vec<String>,
     pub element_template_map: Vec<(usize, usize)>,
 }
