@@ -10,16 +10,7 @@ defmodule Vize.GeneratedNifStubs do
         :erlang.nif_error(:nif_not_loaded)
       end
 
-      def compile_sfc_nif(
-            _source,
-            _filename,
-            _scope_id,
-            _vapor,
-            _ssr,
-            _custom_renderer,
-            _strip_types,
-            _source_map
-          ) do
+      def compile_sfc_nif(_source, _opts) do
         :erlang.nif_error(:nif_not_loaded)
       end
 
@@ -31,11 +22,11 @@ defmodule Vize.GeneratedNifStubs do
         :erlang.nif_error(:nif_not_loaded)
       end
 
-      def sfc_scope_id_nif(_filename, _root, _production, _source) do
+      def sfc_scope_id_nif(_filename, _opts) do
         :erlang.nif_error(:nif_not_loaded)
       end
 
-      def compile_template_nif(_source, _mode, _ssr) do
+      def compile_template_nif(_source, _opts) do
         :erlang.nif_error(:nif_not_loaded)
       end
 
@@ -43,7 +34,7 @@ defmodule Vize.GeneratedNifStubs do
         :erlang.nif_error(:nif_not_loaded)
       end
 
-      def compile_vapor_nif(_source, _ssr, _diagnostics, _template_syntax) do
+      def compile_vapor_nif(_source, _opts) do
         :erlang.nif_error(:nif_not_loaded)
       end
 
@@ -55,41 +46,31 @@ defmodule Vize.GeneratedNifStubs do
         :erlang.nif_error(:nif_not_loaded)
       end
 
-      def select_css_nif(_source, _filename, _custom_media, _css_modules, _selector_term) do
+      def select_css_nif(_source, _opts, _selector_term) do
         :erlang.nif_error(:nif_not_loaded)
       end
 
-      def parse_css_ast_nif(_source, _filename, _custom_media, _css_modules) do
+      def parse_css_ast_nif(_source, _opts) do
         :erlang.nif_error(:nif_not_loaded)
       end
 
-      def print_css_ast_nif(_ast, _minify, _chrome, _firefox, _safari) do
+      def print_css_ast_nif(_ast, _opts) do
         :erlang.nif_error(:nif_not_loaded)
       end
 
-      def compile_sass_nif(_source, _syntax, _filename, _load_paths, _compressed) do
+      def compile_sass_nif(_source, _opts) do
         :erlang.nif_error(:nif_not_loaded)
       end
 
-      def compile_css_nif(
-            _source,
-            _minify,
-            _scoped,
-            _scope_id_str,
-            _filename,
-            _chrome,
-            _firefox,
-            _safari,
-            _css_modules
-          ) do
+      def compile_css_nif(_source, _opts) do
         :erlang.nif_error(:nif_not_loaded)
       end
 
-      def bundle_css_nif(_entry_path, _minify, _chrome, _firefox, _safari, _css_modules) do
+      def bundle_css_nif(_entry_path, _opts) do
         :erlang.nif_error(:nif_not_loaded)
       end
 
-      def vapor_split_nif(_source, _events) do
+      def vapor_split_nif(_source, _opts) do
         :erlang.nif_error(:nif_not_loaded)
       end
 

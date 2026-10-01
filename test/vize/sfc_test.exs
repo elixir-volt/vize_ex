@@ -96,4 +96,14 @@ defmodule Vize.SFCTest do
     assert is_binary(first)
     assert first != ""
   end
+
+  test "block locations include the tag span" do
+    source = ~s(<template><p>hi</p></template>\n<script lang="ts">\nconst a = 1\n</script>)
+    {:ok, %{script: %{loc: loc}}} = Vize.parse_sfc(source)
+
+    assert binary_part(source, loc.tag_start, loc.tag_end - loc.tag_start) ==
+             ~s(<script lang="ts">\nconst a = 1\n</script>)
+
+    assert binary_part(source, loc.start, loc.end - loc.start) == "\nconst a = 1\n"
+  end
 end

@@ -36,7 +36,7 @@ impl rustler::Encoder for EncodedTemplateBlock<'_> {
                     self.0.content.as_ref().encode(env),
                     self.0.src.as_deref().encode(env),
                     self.0.lang.as_deref().encode(env),
-                    loc_to_term(env, &self.0.loc),
+                    encode_block_location(env, &self.0.loc),
                     attrs_to_term(env, &self.0.attrs),
                 ],
             )
@@ -60,7 +60,7 @@ impl rustler::Encoder for EncodedScriptBlock<'_> {
                     self.0.src.as_deref().encode(env),
                     self.0.lang.as_deref().encode(env),
                     self.0.setup.encode(env),
-                    loc_to_term(env, &self.0.loc),
+                    encode_block_location(env, &self.0.loc),
                     attrs_to_term(env, &self.0.attrs),
                 ],
             )
@@ -86,7 +86,7 @@ impl rustler::Encoder for EncodedStyleBlock<'_> {
                     self.0.lang.as_deref().encode(env),
                     self.0.scoped.encode(env),
                     self.0.module.as_deref().encode(env),
-                    loc_to_term(env, &self.0.loc),
+                    encode_block_location(env, &self.0.loc),
                     attrs_to_term(env, &self.0.attrs),
                 ],
             )
@@ -108,7 +108,7 @@ impl rustler::Encoder for EncodedCustomBlock<'_> {
                     self.0.block_type.as_ref().encode(env),
                     self.0.content.as_ref().encode(env),
                     src_attr_to_term(env, &self.0.attrs),
-                    loc_to_term(env, &self.0.loc),
+                    encode_block_location(env, &self.0.loc),
                     attrs_to_term(env, &self.0.attrs),
                 ],
             )

@@ -4,10 +4,16 @@
 
 ### Added
 
+- SFC block locations (`loc` in `parse_sfc/1` results) include `tag_start` and `tag_end`, the span of the block's tags. Their encoder is now generated from Vize's `BlockLocation`, which the handwritten one had fallen behind.
 - `vapor_split/2` takes `events: false` to leave event handlers out of the statics, for callers whose client code handles the template's events.
+
+### Changed
+
+- NIFs take one typed options map instead of positional arguments; `compile_sfc_nif` had eight. RustQ derives the Rust struct and decoder for each map from a typespec, and the public functions keep their keyword options and defaults. CSS browser targets are optional versions instead of `-1` sentinels.
 
 ### Fixed
 
+- Document that CSS `:targets` take effect only with `minify: true`, because Vize applies them while minifying.
 - Escape event handlers in the `phx-*` attributes `vapor_split` writes. `@click='say("hi")'` produced `phx-click="say("hi")"`, which ends the attribute early.
 
 ## 0.15.0 - 2026-09-30

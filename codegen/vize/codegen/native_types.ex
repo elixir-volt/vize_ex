@@ -1,8 +1,9 @@
 defmodule Vize.Codegen.NativeTypes do
   @moduledoc false
 
-  # Result shapes returned by the NIFs. RustQ derives a Rust struct and its
-  # Term codec for each type.
+  # Options passed to and results returned by the NIFs. RustQ derives a Rust
+  # struct and its Term codec for each type. Option defaults live in the public
+  # Elixir functions, which always pass every key.
 
   use RustQ.Native,
     build: false,
@@ -11,13 +12,74 @@ defmodule Vize.Codegen.NativeTypes do
 
   alias RustQ.Type, as: R
 
-  @type encoded_loc :: %{
-          required(:start) => R.usize(),
-          required(:end) => R.usize(),
-          required(:start_line) => R.usize(),
-          required(:start_column) => R.usize(),
-          required(:end_line) => R.usize(),
-          required(:end_column) => R.usize()
+  ## NIF options
+
+  @type compile_sfc_opts :: %{
+          required(:filename) => String.t(),
+          required(:scope_id) => String.t(),
+          required(:vapor) => boolean(),
+          required(:ssr) => boolean(),
+          required(:custom_renderer) => boolean(),
+          required(:strip_types) => boolean(),
+          required(:source_map) => boolean()
+        }
+
+  @type scope_id_opts :: %{
+          required(:root) => String.t(),
+          required(:production) => boolean(),
+          required(:source) => String.t()
+        }
+
+  @type compile_template_opts :: %{
+          required(:mode) => String.t(),
+          required(:ssr) => boolean()
+        }
+
+  @type compile_vapor_opts :: %{
+          required(:ssr) => boolean(),
+          required(:diagnostics) => boolean(),
+          required(:template_syntax) => String.t()
+        }
+
+  @type vapor_split_opts :: %{required(:events) => boolean()}
+
+  @type browser_targets :: %{
+          required(:chrome) => R.u32() | nil,
+          required(:firefox) => R.u32() | nil,
+          required(:safari) => R.u32() | nil
+        }
+
+  @type compile_css_opts :: %{
+          required(:minify) => boolean(),
+          required(:scoped) => boolean(),
+          required(:scope_id) => String.t(),
+          required(:filename) => String.t(),
+          required(:targets) => browser_targets(),
+          required(:css_modules) => boolean()
+        }
+
+  @type bundle_css_opts :: %{
+          required(:minify) => boolean(),
+          required(:targets) => browser_targets(),
+          required(:css_modules) => boolean()
+        }
+
+  @type parse_css_opts :: %{
+          required(:filename) => String.t(),
+          required(:custom_media) => boolean(),
+          required(:css_modules) => boolean()
+        }
+
+  @type print_css_opts :: %{
+          required(:minify) => boolean(),
+          required(:targets) => browser_targets()
+        }
+
+  @type compile_sass_opts :: %{
+          required(:syntax) => String.t(),
+          required(:filename) => String.t(),
+          required(:load_paths) => [String.t()],
+          required(:compressed) => boolean()
         }
 
   ## Diagnostics

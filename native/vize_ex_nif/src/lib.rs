@@ -40,6 +40,14 @@ mod ir_encoders {
 
     include!("generated_ir_encoders.rs");
 }
+mod sfc_encoders {
+    use rustler::Encoder;
+    use vize_atelier_sfc::BlockLocation;
+
+    use crate::atoms;
+
+    include!("generated_sfc_encoders.rs");
+}
 mod term_encoding;
 mod vapor_split;
 
@@ -52,6 +60,10 @@ use crate::term_encoding::{
     EncodedSsrCompileResult, EncodedTemplateAsset, EncodedTemplateCompileResult,
     EncodedTemplateExpression, EncodedUndefinedRef, EncodedVaporDiagnosticsOutput, EncodedVaporIr,
     EncodedVaporOutput, EncodedVaporSplit,
+};
+use crate::term_encoding::{
+    BrowserTargets, BundleCssOpts, CompileCssOpts, CompileSassOpts, CompileSfcOpts,
+    CompileTemplateOpts, CompileVaporOpts, ParseCssOpts, PrintCssOpts, ScopeIdOpts, VaporSplitOpts,
 };
 use crate::vapor_split::process_block;
 
@@ -196,21 +208,23 @@ fn analyze_sfc_nif_impl<'a>(env: Env<'a>, source: &str, mode: &str) -> NifResult
 
 // ── SFC Compilation ──
 
-#[allow(clippy::too_many_arguments)]
 fn compile_sfc_nif_impl<'a>(
     env: Env<'a>,
     source: &str,
-    filename: &str,
-    scope_id: &str,
-    vapor: bool,
-    ssr: bool,
-    custom_renderer: bool,
-    strip_types: bool,
-    source_map: bool,
+    opts: CompileSfcOpts,
 ) -> NifResult<Term<'a>> {
+    let CompileSfcOpts {
+        filename,
+        scope_id,
+        vapor,
+        ssr,
+        custom_renderer,
+        strip_types,
+        source_map,
+    } = opts;
     let mut parse_opts = SfcParseOptions::default();
     if !filename.is_empty() {
-        parse_opts.filename = filename.into();
+        parse_opts.filename = filename.as_str().into();
     }
 
     let descriptor = match parse_sfc(source, parse_opts) {
@@ -308,15 +322,18 @@ fn rewrite_sfc_template_assets_nif_impl<'a>(
 fn sfc_scope_id_nif_impl<'a>(
     env: Env<'a>,
     filename: &str,
-    root: &str,
-    production: bool,
-    source: &str,
+    opts: ScopeIdOpts,
 ) -> NifResult<Term<'a>> {
+    let ScopeIdOpts {
+        root,
+        production,
+        source,
+    } = opts;
     let scope_id = generate_bundler_scope_id(
         filename,
-        (!root.is_empty()).then_some(root),
+        (!root.is_empty()).then_some(root.as_str()),
         production,
-        (!source.is_empty()).then_some(source),
+        (!source.is_empty()).then_some(source.as_str()),
     );
     Ok(scope_id.encode(env))
 }
@@ -326,9 +343,9 @@ fn sfc_scope_id_nif_impl<'a>(
 fn compile_template_nif_impl<'a>(
     env: Env<'a>,
     source: &str,
-    mode: &str,
-    ssr: bool,
+    opts: CompileTemplateOpts,
 ) -> NifResult<Term<'a>> {
+    let CompileTemplateOpts { mode, ssr } = opts;
     let allocator = Allocator::new();
     let (mut root, errors) = parse(&allocator, source);
 
@@ -437,16 +454,19 @@ fn template_syntax_mode(value: &str) -> TemplateSyntaxMode {
 fn compile_vapor_nif_impl<'a>(
     env: Env<'a>,
     source: &str,
-    ssr: bool,
-    diagnostics: bool,
-    template_syntax: &str,
+    opts: CompileVaporOpts,
 ) -> NifResult<Term<'a>> {
+    let CompileVaporOpts {
+        ssr,
+        diagnostics,
+        template_syntax,
+    } = opts;
     let allocator = Allocator::new();
     let opts = VaporCompilerOptions {
         ssr,
         ..Default::default()
     };
-    let syntax = template_syntax_mode(template_syntax);
+    let syntax = template_syntax_mode(&template_syntax);
 
     if diagnostics || syntax.is_quirks() {
         let (result, parser_diagnostics) =
@@ -557,12 +577,15 @@ fn lint_nif_impl<'a>(env: Env<'a>, source: &str, filename: &str) -> NifResult<Te
 fn compile_sass_nif_impl<'a>(
     env: Env<'a>,
     source: &str,
-    syntax: &str,
-    filename: &str,
-    load_paths: Vec<String>,
-    compressed: bool,
+    opts: CompileSassOpts,
 ) -> NifResult<Term<'a>> {
-    let input_syntax = match syntax {
+    let CompileSassOpts {
+        syntax,
+        filename,
+        load_paths,
+        compressed,
+    } = opts;
+    let input_syntax = match syntax.as_str() {
         "sass" => grass::InputSyntax::Sass,
         "scss" => grass::InputSyntax::Scss,
         _ => return Ok(error_term(env, format!("Unknown Sass syntax: {syntax}"))),
@@ -577,7 +600,7 @@ fn compile_sass_nif_impl<'a>(
         });
 
     if !filename.is_empty() {
-        if let Some(parent) = std::path::Path::new(filename).parent() {
+        if let Some(parent) = std::path::Path::new(&filename).parent() {
             options = options.load_path(parent);
         }
     }
@@ -592,29 +615,19 @@ fn compile_sass_nif_impl<'a>(
     }
 }
 
-fn css_targets(chrome: i64, firefox: i64, safari: i64) -> Option<CssTargets> {
-    if chrome >= 0 || firefox >= 0 || safari >= 0 {
-        Some(CssTargets {
-            chrome: if chrome >= 0 {
-                Some(chrome as u32)
-            } else {
-                None
-            },
-            firefox: if firefox >= 0 {
-                Some(firefox as u32)
-            } else {
-                None
-            },
-            safari: if safari >= 0 {
-                Some(safari as u32)
-            } else {
-                None
-            },
-            ..Default::default()
-        })
-    } else {
-        None
-    }
+fn css_targets(targets: &BrowserTargets) -> Option<CssTargets> {
+    let &BrowserTargets {
+        chrome,
+        firefox,
+        safari,
+    } = targets;
+
+    (chrome.is_some() || firefox.is_some() || safari.is_some()).then(|| CssTargets {
+        chrome,
+        firefox,
+        safari,
+        ..Default::default()
+    })
 }
 
 fn css_parser_options<'a>(
@@ -755,16 +768,19 @@ fn optional_string(value: Option<&str>) -> ValueRef<'_> {
 fn select_css_nif_impl<'a>(
     env: Env<'a>,
     source: &str,
-    filename: &str,
-    custom_media: bool,
-    css_modules: bool,
+    opts: ParseCssOpts,
     selector_term: Term<'a>,
 ) -> NifResult<Term<'a>> {
+    let ParseCssOpts {
+        filename,
+        custom_media,
+        css_modules,
+    } = opts;
     let selector = Selector::from_term(selector_term)?;
 
     let stylesheet = match StyleSheet::parse(
         source,
-        css_parser_options(filename, custom_media, css_modules),
+        css_parser_options(&filename, custom_media, css_modules),
     ) {
         Ok(stylesheet) => stylesheet,
         Err(error) => return Ok(error_term(env, vec![format!("CSS parse error: {error}")])),
@@ -857,10 +873,13 @@ fn select_css_nif_impl<'a>(
 fn parse_css_ast_nif_impl<'a>(
     env: Env<'a>,
     source: &str,
-    filename: &str,
-    custom_media: bool,
-    css_modules: bool,
+    opts: ParseCssOpts,
 ) -> NifResult<Term<'a>> {
+    let ParseCssOpts {
+        filename,
+        custom_media,
+        css_modules,
+    } = opts;
     let options = CssCompileOptions {
         filename: if filename.is_empty() {
             None
@@ -880,11 +899,9 @@ fn parse_css_ast_nif_impl<'a>(
 fn print_css_ast_nif_impl<'a>(
     env: Env<'a>,
     ast: Term<'a>,
-    minify: bool,
-    chrome: i64,
-    firefox: i64,
-    safari: i64,
+    opts: PrintCssOpts,
 ) -> NifResult<Term<'a>> {
+    let PrintCssOpts { minify, targets } = opts;
     let ast = match decode_json_value(ast) {
         Ok(ast) => ast,
         Err(_) => {
@@ -903,7 +920,7 @@ fn print_css_ast_nif_impl<'a>(
 
     let options = CssCompileOptions {
         minify,
-        targets: css_targets(chrome, firefox, safari),
+        targets: css_targets(&targets),
         ..Default::default()
     };
 
@@ -912,47 +929,26 @@ fn print_css_ast_nif_impl<'a>(
     Ok(ok_term(env, EncodedCssCompileResult { result: &result }))
 }
 
-#[allow(clippy::too_many_arguments)]
 fn compile_css_nif_impl<'a>(
     env: Env<'a>,
     source: &str,
-    minify: bool,
-    scoped: bool,
-    scope_id_str: &str,
-    filename: &str,
-    chrome: i64,
-    firefox: i64,
-    safari: i64,
-    css_modules: bool,
+    opts: CompileCssOpts,
 ) -> NifResult<Term<'a>> {
-    let targets = if chrome >= 0 || firefox >= 0 || safari >= 0 {
-        Some(CssTargets {
-            chrome: if chrome >= 0 {
-                Some(chrome as u32)
-            } else {
-                None
-            },
-            firefox: if firefox >= 0 {
-                Some(firefox as u32)
-            } else {
-                None
-            },
-            safari: if safari >= 0 {
-                Some(safari as u32)
-            } else {
-                None
-            },
-            ..Default::default()
-        })
-    } else {
-        None
-    };
+    let CompileCssOpts {
+        minify,
+        scoped,
+        scope_id,
+        filename,
+        targets,
+        css_modules,
+    } = opts;
+    let targets = css_targets(&targets);
 
     let options = CssCompileOptions {
-        scope_id: if scope_id_str.is_empty() {
+        scope_id: if scope_id.is_empty() {
             None
         } else {
-            Some(scope_id_str.into())
+            Some(scope_id.into())
         },
         scoped,
         minify,
@@ -977,34 +973,14 @@ fn compile_css_nif_impl<'a>(
 fn bundle_css_nif_impl<'a>(
     env: Env<'a>,
     entry_path: &str,
-    minify: bool,
-    chrome: i64,
-    firefox: i64,
-    safari: i64,
-    css_modules: bool,
+    opts: BundleCssOpts,
 ) -> NifResult<Term<'a>> {
-    let targets = if chrome >= 0 || firefox >= 0 || safari >= 0 {
-        Some(CssTargets {
-            chrome: if chrome >= 0 {
-                Some(chrome as u32)
-            } else {
-                None
-            },
-            firefox: if firefox >= 0 {
-                Some(firefox as u32)
-            } else {
-                None
-            },
-            safari: if safari >= 0 {
-                Some(safari as u32)
-            } else {
-                None
-            },
-            ..Default::default()
-        })
-    } else {
-        None
-    };
+    let BundleCssOpts {
+        minify,
+        targets,
+        css_modules,
+    } = opts;
+    let targets = css_targets(&targets);
 
     let options = CssCompileOptions {
         minify,
@@ -1018,7 +994,12 @@ fn bundle_css_nif_impl<'a>(
     Ok(ok_term(env, EncodedBundleCssResult { result: &result }))
 }
 
-fn vapor_split_nif_impl<'a>(env: Env<'a>, source: &str, events: bool) -> NifResult<Term<'a>> {
+fn vapor_split_nif_impl<'a>(
+    env: Env<'a>,
+    source: &str,
+    opts: VaporSplitOpts,
+) -> NifResult<Term<'a>> {
+    let VaporSplitOpts { events } = opts;
     let allocator = Allocator::new();
     let parser_opts = ParserOptions::default();
     let (mut root, errors) = parse_with_options(&allocator, source, parser_opts);

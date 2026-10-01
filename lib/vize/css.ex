@@ -40,7 +40,8 @@ defmodule Vize.CSS do
     * `:filename` — filename for error reporting
     * `:css_modules` — enable CSS Modules scoping (default: `false`)
     * `:targets` — browser targets for autoprefixing, map with optional
-      `:chrome`, `:firefox`, `:safari` keys as major version integers
+      `:chrome`, `:firefox`, `:safari` keys as major version integers. Vize
+      applies them while minifying, so they take effect only with `minify: true`
 
   ## Examples
 
@@ -52,27 +53,14 @@ defmodule Vize.CSS do
   """
   @spec compile(String.t(), keyword()) :: {:ok, css_result()}
   def compile(source, opts \\ []) do
-    minify = Keyword.get(opts, :minify, false)
-    scoped = Keyword.get(opts, :scoped, false)
-    scope_id = Keyword.get(opts, :scope_id, "")
-    filename = Keyword.get(opts, :filename, "")
-    css_modules = Keyword.get(opts, :css_modules, false)
-    targets = Keyword.get(opts, :targets, %{})
-    chrome = Map.get(targets, :chrome, -1)
-    firefox = Map.get(targets, :firefox, -1)
-    safari = Map.get(targets, :safari, -1)
-
-    Vize.Native.compile_css_nif(
-      source,
-      minify,
-      scoped,
-      scope_id,
-      filename,
-      chrome,
-      firefox,
-      safari,
-      css_modules
-    )
+    Vize.Native.compile_css_nif(source, %{
+      minify: Keyword.get(opts, :minify, false),
+      scoped: Keyword.get(opts, :scoped, false),
+      scope_id: Keyword.get(opts, :scope_id, ""),
+      filename: Keyword.get(opts, :filename, ""),
+      targets: browser_targets(opts),
+      css_modules: Keyword.get(opts, :css_modules, false)
+    })
   end
 
   @doc """
@@ -88,12 +76,12 @@ defmodule Vize.CSS do
   @spec compile_sass(String.t(), keyword()) ::
           {:ok, %{code: String.t()}} | {:error, String.t()}
   def compile_sass(source, opts \\ []) do
-    syntax = opts |> Keyword.get(:syntax, :scss) |> Atom.to_string()
-    filename = opts |> Keyword.get(:filename, "") |> to_string()
-    load_paths = opts |> Keyword.get(:load_paths, []) |> Enum.map(&Path.expand/1)
-    compressed = Keyword.get(opts, :compressed, false)
-
-    Vize.Native.compile_sass_nif(source, syntax, filename, load_paths, compressed)
+    Vize.Native.compile_sass_nif(source, %{
+      syntax: opts |> Keyword.get(:syntax, :scss) |> Atom.to_string(),
+      filename: opts |> Keyword.get(:filename, "") |> to_string(),
+      load_paths: opts |> Keyword.get(:load_paths, []) |> Enum.map(&Path.expand/1),
+      compressed: Keyword.get(opts, :compressed, false)
+    })
   end
 
   @doc "Like `compile_sass/2` but raises on compilation errors."
@@ -129,25 +117,16 @@ defmodule Vize.CSS do
 
     * `:minify` — minify the output (default: `false`)
     * `:css_modules` — enable CSS Modules scoping (default: `false`)
-    * `:targets` — browser targets for autoprefixing
+    * `:targets` — browser targets for autoprefixing; they take effect only with
+      `minify: true`
   """
   @spec bundle(String.t(), keyword()) :: {:ok, css_result()}
   def bundle(entry_path, opts \\ []) do
-    minify = Keyword.get(opts, :minify, false)
-    css_modules = Keyword.get(opts, :css_modules, false)
-    targets = Keyword.get(opts, :targets, %{})
-    chrome = Map.get(targets, :chrome, -1)
-    firefox = Map.get(targets, :firefox, -1)
-    safari = Map.get(targets, :safari, -1)
-
-    Vize.Native.bundle_css_nif(
-      Path.expand(entry_path),
-      minify,
-      chrome,
-      firefox,
-      safari,
-      css_modules
-    )
+    Vize.Native.bundle_css_nif(Path.expand(entry_path), %{
+      minify: Keyword.get(opts, :minify, false),
+      targets: browser_targets(opts),
+      css_modules: Keyword.get(opts, :css_modules, false)
+    })
   end
 
   @doc "Like `bundle/2` but raises on errors."
@@ -182,17 +161,7 @@ defmodule Vize.CSS do
   """
   @spec select(String.t(), atom(), keyword()) :: {:ok, [map()]} | {:error, Vize.Error.t()}
   def select(source, selector, opts \\ []) when is_atom(selector) do
-    filename = Keyword.get(opts, :filename, "")
-    css_modules = Keyword.get(opts, :css_modules, false)
-    custom_media = Keyword.get(opts, :custom_media, false)
-
-    case Vize.Native.select_css_nif(
-           source,
-           filename,
-           custom_media,
-           css_modules,
-           selector_spec(selector)
-         ) do
+    case Vize.Native.select_css_nif(source, parse_opts(opts), selector_spec(selector)) do
       {:ok, events} -> {:ok, events}
       {:error, errors} -> {:error, error("Vize CSS selection error", errors)}
     end
@@ -319,11 +288,7 @@ defmodule Vize.CSS do
   """
   @spec parse_ast(String.t(), keyword()) :: {:ok, ast_result()}
   def parse_ast(source, opts \\ []) do
-    filename = Keyword.get(opts, :filename, "")
-    css_modules = Keyword.get(opts, :css_modules, false)
-    custom_media = Keyword.get(opts, :custom_media, false)
-
-    Vize.Native.parse_css_ast_nif(source, filename, custom_media, css_modules)
+    Vize.Native.parse_css_ast_nif(source, parse_opts(opts))
   end
 
   @doc "Like `parse_ast/2` but raises on errors."
@@ -346,7 +311,8 @@ defmodule Vize.CSS do
 
     * `:minify` — minify the output (default: `false`)
     * `:targets` — browser targets for autoprefixing, map with optional
-      `:chrome`, `:firefox`, `:safari` keys as major version integers
+      `:chrome`, `:firefox`, `:safari` keys as major version integers. Vize
+      applies them while minifying, so they take effect only with `minify: true`
 
   ## Examples
 
@@ -357,13 +323,10 @@ defmodule Vize.CSS do
   """
   @spec print_ast(map(), keyword()) :: {:ok, css_result()}
   def print_ast(ast, opts \\ []) do
-    minify = Keyword.get(opts, :minify, false)
-    targets = Keyword.get(opts, :targets, %{})
-    chrome = Map.get(targets, :chrome, -1)
-    firefox = Map.get(targets, :firefox, -1)
-    safari = Map.get(targets, :safari, -1)
-
-    Vize.Native.print_css_ast_nif(ast, minify, chrome, firefox, safari)
+    Vize.Native.print_css_ast_nif(ast, %{
+      minify: Keyword.get(opts, :minify, false),
+      targets: browser_targets(opts)
+    })
   end
 
   @doc "Like `print_ast/2` but raises on errors."
@@ -503,4 +466,17 @@ defmodule Vize.CSS do
   end
 
   defp do_postwalk(value, _fun, acc), do: {value, acc}
+
+  defp parse_opts(opts) do
+    %{
+      filename: Keyword.get(opts, :filename, ""),
+      custom_media: Keyword.get(opts, :custom_media, false),
+      css_modules: Keyword.get(opts, :css_modules, false)
+    }
+  end
+
+  defp browser_targets(opts) do
+    targets = Keyword.get(opts, :targets, %{})
+    %{chrome: targets[:chrome], firefox: targets[:firefox], safari: targets[:safari]}
+  end
 end

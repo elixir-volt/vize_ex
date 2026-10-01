@@ -223,4 +223,25 @@ defmodule Vize.CSSTest do
       end
     end
   end
+
+  describe "browser targets" do
+    # Vize applies targets while minifying, so they only take effect with
+    # minify: true.
+    test "prefix for the given targets and leave unset browsers out" do
+      css = ".a { backdrop-filter: blur(2px) }"
+
+      assert {:ok, %{code: plain}} = Vize.CSS.compile(css, minify: true)
+      refute plain =~ "-webkit-backdrop-filter"
+
+      assert {:ok, %{code: prefixed}} = Vize.CSS.compile(css, minify: true, targets: %{safari: 9})
+      assert prefixed =~ "-webkit-backdrop-filter"
+
+      {:ok, parsed} = Vize.CSS.parse_ast(css)
+
+      assert {:ok, %{code: printed}} =
+               Vize.CSS.print_ast(parsed.ast, minify: true, targets: %{safari: 9})
+
+      assert printed =~ "-webkit-backdrop-filter"
+    end
+  end
 end

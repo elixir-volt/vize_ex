@@ -7,14 +7,13 @@ unless Code.ensure_loaded?(Vize.Codegen.NativeTypes) do
   Code.require_file("codegen/vize/codegen/native_types.ex")
 end
 
+unless Code.ensure_loaded?(Vize.Codegen.Sfc) do
+  Code.require_file("codegen/vize/codegen/sfc.ex")
+end
+
 unless Code.ensure_loaded?(Vize.Codegen.VaporIR) do
   Code.require_file("codegen/vize/codegen/vapor_ir.ex")
 end
-
-derived_encoders = [
-  {:EncodedLoc,
-   fields: [:start, {:end_, :end}, :start_line, :start_column, :end_line, :end_column]}
-]
 
 encoders = [
   {:EncodedLintDiagnostic, fields: [:message, :name], target_lifetimes: [:_]},
@@ -25,7 +24,7 @@ encoders = [
      content: [field: [0, :content], via: :as_ref],
      src: [field: [0, :src], via: :as_deref],
      lang: [field: [0, :lang], via: :as_deref],
-     loc: [field: [0, :loc], with: :loc_to_term],
+     loc: [field: [0, :loc], with: :encode_block_location],
      attrs: [field: [0, :attrs], with: :attrs_to_term]
    ],
    target_lifetimes: [:_]},
@@ -35,7 +34,7 @@ encoders = [
      src: [field: [0, :src], via: :as_deref],
      lang: [field: [0, :lang], via: :as_deref],
      setup: [field: [0, :setup]],
-     loc: [field: [0, :loc], with: :loc_to_term],
+     loc: [field: [0, :loc], with: :encode_block_location],
      attrs: [field: [0, :attrs], with: :attrs_to_term]
    ],
    target_lifetimes: [:_]},
@@ -46,7 +45,7 @@ encoders = [
      lang: [field: [0, :lang], via: :as_deref],
      scoped: [field: [0, :scoped]],
      module: [field: [0, :module], via: :as_deref],
-     loc: [field: [0, :loc], with: :loc_to_term],
+     loc: [field: [0, :loc], with: :encode_block_location],
      attrs: [field: [0, :attrs], with: :attrs_to_term]
    ],
    target_lifetimes: [:_]},
@@ -55,7 +54,7 @@ encoders = [
      block_type: [field: [0, :block_type], via: :as_ref],
      content: [field: [0, :content], via: :as_ref],
      src: [field: [0, :attrs], with: :src_attr_to_term],
-     loc: [field: [0, :loc], with: :loc_to_term],
+     loc: [field: [0, :loc], with: :encode_block_location],
      attrs: [field: [0, :attrs], with: :attrs_to_term]
    ],
    target_lifetimes: [:_]},
@@ -150,7 +149,7 @@ nifs = [
 ]
 
 encoder_atoms =
-  Enum.flat_map(derived_encoders ++ encoders, fn {_name, opts} ->
+  Enum.flat_map(encoders, fn {_name, opts} ->
     Term.encoder_atom_names(opts)
   end)
 
@@ -161,7 +160,7 @@ source_atoms =
   |> Enum.flat_map(fn path -> path |> File.read!() |> RustQ.Syn.atom_references!() end)
 
 atoms =
-  (source_atoms ++ encoder_atoms ++ Vize.Codegen.VaporIR.atoms())
+  (source_atoms ++ encoder_atoms ++ Vize.Codegen.Sfc.atoms() ++ Vize.Codegen.VaporIR.atoms())
   |> Enum.uniq()
   |> Enum.sort()
   |> Enum.map(fn
@@ -173,12 +172,20 @@ rust "native/vize_ex_nif/src/generated_atoms.rs" do
   Atom.declaration(atoms)
 end
 
+rust "native/vize_ex_nif/src/generated_sfc_encoders.rs" do
+  Vize.Codegen.Sfc.encoders()
+end
+
 rust "native/vize_ex_nif/src/generated_ir_encoders.rs" do
   Vize.Codegen.VaporIR.encoders()
 end
 
 rust "native/vize_ex_nif/src/generated_types.rs" do
-  RustQ.Native.items(Vize.Codegen.NativeTypes)
+  # RustQ emits these in map order, which differs between environments once a
+  # module has more than 32 types. Sort for a stable `rustq.gen --check`.
+  Vize.Codegen.NativeTypes
+  |> RustQ.Native.items()
+  |> Enum.sort_by(& &1.name)
 end
 
 rust "native/vize_ex_nif/src/generated_term_encoders.rs" do

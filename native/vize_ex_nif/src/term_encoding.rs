@@ -3,26 +3,10 @@ use rustler::{Atom, Encoder, Env, Error, NifResult, Term};
 use serde_json::{Map, Number, Value};
 
 use crate::atoms;
+use crate::sfc_encoders::encode_block_location;
 
 include!("generated_types.rs");
 include!("generated_term_encoders.rs");
-
-impl From<&vize_atelier_sfc::BlockLocation> for EncodedLoc {
-    fn from(loc: &vize_atelier_sfc::BlockLocation) -> Self {
-        Self {
-            start: loc.start,
-            end: loc.end,
-            start_line: loc.start_line,
-            start_column: loc.start_column,
-            end_line: loc.end_line,
-            end_column: loc.end_column,
-        }
-    }
-}
-
-pub(crate) fn loc_to_term<'a>(env: Env<'a>, loc: &vize_atelier_sfc::BlockLocation) -> Term<'a> {
-    EncodedLoc::from(loc).encode(env)
-}
 
 type SfcAttrs<'a> = vize_carton::FxHashMap<std::borrow::Cow<'a, str>, std::borrow::Cow<'a, str>>;
 

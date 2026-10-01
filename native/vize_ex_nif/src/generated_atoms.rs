@@ -6,10 +6,10 @@ mod atoms {
         builtin, camel, capture, child_id, child_ref, children, code, component,
         condition, content, control, create_component, css, css_import, css_url,
         css_vars, custom_blocks, delegate, directive, dynamic, dynamic_slots, effect,
-        effects, element, end_ = "end", end_column, end_line, error, errors, exports,
-        expression, fallback, flags, fn_exp, for_node, get_text_child, group, has_scoped,
-        helpers, id, if_node, index, input_type, insert_node, is_component, is_element,
-        is_event, is_expr, keep_alive, key, key_prop, keys, kind, lang, loc,
+        effects, element, end, end_ = "end", end_column, end_line, error, errors,
+        exports, expression, fallback, flags, fn_exp, for_node, get_text_child, group,
+        has_scoped, helpers, id, if_node, index, input_type, insert_node, is_component,
+        is_element, is_event, is_expr, keep_alive, key, key_prop, keys, kind, lang, loc,
         macro_artifacts, match_scope, media, message, model_modifiers, model_update,
         modifiers, module, name, negative, next_ref, non_keys, object, offset, ok, once,
         only_child, operations, options, parent, parent_id, passive, positive, preamble,
@@ -18,7 +18,8 @@ mod atoms {
         set_merged_props, set_prop, set_template_ref, set_text, setup,
         should_force_reload, slot_outlet, slots, slotted, source, source_map, sources,
         src, start, start_column, start_line, static_, style_hash, styles, supports,
-        suspense, tag, teleport, temp_id, template, template_hash, transition,
-        transition_group, url, v_model, v_show, value, value_kind, values, warnings
+        suspense, tag, tag_end, tag_start, teleport, temp_id, template, template_hash,
+        transition, transition_group, url, v_model, v_show, value, value_kind, values,
+        warnings
     }
 }

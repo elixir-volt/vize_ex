@@ -13,25 +13,9 @@ fn analyze_sfc_nif<'a>(env: Env<'a>, source: &str, mode: &str) -> NifResult<Term
 fn compile_sfc_nif<'a>(
     env: Env<'a>,
     source: &str,
-    filename: &str,
-    scope_id: &str,
-    vapor: bool,
-    ssr: bool,
-    custom_renderer: bool,
-    strip_types: bool,
-    source_map: bool,
+    opts: CompileSfcOpts,
 ) -> NifResult<Term<'a>> {
-    compile_sfc_nif_impl(
-        env,
-        source,
-        filename,
-        scope_id,
-        vapor,
-        ssr,
-        custom_renderer,
-        strip_types,
-        source_map,
-    )
+    compile_sfc_nif_impl(env, source, opts)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
 fn sfc_template_assets_nif<'a>(
@@ -53,20 +37,17 @@ fn rewrite_sfc_template_assets_nif<'a>(
 fn sfc_scope_id_nif<'a>(
     env: Env<'a>,
     filename: &str,
-    root: &str,
-    production: bool,
-    source: &str,
+    opts: ScopeIdOpts,
 ) -> NifResult<Term<'a>> {
-    sfc_scope_id_nif_impl(env, filename, root, production, source)
+    sfc_scope_id_nif_impl(env, filename, opts)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
 fn compile_template_nif<'a>(
     env: Env<'a>,
     source: &str,
-    mode: &str,
-    ssr: bool,
+    opts: CompileTemplateOpts,
 ) -> NifResult<Term<'a>> {
-    compile_template_nif_impl(env, source, mode, ssr)
+    compile_template_nif_impl(env, source, opts)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
 fn compile_ssr_nif<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
@@ -76,11 +57,9 @@ fn compile_ssr_nif<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
 fn compile_vapor_nif<'a>(
     env: Env<'a>,
     source: &str,
-    ssr: bool,
-    diagnostics: bool,
-    template_syntax: &str,
+    opts: CompileVaporOpts,
 ) -> NifResult<Term<'a>> {
-    compile_vapor_nif_impl(env, source, ssr, diagnostics, template_syntax)
+    compile_vapor_nif_impl(env, source, opts)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
 fn vapor_ir_nif<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
@@ -94,87 +73,59 @@ fn lint_nif<'a>(env: Env<'a>, source: &str, filename: &str) -> NifResult<Term<'a
 fn select_css_nif<'a>(
     env: Env<'a>,
     source: &str,
-    filename: &str,
-    custom_media: bool,
-    css_modules: bool,
+    opts: ParseCssOpts,
     selector_term: Term<'a>,
 ) -> NifResult<Term<'a>> {
-    select_css_nif_impl(env, source, filename, custom_media, css_modules, selector_term)
+    select_css_nif_impl(env, source, opts, selector_term)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
 fn parse_css_ast_nif<'a>(
     env: Env<'a>,
     source: &str,
-    filename: &str,
-    custom_media: bool,
-    css_modules: bool,
+    opts: ParseCssOpts,
 ) -> NifResult<Term<'a>> {
-    parse_css_ast_nif_impl(env, source, filename, custom_media, css_modules)
+    parse_css_ast_nif_impl(env, source, opts)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
 fn print_css_ast_nif<'a>(
     env: Env<'a>,
     ast: Term<'a>,
-    minify: bool,
-    chrome: i64,
-    firefox: i64,
-    safari: i64,
+    opts: PrintCssOpts,
 ) -> NifResult<Term<'a>> {
-    print_css_ast_nif_impl(env, ast, minify, chrome, firefox, safari)
+    print_css_ast_nif_impl(env, ast, opts)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
 fn compile_sass_nif<'a>(
     env: Env<'a>,
     source: &str,
-    syntax: &str,
-    filename: &str,
-    load_paths: Vec<String>,
-    compressed: bool,
+    opts: CompileSassOpts,
 ) -> NifResult<Term<'a>> {
-    compile_sass_nif_impl(env, source, syntax, filename, load_paths, compressed)
+    compile_sass_nif_impl(env, source, opts)
 }
 #[allow(clippy::too_many_arguments)]
 #[rustler::nif(schedule = "DirtyCpu")]
 fn compile_css_nif<'a>(
     env: Env<'a>,
     source: &str,
-    minify: bool,
-    scoped: bool,
-    scope_id_str: &str,
-    filename: &str,
-    chrome: i64,
-    firefox: i64,
-    safari: i64,
-    css_modules: bool,
+    opts: CompileCssOpts,
 ) -> NifResult<Term<'a>> {
-    compile_css_nif_impl(
-        env,
-        source,
-        minify,
-        scoped,
-        scope_id_str,
-        filename,
-        chrome,
-        firefox,
-        safari,
-        css_modules,
-    )
+    compile_css_nif_impl(env, source, opts)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
 fn bundle_css_nif<'a>(
     env: Env<'a>,
     entry_path: &str,
-    minify: bool,
-    chrome: i64,
-    firefox: i64,
-    safari: i64,
-    css_modules: bool,
+    opts: BundleCssOpts,
 ) -> NifResult<Term<'a>> {
-    bundle_css_nif_impl(env, entry_path, minify, chrome, firefox, safari, css_modules)
+    bundle_css_nif_impl(env, entry_path, opts)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
-fn vapor_split_nif<'a>(env: Env<'a>, source: &str, events: bool) -> NifResult<Term<'a>> {
-    vapor_split_nif_impl(env, source, events)
+fn vapor_split_nif<'a>(
+    env: Env<'a>,
+    source: &str,
+    opts: VaporSplitOpts,
+) -> NifResult<Term<'a>> {
+    vapor_split_nif_impl(env, source, opts)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
 fn generate_dts_nif<'a>(

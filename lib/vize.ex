@@ -176,24 +176,15 @@ defmodule Vize do
   """
   @spec compile_sfc(String.t(), keyword()) :: {:ok, sfc_result()} | {:error, String.t()}
   def compile_sfc(source, opts \\ []) do
-    vapor = Keyword.get(opts, :vapor, false)
-    ssr = Keyword.get(opts, :ssr, false)
-    filename = Keyword.get(opts, :filename, "")
-    scope_id = Keyword.get(opts, :scope_id, "")
-    custom_renderer = Keyword.get(opts, :custom_renderer, false)
-    strip_types = Keyword.get(opts, :strip_types, false)
-    source_map = Keyword.get(opts, :source_map, false)
-
-    Vize.Native.compile_sfc_nif(
-      source,
-      filename,
-      scope_id,
-      vapor,
-      ssr,
-      custom_renderer,
-      strip_types,
-      source_map
-    )
+    Vize.Native.compile_sfc_nif(source, %{
+      filename: Keyword.get(opts, :filename, ""),
+      scope_id: Keyword.get(opts, :scope_id, ""),
+      vapor: Keyword.get(opts, :vapor, false),
+      ssr: Keyword.get(opts, :ssr, false),
+      custom_renderer: Keyword.get(opts, :custom_renderer, false),
+      strip_types: Keyword.get(opts, :strip_types, false),
+      source_map: Keyword.get(opts, :source_map, false)
+    })
   end
 
   @doc """
@@ -229,9 +220,10 @@ defmodule Vize do
   @spec compile_template(String.t(), keyword()) ::
           {:ok, template_result()} | {:error, [String.t()]}
   def compile_template(source, opts \\ []) do
-    mode = opts |> Keyword.get(:mode, "function") |> to_string()
-    ssr = Keyword.get(opts, :ssr, false)
-    Vize.Native.compile_template_nif(source, mode, ssr)
+    Vize.Native.compile_template_nif(source, %{
+      mode: opts |> Keyword.get(:mode, "function") |> to_string(),
+      ssr: Keyword.get(opts, :ssr, false)
+    })
   end
 
   @doc """
@@ -297,13 +289,14 @@ defmodule Vize do
   """
   @spec compile_vapor(String.t(), keyword()) :: {:ok, vapor_result()} | {:error, Vize.Error.t()}
   def compile_vapor(source, opts \\ []) do
-    ssr = Keyword.get(opts, :ssr, false)
-    diagnostics = Keyword.get(opts, :diagnostics, false)
+    nif_opts = %{
+      ssr: Keyword.get(opts, :ssr, false),
+      diagnostics: Keyword.get(opts, :diagnostics, false),
+      template_syntax:
+        opts |> Keyword.get(:template_syntax, :standard) |> normalize_template_syntax()
+    }
 
-    template_syntax =
-      opts |> Keyword.get(:template_syntax, :standard) |> normalize_template_syntax()
-
-    case Vize.Native.compile_vapor_nif(source, ssr, diagnostics, template_syntax) do
+    case Vize.Native.compile_vapor_nif(source, nif_opts) do
       {:ok, result} -> {:ok, Vize.Vapor.Result.new(result)}
       {:error, errors} -> {:error, error("Vize vapor compile error", errors)}
     end
@@ -394,7 +387,7 @@ defmodule Vize do
   """
   @spec vapor_split(String.t(), keyword()) :: {:ok, map()} | {:error, [String.t()]}
   def vapor_split(source, opts \\ []) do
-    Vize.Native.vapor_split_nif(source, Keyword.get(opts, :events, true))
+    Vize.Native.vapor_split_nif(source, %{events: Keyword.get(opts, :events, true)})
   end
 
   @spec vapor_split!(String.t(), keyword()) :: map()

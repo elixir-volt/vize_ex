@@ -93,10 +93,11 @@ defmodule Vize.SFC do
   """
   @spec scope_id(String.t(), keyword()) :: String.t()
   def scope_id(filename, opts \\ []) do
-    root = Keyword.get(opts, :root, "")
-    production = Keyword.get(opts, :production, false)
-    source = Keyword.get(opts, :source, "")
-    Vize.Native.sfc_scope_id_nif(filename, root, production, source)
+    Vize.Native.sfc_scope_id_nif(filename, %{
+      root: Keyword.get(opts, :root, ""),
+      production: Keyword.get(opts, :production, false),
+      source: Keyword.get(opts, :source, "")
+    })
   end
 
   defp descriptor_external_sources(descriptor) do
