@@ -172,17 +172,4 @@ defmodule Vize.VaporSplitTest do
 
     assert split.statics == [~s|<button phx-click="say(&quot;hi &gt; there&quot;)">x</button>|]
   end
-
-  test "leaves out event attributes with events: false" do
-    template =
-      ~S|<div><button @click="save">x</button><input v-model="name"><p v-if="on" @click="go">y</p></div>|
-
-    {:ok, split} = Vize.vapor_split(template, events: false)
-    statics = Enum.join(split.statics)
-
-    refute statics =~ "phx-"
-    assert statics =~ ~s(value=")
-    [_, %{kind: :if_node, positive: positive}] = split.slots
-    refute Enum.join(positive.statics) =~ "phx-"
-  end
 end

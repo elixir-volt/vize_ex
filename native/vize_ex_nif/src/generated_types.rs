@@ -229,7 +229,3 @@ pub struct ScopeIdOpts {
     pub production: bool,
     pub source: String,
 }
-#[derive(Clone, Debug, rustler::NifMap)]
-pub struct VaporSplitOpts {
-    pub events: bool,
-}

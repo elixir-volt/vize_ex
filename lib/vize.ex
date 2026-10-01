@@ -378,21 +378,15 @@ defmodule Vize do
 
   The statics + slots can be directly assembled into a `%Phoenix.LiveView.Rendered{}`
   struct by evaluating each slot against assigns.
-
-  ## Options
-
-    * `:events` — render event handlers as `phx-*` attributes, such as
-      `@click="save"` as `phx-click="save"` (default: `true`). Pass `false`
-      when client code handles the template's events.
   """
-  @spec vapor_split(String.t(), keyword()) :: {:ok, map()} | {:error, [String.t()]}
-  def vapor_split(source, opts \\ []) do
-    Vize.Native.vapor_split_nif(source, %{events: Keyword.get(opts, :events, true)})
+  @spec vapor_split(String.t()) :: {:ok, map()} | {:error, [String.t()]}
+  def vapor_split(source) do
+    Vize.Native.vapor_split_nif(source)
   end
 
-  @spec vapor_split!(String.t(), keyword()) :: map()
-  def vapor_split!(source, opts \\ []) do
-    case vapor_split(source, opts) do
+  @spec vapor_split!(String.t()) :: map()
+  def vapor_split!(source) do
+    case vapor_split(source) do
       {:ok, split} -> split
       {:error, errors} -> raise "Vize vapor split error: #{inspect(errors)}"
     end

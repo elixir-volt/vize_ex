@@ -34,9 +34,8 @@ fn split_block<'a, 'b>(
     block: &'b BlockIRNode<'b>,
     ir: &'b RootIRNode<'b>,
     source: &str,
-    events: bool,
 ) -> EncodedSplitBlock<'a> {
-    let (statics, slots) = process_block(env, block, ir, source, events);
+    let (statics, slots) = process_block(env, block, ir, source);
     EncodedSplitBlock { statics, slots }
 }
 
@@ -45,22 +44,17 @@ fn encode_slot_if_split<'a, 'b>(
     if_node: &'b IfIRNode<'b>,
     ir: &'b RootIRNode<'b>,
     source: &str,
-    events: bool,
 ) -> Term<'a> {
     let negative = match &if_node.negative {
-        Some(NegativeBranch::Block(block)) => {
-            Some(split_block(env, block, ir, source, events).encode(env))
-        }
-        Some(NegativeBranch::If(nested)) => {
-            Some(encode_slot_if_split(env, nested, ir, source, events))
-        }
+        Some(NegativeBranch::Block(block)) => Some(split_block(env, block, ir, source).encode(env)),
+        Some(NegativeBranch::If(nested)) => Some(encode_slot_if_split(env, nested, ir, source)),
         None => None,
     };
 
     EncodedIfSlot {
         kind: atoms::if_node(),
         condition: encode_simple_expr(env, &if_node.condition),
-        positive: split_block(env, &if_node.positive, ir, source, events),
+        positive: split_block(env, &if_node.positive, ir, source),
         negative,
     }
     .encode(env)
@@ -71,7 +65,6 @@ fn encode_slot_for_split<'a, 'b>(
     for_node: &'b ForIRNode<'b>,
     ir: &'b RootIRNode<'b>,
     source: &str,
-    events: bool,
 ) -> Term<'a> {
     EncodedForSlot {
         kind: atoms::for_node(),
@@ -84,7 +77,7 @@ fn encode_slot_for_split<'a, 'b>(
             .key_prop
             .as_ref()
             .map(|key_prop| encode_simple_expr(env, key_prop)),
-        render: split_block(env, &for_node.render, ir, source, events),
+        render: split_block(env, &for_node.render, ir, source),
     }
     .encode(env)
 }
@@ -334,7 +327,6 @@ pub(crate) fn process_block<'a, 'b>(
     block: &'b BlockIRNode<'b>,
     ir: &'b RootIRNode<'b>,
     source: &str,
-    events: bool,
 ) -> (Vec<String>, Vec<Term<'a>>) {
     let template_html: String = block
         .returns
@@ -355,25 +347,21 @@ pub(crate) fn process_block<'a, 'b>(
     let mut elem_to_tag = build_elem_to_tag(&block.returns, &block.operation, &tags);
     let mut slots: Vec<SlotMarker<'a>> = Vec::new();
 
-    // Event handlers become phx-* attributes, unless the caller handles
-    // events itself.
-    if events {
-        for op in block.operation.iter() {
-            if let OperationNode::SetEvent(event) = op {
-                if let Some(&tag_pos) = elem_to_tag.get(&event.element) {
-                    let event_name = event.key.content;
-                    let handler = event
-                        .value
-                        .as_ref()
-                        .map(|value| value.content)
-                        .unwrap_or(event_name);
-                    let attr = format!(
-                        " phx-{}=\"{}\"",
-                        event_name,
-                        html_escape::encode_double_quoted_attribute(handler)
-                    );
-                    inject_attr(&mut html, &mut tags, tag_pos, &attr);
-                }
+    for op in &block.operation {
+        if let OperationNode::SetEvent(event) = op {
+            if let Some(&tag_pos) = elem_to_tag.get(&event.element) {
+                let event_name = event.key.content;
+                let handler = event
+                    .value
+                    .as_ref()
+                    .map(|value| value.content)
+                    .unwrap_or(event_name);
+                let attr = format!(
+                    " phx-{}=\"{}\"",
+                    event_name,
+                    html_escape::encode_double_quoted_attribute(handler)
+                );
+                inject_attr(&mut html, &mut tags, tag_pos, &attr);
             }
         }
     }
@@ -463,14 +451,12 @@ pub(crate) fn process_block<'a, 'b>(
                             let marker = push_slot_marker(&mut slots, slot, dir.dir.loc.span.start);
                             let attr = format!(" value=\"{marker}\"");
                             inject_attr(&mut html, &mut tags, tag_pos, &attr);
-                            if events {
-                                let handler_name = format!("{}_changed", simple.content);
-                                let change_attr = format!(
-                                    " phx-change=\"{}\"",
-                                    html_escape::encode_double_quoted_attribute(&handler_name)
-                                );
-                                inject_attr(&mut html, &mut tags, tag_pos, &change_attr);
-                            }
+                            let handler_name = format!("{}_changed", simple.content);
+                            let change_attr = format!(
+                                " phx-change=\"{}\"",
+                                html_escape::encode_double_quoted_attribute(&handler_name)
+                            );
+                            inject_attr(&mut html, &mut tags, tag_pos, &change_attr);
                         }
                     }
                     _ => {}
@@ -515,7 +501,7 @@ pub(crate) fn process_block<'a, 'b>(
         match operation {
             OperationNode::If(if_node) => {
                 let source_offset = if_node.condition.loc.span.start;
-                let slot = encode_slot_if_split(env, if_node, ir, source, events);
+                let slot = encode_slot_if_split(env, if_node, ir, source);
                 let marker = push_slot_marker(&mut slots, slot, source_offset);
                 inject_structural_marker(
                     &mut html,
@@ -529,7 +515,7 @@ pub(crate) fn process_block<'a, 'b>(
             }
             OperationNode::For(for_node) => {
                 let source_offset = for_node.source.loc.span.start;
-                let slot = encode_slot_for_split(env, for_node, ir, source, events);
+                let slot = encode_slot_for_split(env, for_node, ir, source);
                 let marker = push_slot_marker(&mut slots, slot, source_offset);
                 inject_structural_marker(
                     &mut html,

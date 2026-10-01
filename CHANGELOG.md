@@ -5,7 +5,6 @@
 ### Added
 
 - SFC block locations (`loc` in `parse_sfc/1` results) include `tag_start` and `tag_end`, the span of the block's tags. Their encoder is now generated from Vize's `BlockLocation`, which the handwritten one had fallen behind.
-- `vapor_split/2` takes `events: false` to leave event handlers out of the statics, for callers whose client code handles the template's events.
 
 ### Changed
 

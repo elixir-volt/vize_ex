@@ -41,8 +41,6 @@ defmodule Vize.Codegen.NativeTypes do
           required(:template_syntax) => String.t()
         }
 
-  @type vapor_split_opts :: %{required(:events) => boolean()}
-
   @type browser_targets :: %{
           required(:chrome) => R.u32() | nil,
           required(:firefox) => R.u32() | nil,
