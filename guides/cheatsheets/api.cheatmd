@@ -1,0 +1,145 @@
+# API
+
+## Single-file components
+{: .col-2}
+
+### Parse
+
+```elixir
+Vize.parse_sfc(source)
+```
+
+Template, scripts, styles, and custom blocks, with locations.
+
+### Compile
+
+```elixir
+Vize.compile_sfc(source,
+  filename: "App.vue",
+  scope_id: "7a7a37b1",
+  vapor: false,
+  ssr: false,
+  strip_types: false,
+  source_map: false,
+  custom_renderer: false
+)
+```
+
+### Analyze
+
+```elixir
+Vize.analyze_sfc(source, mode: :full)
+```
+
+`%Vize.Croquis{}` with props, bindings, and template expressions.
+
+### Lint
+
+```elixir
+Vize.lint(source, "App.vue")
+```
+
+### Declarations
+
+```elixir
+Vize.generate_dts(source, filename: "App.vue")
+```
+
+### Bundler helpers
+
+```elixir
+Vize.SFC.scope_id("src/App.vue", root: root)
+Vize.SFC.collect_template_assets(source)
+Vize.SFC.rewrite_asset_references(code, assets)
+Vize.SFC.external_sources(source)
+```
+
+## Templates
+{: .col-2}
+
+### Render function
+
+```elixir
+Vize.compile_template(source,
+  mode: "function",
+  ssr: false
+)
+```
+
+### SSR
+
+```elixir
+Vize.compile_ssr(source)
+```
+
+### Vapor
+
+```elixir
+Vize.compile_vapor(source,
+  ssr: false,
+  diagnostics: false,
+  template_syntax: :standard
+)
+```
+
+### Vapor IR
+
+```elixir
+Vize.vapor_ir(source)
+Vize.vapor_split(source)
+```
+
+## CSS
+{: .col-2}
+
+### Compile
+
+```elixir
+Vize.CSS.compile(css,
+  minify: true,
+  targets: %{chrome: 80, safari: 14},
+  scoped: false,
+  scope_id: "data-v-7a7a37b1",
+  css_modules: false,
+  filename: "app.css"
+)
+```
+
+Targets apply only with `minify: true`.
+
+### Bundle
+
+```elixir
+Vize.CSS.bundle(path,
+  minify: true,
+  targets: %{safari: 14},
+  css_modules: false
+)
+```
+
+### Sass
+
+```elixir
+Vize.CSS.compile_sass(scss,
+  syntax: :scss,
+  filename: path,
+  load_paths: ["assets/css"],
+  compressed: false
+)
+```
+
+### URLs
+
+```elixir
+Vize.CSS.collect_urls(css)
+Vize.CSS.rewrite_urls(css, fn url -> :keep end)
+Vize.CSS.select(css, :dependencies)
+```
+
+### AST
+
+```elixir
+{:ok, %{ast: ast}} = Vize.CSS.parse_ast(css)
+ast = Vize.CSS.postwalk(ast, & &1)
+Vize.CSS.print_ast(ast, minify: true)
+```

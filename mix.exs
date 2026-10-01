@@ -43,9 +43,25 @@ defmodule Vize.MixProject do
 
   defp docs do
     [
-      main: "Vize",
-      extras: ["README.md", "LICENSE"],
-      source_ref: "v#{@version}"
+      main: "readme",
+      source_ref: "v#{@version}",
+      extras: [
+        "README.md",
+        "CHANGELOG.md",
+        "guides/introduction/getting-started.md",
+        "guides/features/sfc.md",
+        "guides/features/analysis-and-linting.md",
+        "guides/features/vapor.md",
+        "guides/features/templates-and-ssr.md",
+        "guides/features/css.md",
+        "guides/cheatsheets/api.cheatmd",
+        "LICENSE"
+      ],
+      groups_for_extras: [
+        Introduction: ~r/guides\/introduction\//,
+        Features: ~r/guides\/features\//,
+        Cheatsheets: ~r/guides\/cheatsheets\//
+      ]
     ]
   end
 

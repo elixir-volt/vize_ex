@@ -278,6 +278,9 @@ defmodule Vize do
   ## Options
 
     * `:ssr` — compile for SSR (default: `false`)
+    * `:diagnostics` — also report the parser's diagnostics, such as duplicate
+      attributes, in the result's `:diagnostics` (default: `false`)
+    * `:template_syntax` — `:standard` (default) or `:quirks`
 
   ## Examples
 
