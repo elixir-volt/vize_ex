@@ -19,7 +19,7 @@ Options:
 
 ## Server-side rendering
 
-`Vize.compile_ssr/1` compiles a template to code that writes HTML with `_push()`. Run it in a JavaScript runtime such as [QuickBEAM](https://github.com/elixir-volt/quickbeam).
+`Vize.compile_ssr/1` compiles a template for Vue's [server-side rendering](https://vuejs.org/guide/scaling-up/ssr.html), to code that writes HTML with `_push()`. Run it in a JavaScript runtime such as [QuickBEAM](https://github.com/elixir-volt/quickbeam).
 
 ```elixir
 {:ok, result} = Vize.compile_ssr("<div>{{ msg }}</div>")

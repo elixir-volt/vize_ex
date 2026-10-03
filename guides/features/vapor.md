@@ -1,6 +1,6 @@
 # Vapor Mode
 
-Vapor is Vue's compilation mode without a virtual DOM: a template compiles to code that creates and updates DOM nodes directly.
+[Vapor mode](https://github.com/vuejs/core/releases/tag/v3.6.0-beta.1#about-vapor-mode) is Vue's compilation mode without a virtual DOM: a template compiles to code that creates and updates DOM nodes directly. It is new in Vue 3.6.
 
 ## Compiling
 

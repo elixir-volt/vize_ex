@@ -1,5 +1,7 @@
 # Single-File Components
 
+A [single-file component](https://vuejs.org/guide/scaling-up/sfc.html) is a `.vue` file with a template, scripts, and styles. Vue's [SFC syntax specification](https://vuejs.org/api/sfc-spec.html) describes the blocks.
+
 ## Parsing
 
 `Vize.parse_sfc/1` returns the descriptor: the template, `<script>`, `<script setup>`, styles, and custom blocks, each with its content, `lang`, attributes, and location.

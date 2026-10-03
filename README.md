@@ -2,7 +2,7 @@
 
 [![Hex.pm](https://img.shields.io/hexpm/v/vize.svg)](https://hex.pm/packages/vize) [![Documentation](https://img.shields.io/badge/documentation-gray)](https://hexdocs.pm/vize)
 
-Elixir bindings for [Vize](https://vizejs.dev), a Vue.js toolchain written in Rust. Parse, analyze, lint, and compile Vue single-file components from Elixir, including Vapor mode and its intermediate representation, plus a LightningCSS-based CSS pipeline.
+Elixir bindings for [Vize](https://vizejs.dev), a [Vue.js](https://vuejs.org) toolchain written in Rust. Parse, analyze, lint, and compile Vue [single-file components](https://vuejs.org/guide/scaling-up/sfc.html) from Elixir, including [Vapor mode](https://github.com/vuejs/core/releases/tag/v3.6.0-beta.1#about-vapor-mode) and its intermediate representation, plus a [LightningCSS](https://lightningcss.dev)-based CSS pipeline.
 
 ```elixir
 {:ok, result} =
