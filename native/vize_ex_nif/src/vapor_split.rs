@@ -34,13 +34,13 @@ fn split_block<'a, 'b>(
     block: &'b BlockIRNode<'b>,
     ir: &'b RootIRNode<'b>,
     source: &str,
-) -> EncodedSplitBlock<'a> {
-    let (statics, slots, bindings) = process_block(env, block, ir, source);
-    EncodedSplitBlock {
+) -> Result<EncodedSplitBlock<'a>, String> {
+    let (statics, slots, bindings) = process_block(env, block, ir, source)?;
+    Ok(EncodedSplitBlock {
         statics,
         slots,
         bindings,
-    }
+    })
 }
 
 fn encode_slot_if_split<'a, 'b>(
@@ -48,20 +48,22 @@ fn encode_slot_if_split<'a, 'b>(
     if_node: &'b IfIRNode<'b>,
     ir: &'b RootIRNode<'b>,
     source: &str,
-) -> Term<'a> {
+) -> Result<Term<'a>, String> {
     let negative = match &if_node.negative {
-        Some(NegativeBranch::Block(block)) => Some(split_block(env, block, ir, source).encode(env)),
-        Some(NegativeBranch::If(nested)) => Some(encode_slot_if_split(env, nested, ir, source)),
+        Some(NegativeBranch::Block(block)) => {
+            Some(split_block(env, block, ir, source)?.encode(env))
+        }
+        Some(NegativeBranch::If(nested)) => Some(encode_slot_if_split(env, nested, ir, source)?),
         None => None,
     };
 
-    EncodedIfSlot {
+    Ok(EncodedIfSlot {
         kind: atoms::if_node(),
         condition: encode_simple_expr(env, &if_node.condition),
-        positive: split_block(env, &if_node.positive, ir, source),
+        positive: split_block(env, &if_node.positive, ir, source)?,
         negative,
     }
-    .encode(env)
+    .encode(env))
 }
 
 fn encode_slot_for_split<'a, 'b>(
@@ -69,8 +71,8 @@ fn encode_slot_for_split<'a, 'b>(
     for_node: &'b ForIRNode<'b>,
     ir: &'b RootIRNode<'b>,
     source: &str,
-) -> Term<'a> {
-    EncodedForSlot {
+) -> Result<Term<'a>, String> {
+    Ok(EncodedForSlot {
         kind: atoms::for_node(),
         source: encode_simple_expr(env, &for_node.source),
         value: for_node
@@ -81,9 +83,9 @@ fn encode_slot_for_split<'a, 'b>(
             .key_prop
             .as_ref()
             .map(|key_prop| encode_simple_expr(env, key_prop)),
-        render: split_block(env, &for_node.render, ir, source),
+        render: split_block(env, &for_node.render, ir, source)?,
     }
-    .encode(env)
+    .encode(env))
 }
 
 fn encode_slot_component<'a>(env: Env<'a>, node: &CreateComponentIRNode) -> Term<'a> {
@@ -376,12 +378,14 @@ fn split_on_markers<'a>(
     (statics, ordered_slots, bindings)
 }
 
+type SplitResult<'a> = Result<(Vec<String>, Vec<Term<'a>>, Vec<EncodedSplitBinding<'a>>), String>;
+
 pub(crate) fn process_block<'a, 'b>(
     env: Env<'a>,
     block: &'b BlockIRNode<'b>,
     ir: &'b RootIRNode<'b>,
     source: &str,
-) -> (Vec<String>, Vec<Term<'a>>, Vec<EncodedSplitBinding<'a>>) {
+) -> SplitResult<'a> {
     let template_html: String = block
         .returns
         .iter()
@@ -455,6 +459,31 @@ pub(crate) fn process_block<'a, 'b>(
         {
             elem_to_tag.insert(element, parent_tag);
         }
+    }
+
+    // A slot whose element can't be located would silently disappear from the
+    // output, so fail instead.
+    let bound_elements = block
+        .operation
+        .iter()
+        .filter_map(|operation| match operation {
+            OperationNode::SetEvent(event) => Some(event.element),
+            OperationNode::Directive(dir) if matches!(dir.name, "model" | "show") => {
+                Some(dir.element)
+            }
+            _ => None,
+        });
+    if let Some(element) = text_effects
+        .iter()
+        .map(|text| text.element)
+        .chain(html_effects.iter().map(|html| html.element))
+        .chain(prop_effects.iter().map(|prop| prop.element))
+        .chain(bound_elements)
+        .find(|element| !elem_to_tag.contains_key(element))
+    {
+        return Err(format!(
+            "vapor_split could not locate element {element} in the template"
+        ));
     }
 
     for prop in &prop_effects {
@@ -551,7 +580,7 @@ pub(crate) fn process_block<'a, 'b>(
         match operation {
             OperationNode::If(if_node) => {
                 let source_offset = if_node.condition.loc.span.start;
-                let slot = encode_slot_if_split(env, if_node, ir, source);
+                let slot = encode_slot_if_split(env, if_node, ir, source)?;
                 let marker = push_slot_marker(&mut slots, slot, source_offset);
                 inject_structural_marker(
                     &mut html,
@@ -565,7 +594,7 @@ pub(crate) fn process_block<'a, 'b>(
             }
             OperationNode::For(for_node) => {
                 let source_offset = for_node.source.loc.span.start;
-                let slot = encode_slot_for_split(env, for_node, ir, source);
+                let slot = encode_slot_for_split(env, for_node, ir, source)?;
                 let marker = push_slot_marker(&mut slots, slot, source_offset);
                 inject_structural_marker(
                     &mut html,
@@ -601,5 +630,5 @@ pub(crate) fn process_block<'a, 'b>(
         }
     }
 
-    split_on_markers(&html, slots, binding_nodes)
+    Ok(split_on_markers(&html, slots, binding_nodes))
 }

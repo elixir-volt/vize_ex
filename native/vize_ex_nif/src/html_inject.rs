@@ -3,7 +3,9 @@ pub(crate) struct TagEntry {
     pub(crate) tag: String,
     pub(crate) pos: usize,
     pub(crate) parent: Option<usize>,
-    pub(crate) child_index: usize,
+    /// Position among the parent's child nodes, counting text runs and anchors
+    /// as the DOM does. Vapor's `child`/`next` offsets count the same way.
+    pub(crate) node_index: usize,
     pub(crate) open_start: usize,
     pub(crate) open_end: usize,
     pub(crate) close_start: Option<usize>,
@@ -61,11 +63,14 @@ fn skip_declaration(bytes: &[u8], i: &mut usize) {
     }
 }
 
-fn sibling_count(entries: &[TagEntry], parent: Option<usize>) -> usize {
-    entries
-        .iter()
-        .filter(|entry| entry.parent == parent)
-        .count()
+fn next_node_index(
+    node_counts: &mut std::collections::HashMap<Option<usize>, usize>,
+    parent: Option<usize>,
+) -> usize {
+    let count = node_counts.entry(parent).or_default();
+    let index = *count;
+    *count += 1;
+    index
 }
 
 pub(crate) fn parse_tag_tree(html: &str) -> Vec<TagEntry> {
@@ -73,24 +78,32 @@ pub(crate) fn parse_tag_tree(html: &str) -> Vec<TagEntry> {
     let len = bytes.len();
     let mut entries: Vec<TagEntry> = Vec::new();
     let mut stack: Vec<usize> = Vec::new();
+    let mut node_counts: std::collections::HashMap<Option<usize>, usize> =
+        std::collections::HashMap::new();
+    let mut in_text = false;
     let mut i = 0;
 
     while i < len {
         if bytes[i] != b'<' {
+            if !in_text {
+                *node_counts.entry(stack.last().copied()).or_default() += 1;
+                in_text = true;
+            }
             i += 1;
             continue;
         }
+        in_text = false;
 
         if html[i..].starts_with(VAPOR_ANCHOR) {
             // Anchors are DOM nodes at runtime, so child/next offsets count them.
             let parent = stack.last().copied();
-            let child_index = sibling_count(&entries, parent);
+            let node_index = next_node_index(&mut node_counts, parent);
             let pos = entries.len();
             entries.push(TagEntry {
                 tag: VAPOR_ANCHOR_TAG.to_string(),
                 pos,
                 parent,
-                child_index,
+                node_index,
                 open_start: i,
                 open_end: i + VAPOR_ANCHOR.len(),
                 close_start: None,
@@ -159,14 +172,14 @@ pub(crate) fn parse_tag_tree(html: &str) -> Vec<TagEntry> {
         let open_end = i;
 
         let parent = stack.last().copied();
-        let child_index = sibling_count(&entries, parent);
+        let node_index = next_node_index(&mut node_counts, parent);
 
         let pos = entries.len();
         entries.push(TagEntry {
             tag: tag_name.clone(),
             pos,
             parent,
-            child_index,
+            node_index,
             open_start,
             open_end,
             close_start: None,
@@ -200,11 +213,9 @@ pub(crate) fn build_elem_to_tag(
             match op {
                 vize_atelier_vapor::ir::OperationNode::ChildRef(node) => {
                     if let Some(&parent_tag_pos) = map.get(&node.parent_id) {
-                        let children: Vec<_> = tags
-                            .iter()
-                            .filter(|tag| tag.parent == Some(parent_tag_pos))
-                            .collect();
-                        if let Some(child) = children.get(node.offset) {
+                        if let Some(child) = tags.iter().find(|tag| {
+                            tag.parent == Some(parent_tag_pos) && tag.node_index == node.offset
+                        }) {
                             map.insert(node.child_id, child.pos);
                         }
                     }
@@ -212,12 +223,10 @@ pub(crate) fn build_elem_to_tag(
                 vize_atelier_vapor::ir::OperationNode::NextRef(node) => {
                     if let Some(&prev_tag_pos) = map.get(&node.prev_id) {
                         if let Some(prev_entry) = tags.get(prev_tag_pos) {
-                            let siblings: Vec<_> = tags
-                                .iter()
-                                .filter(|tag| tag.parent == prev_entry.parent)
-                                .collect();
-                            let target_idx = prev_entry.child_index + node.offset;
-                            if let Some(sibling) = siblings.get(target_idx) {
+                            let target = prev_entry.node_index + node.offset;
+                            if let Some(sibling) = tags.iter().find(|tag| {
+                                tag.parent == prev_entry.parent && tag.node_index == target
+                            }) {
                                 map.insert(node.child_id, sibling.pos);
                             }
                         }
@@ -379,9 +388,18 @@ mod tests {
         assert_eq!(tags[1].close_start, None);
         assert_eq!(tags[2].close_start, None);
         assert_eq!(tags[3].close_start, Some(html.find("</span>").unwrap()));
-        assert_eq!(tags[1].child_index, 0);
-        assert_eq!(tags[2].child_index, 1);
-        assert_eq!(tags[3].child_index, 2);
+        assert_eq!(tags[1].node_index, 0);
+        assert_eq!(tags[2].node_index, 1);
+        assert_eq!(tags[3].node_index, 2);
+    }
+
+    #[test]
+    fn parse_tag_tree_counts_text_runs_in_node_indices() {
+        let tags = parse_tag_tree("<p>a<b></b>c<!----><i></i></p>");
+
+        assert_eq!(tags[1].node_index, 1);
+        assert_eq!(tags[2].node_index, 3);
+        assert_eq!(tags[3].node_index, 4);
     }
 
     #[test]
@@ -403,8 +421,8 @@ mod tests {
         assert_eq!(tags.len(), 2);
         assert_eq!(tags[0].parent, None);
         assert_eq!(tags[1].parent, None);
-        assert_eq!(tags[0].child_index, 0);
-        assert_eq!(tags[1].child_index, 1);
+        assert_eq!(tags[0].node_index, 0);
+        assert_eq!(tags[1].node_index, 1);
     }
 
     #[test]

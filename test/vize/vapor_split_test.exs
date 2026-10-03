@@ -212,4 +212,28 @@ defmodule Vize.VaporSplitTest do
       assert [%{kind: :set_event, node: %{value: "off"}}] = if_slot.positive.bindings
     end
   end
+
+  describe "text nodes before elements" do
+    test "an element after a text node in a nested list keeps its slot" do
+      {:ok, split} =
+        Vize.vapor_split(~S|<ul><li>a<ul><li>{{ b }}</li></ul></li><li>c</li></ul>|)
+
+      assert split.statics == ["<ul><li>a<ul><li>", "</li></ul></li><li>c</li></ul>"]
+      assert [%{kind: :set_text, values: ["b"]}] = split.slots
+    end
+
+    test "slots after mixed text and elements" do
+      {:ok, split} = Vize.vapor_split(~S|<p>a<b>{{ x }}</b>c<i :title="t">{{ y }}</i></p>|)
+
+      assert split.statics == ["<p>a<b>", "</b>c<i title=\"", "\">", "</i></p>"]
+      assert Enum.map(split.slots, & &1.kind) == [:set_text, :set_prop, :set_text]
+    end
+
+    test "an event after a text node is bound to its element" do
+      {:ok, split} = Vize.vapor_split(~S|<div>hi<button @click="go">x</button></div>|)
+
+      assert [%{at: {0, offset}}] = split.bindings
+      assert binary_part(hd(split.statics), 0, offset) == "<div>hi<button"
+    end
+  end
 end
