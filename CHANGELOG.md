@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.17.0 - 2026-10-03
+
 ### Breaking changes
 
 - `Vize.vapor_split/1` is replaced by `Vize.split_template/2`, which works from Vize's L2 semantic IR, the representation Vize's SSR compiler builds on, instead of scanning Vapor's template HTML. The split no longer has to locate elements in generated HTML, so whole classes of bugs are gone: slots dropped after text nodes, components placed before their siblings, a root `v-if` rendered twice, and implicit default slot content lost beside a named slot. The slots have a new shape, documented in [Splitting templates](guides/features/templates-and-ssr.md#splitting-templates):

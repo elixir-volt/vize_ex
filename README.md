@@ -23,7 +23,7 @@ result.css   # scoped CSS
 
 ```elixir
 def deps do
-  [{:vize, "~> 0.16"}]
+  [{:vize, "~> 0.17"}]
 end
 ```
 
