@@ -28,6 +28,10 @@ vize_atelier_ssr = "=0.429.1"
 vize_atelier_sfc = { version = "=0.429.1", features = ["native"] }
 vize_patina = "=0.429.1"
 vize_croquis = "=0.429.1"
+vize_davinci = "=0.429.1"
+vize_l1 = "=0.429.1"
+vize_l1_to_l2 = "=0.429.1"
+vize_l2 = "=0.429.1"
 
 [dev-dependencies]
 proptest = "1.6"

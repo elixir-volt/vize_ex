@@ -2,24 +2,24 @@
 
 mod atoms {
     rustler::atoms! {
-        r#for = "for", r#if = "if", anchor, asset, ast, attrs, block, block_type,
+        r#for = "for", r#if = "if", anchor, asset, ast, attr, attrs, block, block_type,
         builtin, camel, capture, child_id, child_ref, children, code, component,
         condition, content, control, create_component, css, css_import, css_url,
         css_vars, custom_blocks, delegate, directive, dynamic, dynamic_slots, effect,
         effects, element, end, end_ = "end", end_column, end_line, error, errors,
         exports, expression, fallback, flags, fn_exp, for_node, get_text_child, group,
-        has_scoped, helpers, id, if_node, index, input_type, insert_node, is_component,
-        is_element, is_event, is_expr, keep_alive, key, key_prop, keys, kind, lang, loc,
-        macro_artifacts, match_scope, media, message, model_modifiers, model_update,
-        modifiers, module, name, negative, next_ref, non_keys, object, offset, ok, once,
-        only_child, operations, options, parent, parent_id, passive, positive, preamble,
-        prepend_node, prop_modifier, props, ref_for, regular, render, returns, scoped,
-        script, script_hash, script_setup, set_dynamic_props, set_event, set_html,
-        set_merged_props, set_prop, set_template_ref, set_text, setup,
-        should_force_reload, slot_outlet, slots, slotted, source, source_map, sources,
-        src, start, start_column, start_line, static_, style_hash, styles, supports,
-        suspense, tag, tag_end, tag_start, teleport, temp_id, template, template_hash,
-        transition, transition_group, url, v_model, v_show, value, value_kind, values,
-        warnings
+        has_scoped, helpers, html, id, if_node, index, input_type, insert_node,
+        is_component, is_element, is_event, is_expr, keep_alive, key, key_prop, keys,
+        kind, lang, loc, macro_artifacts, match_scope, media, message, model,
+        model_modifiers, model_update, modifiers, module, name, negative, next_ref,
+        non_keys, object, offset, ok, on, once, only_child, operations, options, parent,
+        parent_id, passive, positive, preamble, prepend_node, prop_modifier, props,
+        ref_for, regular, render, returns, root_attrs, scoped, script, script_hash,
+        script_setup, set_dynamic_props, set_event, set_html, set_merged_props, set_prop,
+        set_template_ref, set_text, setup, should_force_reload, slot, slot_outlet, slots,
+        slotted, source, source_map, sources, spread, src, start, start_column,
+        start_line, static_, style_hash, styles, supports, suspense, tag, tag_end,
+        tag_start, teleport, temp_id, template, template_hash, text, transition,
+        transition_group, url, v_show, value, value_kind, values, warning, warnings
     }
 }

@@ -86,7 +86,13 @@ Vize.compile_vapor(source,
 
 ```elixir
 Vize.vapor_ir(source)
-Vize.vapor_split(source)
+```
+
+### Split for server rendering
+
+```elixir
+{:ok, %{statics: statics, slots: slots}} = Vize.split_template(source)
+Vize.split_template(source, root_attrs: true)
 ```
 
 ## CSS

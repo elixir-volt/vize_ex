@@ -371,33 +371,83 @@ defmodule Vize do
   end
 
   @doc """
-  Split a Vue template into static HTML and the dynamic slots between them.
+  Split a Vue template into static HTML and the dynamic slots between them,
+  the shape of `%Phoenix.LiveView.Rendered{}`.
 
-  Returns `{:ok, split}` where `split` has:
+  The template is lowered to Vize's L2 semantic IR, which its SSR compiler
+  also uses, and printed: elements, static attributes, and text become HTML,
+  and everything that depends on data becomes a slot. Returns `{:ok, split}`:
 
     * `:statics` — static HTML strings, one more than there are slots
-    * `:slots` — slot descriptors in document order, each with a `:kind`.
-      `v-if` and `v-for` slots carry their own split.
-    * `:bindings` — events and `v-model`s, which the split leaves for the caller
-      to render. Each has a `:kind` (`:set_event` or `:directive`), the IR
-      `:node` as `vapor_ir/1` encodes it, and `:at`, a `{static_index, offset}`
-      pair: the byte offset in that static where the element's start tag ends,
-      so attributes can be inserted there.
-    * `:templates` — raw template strings (for sub-block rendering)
-    * `:element_template_map` — element ID → template index mapping
+    * `:slots` — slots in document order. Each has a `:kind` and a
+      `:position`, `{line, column}` in the template. Expressions are
+      JavaScript source strings.
+      * `:text` — an escaped interpolation (`:value`)
+      * `:html` — unescaped HTML from `v-html` (`:value`)
+      * `:attr` — one attribute, rendered whole with its leading space, so a
+        renderer can leave it out, as Vue does for `null` and a false boolean
+        attribute. Has `:name` (or `:name_value` for `:[name]`), `:value`,
+        `:static` for a static attribute of the same name such as `class="a"`
+        beside `:class="b"`, and `:show` for the `v-show` a `style` combines with
+      * `:spread` — the attributes of an object, from `v-bind="attrs"` (`:value`)
+      * `:model` — what a `v-model` renders on an `<input>` or `<textarea>`:
+        `:value`, the element's `:tag`, and its static `:type` and `:static_value`
+      * `:if` — `:branches`, each a `:condition` (nil for `v-else`) and a `:block`
+      * `:for` — `:source`, `:value`, `:key`, `:index`, the repeated element's
+        `:key_prop`, and its `:block`
+      * `:component` — `:name`, `:props`, `:events`, and `:slots`: the content
+        passed to each of its slots, with its `:name`, `:params` pattern such
+        as `{ item }`, and `:block`
+      * `:slot` — a `<slot>` outlet: `:name`, `:props`, and a `:fallback` block
+      * `:root_attrs` — with `root_attrs: true`, see below
+    * `:bindings` — events and `v-model`s, left for the caller to render: each
+      has a `:kind` (`:on` or `:model`), `:name`, `:modifiers`, `:value`, and
+      `:at`, a `{static_index, offset}` pair where the element's start tag
+      ends, so attributes can be inserted there
+    * `:diagnostics` — warnings, as `Vize.Diagnostic` structs
 
-  The statics and slots map directly onto a `%Phoenix.LiveView.Rendered{}`.
+  A block, such as a `v-if` branch, has its own `:statics`, `:slots`, and
+  `:bindings`. A prop or attribute in `:props` has `:name` (or `:name_value`),
+  and `:static` or `:value`; one with neither name is a `v-bind` object.
+
+  Returns `{:error, %Vize.Error{}}` when the template has errors, such as an
+  expression that doesn't parse.
+
+  ## Options
+
+    * `:root_attrs` — for a component's template: when it has a single root
+      element, return all of that element's attributes, static ones included,
+      as one `:root_attrs` slot, so a caller can merge the
+      [fallthrough attributes](https://vuejs.org/guide/components/attrs.html)
+      a parent passes (default: `false`)
+
+  ## Examples
+
+      iex> {:ok, split} = Vize.split_template(~s(<p :class="kind">Hi {{ name }}</p>))
+      iex> split.statics
+      ["<p", ">Hi ", "</p>"]
+      iex> Enum.map(split.slots, & &1.kind)
+      [:attr, :text]
   """
-  @spec vapor_split(String.t()) :: {:ok, map()} | {:error, [String.t()]}
-  def vapor_split(source) do
-    Vize.Native.vapor_split_nif(source)
+  @spec split_template(String.t(), keyword()) :: {:ok, map()} | {:error, Vize.Error.t()}
+  def split_template(source, opts \\ []) do
+    nif_opts = %{root_attrs: Keyword.get(opts, :root_attrs, false)}
+
+    case Vize.Native.split_template_nif(source, nif_opts) do
+      {:ok, split} ->
+        {:ok, %{split | diagnostics: Enum.map(split.diagnostics, &Vize.Diagnostic.new/1)}}
+
+      {:error, diagnostics} ->
+        {:error, error("Vue template has errors", diagnostics)}
+    end
   end
 
-  @spec vapor_split!(String.t()) :: map()
-  def vapor_split!(source) do
-    case vapor_split(source) do
+  @doc "Like `split_template/2` but raises `Vize.Error` on errors."
+  @spec split_template!(String.t(), keyword()) :: map()
+  def split_template!(source, opts \\ []) do
+    case split_template(source, opts) do
       {:ok, split} -> split
-      {:error, errors} -> raise "Vize vapor split error: #{inspect(errors)}"
+      {:error, error} -> raise error
     end
   end
 

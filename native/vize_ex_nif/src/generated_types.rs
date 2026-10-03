@@ -50,6 +50,16 @@ pub struct CompileVaporOpts {
     pub template_syntax: String,
 }
 #[derive(Clone, Debug, rustler::NifMap)]
+pub struct EncodedAttrSlot {
+    pub kind: Atom,
+    pub name: Option<String>,
+    pub name_value: Option<String>,
+    pub r#static: Option<String>,
+    pub value: Option<String>,
+    pub show: Option<String>,
+    pub position: (usize, usize),
+}
+#[derive(Clone, Debug, rustler::NifMap)]
 pub struct EncodedBinding {
     pub name: String,
     pub kind: String,
@@ -57,9 +67,11 @@ pub struct EncodedBinding {
 #[derive(Clone, Debug, rustler::NifMap)]
 pub struct EncodedComponentSlot<'a> {
     pub kind: Atom,
-    pub tag: String,
-    pub props: Vec<Term<'a>>,
-    pub value: Atom,
+    pub name: String,
+    pub props: Vec<EncodedProp>,
+    pub events: Vec<EncodedEvent>,
+    pub slots: Vec<EncodedSlotContent<'a>>,
+    pub position: (usize, usize),
 }
 #[derive(Clone, Debug, rustler::NifMap)]
 pub struct EncodedComponentUsage {
@@ -80,6 +92,12 @@ pub struct EncodedDts {
     pub dts: String,
 }
 #[derive(Clone, Debug, rustler::NifMap)]
+pub struct EncodedEvent {
+    pub name: Option<String>,
+    pub modifiers: Vec<String>,
+    pub value: Option<String>,
+}
+#[derive(Clone, Debug, rustler::NifMap)]
 pub struct EncodedEventListener {
     pub name: String,
     pub handler: Option<String>,
@@ -87,17 +105,39 @@ pub struct EncodedEventListener {
 #[derive(Clone, Debug, rustler::NifMap)]
 pub struct EncodedForSlot<'a> {
     pub kind: Atom,
-    pub source: Term<'a>,
-    pub value: Option<Term<'a>>,
-    pub key_prop: Option<Term<'a>>,
-    pub render: EncodedSplitBlock<'a>,
+    pub source: String,
+    pub value: String,
+    pub key: Option<String>,
+    pub index: Option<String>,
+    pub key_prop: Option<String>,
+    pub block: EncodedSplitBlock<'a>,
+    pub position: (usize, usize),
+}
+#[derive(Clone, Debug, rustler::NifMap)]
+pub struct EncodedHtmlSlot {
+    pub kind: Atom,
+    pub value: String,
+    pub position: (usize, usize),
+}
+#[derive(Clone, Debug, rustler::NifMap)]
+pub struct EncodedIfBranch<'a> {
+    pub condition: Option<String>,
+    pub block: EncodedSplitBlock<'a>,
 }
 #[derive(Clone, Debug, rustler::NifMap)]
 pub struct EncodedIfSlot<'a> {
     pub kind: Atom,
-    pub condition: Term<'a>,
-    pub positive: EncodedSplitBlock<'a>,
-    pub negative: Option<Term<'a>>,
+    pub branches: Vec<EncodedIfBranch<'a>>,
+    pub position: (usize, usize),
+}
+#[derive(Clone, Debug, rustler::NifMap)]
+pub struct EncodedModelSlot {
+    pub kind: Atom,
+    pub tag: String,
+    pub r#type: Option<String>,
+    pub static_value: Option<String>,
+    pub value: String,
+    pub position: (usize, usize),
 }
 #[derive(Clone, Debug, rustler::NifMap)]
 pub struct EncodedPassedProp {
@@ -112,6 +152,13 @@ pub struct EncodedPosition {
     pub column: u32,
 }
 #[derive(Clone, Debug, rustler::NifMap)]
+pub struct EncodedProp {
+    pub name: Option<String>,
+    pub name_value: Option<String>,
+    pub r#static: Option<String>,
+    pub value: Option<String>,
+}
+#[derive(Clone, Debug, rustler::NifMap)]
 pub struct EncodedPropDeclaration {
     pub name: String,
     pub required: bool,
@@ -120,6 +167,13 @@ pub struct EncodedPropDeclaration {
 pub struct EncodedRange {
     pub start: u32,
     pub end: u32,
+}
+#[derive(Clone, Debug, rustler::NifMap)]
+pub struct EncodedRootAttrsSlot {
+    pub kind: Atom,
+    pub props: Vec<EncodedProp>,
+    pub show: Option<String>,
+    pub position: (usize, usize),
 }
 #[derive(Clone, Debug, rustler::NifMap)]
 pub struct EncodedSass {
@@ -149,22 +203,54 @@ pub struct EncodedSfcStats {
     pub undefined_refs: usize,
 }
 #[derive(Clone, Debug, rustler::NifMap)]
+pub struct EncodedSlotContent<'a> {
+    pub name: Option<String>,
+    pub name_value: Option<String>,
+    pub params: Option<String>,
+    pub block: EncodedSplitBlock<'a>,
+}
+#[derive(Clone, Debug, rustler::NifMap)]
+pub struct EncodedSlotOutlet<'a> {
+    pub kind: Atom,
+    pub name: Option<String>,
+    pub name_value: Option<String>,
+    pub props: Vec<EncodedProp>,
+    pub fallback: Option<EncodedSplitBlock<'a>>,
+    pub position: (usize, usize),
+}
+#[derive(Clone, Debug, rustler::NifMap)]
 pub struct EncodedSourceLocation {
     pub start: EncodedPosition,
     pub end: EncodedPosition,
     pub source: String,
 }
 #[derive(Clone, Debug, rustler::NifMap)]
-pub struct EncodedSplitBinding<'a> {
+pub struct EncodedSplitBinding {
     pub kind: Atom,
-    pub node: Term<'a>,
+    pub name: Option<String>,
+    pub modifiers: Vec<String>,
+    pub value: Option<String>,
     pub at: (usize, usize),
+    pub position: (usize, usize),
 }
 #[derive(Clone, Debug, rustler::NifMap)]
 pub struct EncodedSplitBlock<'a> {
     pub statics: Vec<String>,
     pub slots: Vec<Term<'a>>,
-    pub bindings: Vec<EncodedSplitBinding<'a>>,
+    pub bindings: Vec<EncodedSplitBinding>,
+}
+#[derive(Clone, Debug, rustler::NifMap)]
+pub struct EncodedSplitDiagnostic {
+    pub severity: Atom,
+    pub message: String,
+    pub start: EncodedPosition,
+    pub end: EncodedPosition,
+}
+#[derive(Clone, Debug, rustler::NifMap)]
+pub struct EncodedSpreadSlot {
+    pub kind: Atom,
+    pub value: String,
+    pub position: (usize, usize),
 }
 #[derive(Clone, Debug, rustler::NifMap)]
 pub struct EncodedTemplateAsset {
@@ -178,20 +264,23 @@ pub struct EncodedTemplateExpression {
     pub range: EncodedRange,
 }
 #[derive(Clone, Debug, rustler::NifMap)]
+pub struct EncodedTemplateSplit<'a> {
+    pub statics: Vec<String>,
+    pub slots: Vec<Term<'a>>,
+    pub bindings: Vec<EncodedSplitBinding>,
+    pub diagnostics: Vec<EncodedSplitDiagnostic>,
+}
+#[derive(Clone, Debug, rustler::NifMap)]
+pub struct EncodedTextSlot {
+    pub kind: Atom,
+    pub value: String,
+    pub position: (usize, usize),
+}
+#[derive(Clone, Debug, rustler::NifMap)]
 pub struct EncodedUndefinedRef {
     pub name: String,
     pub offset: u32,
     pub context: String,
-}
-#[derive(Clone, Debug, rustler::NifMap)]
-pub struct EncodedValueSlot<'a> {
-    pub kind: Atom,
-    pub value: Term<'a>,
-}
-#[derive(Clone, Debug, rustler::NifMap)]
-pub struct EncodedValuesSlot<'a> {
-    pub kind: Atom,
-    pub values: Vec<Term<'a>>,
 }
 #[derive(Clone, Debug, rustler::NifMap)]
 pub struct EncodedVaporDiagnosticsOutput {
@@ -213,14 +302,6 @@ pub struct EncodedVaporOutput {
     pub templates: Vec<String>,
 }
 #[derive(Clone, Debug, rustler::NifMap)]
-pub struct EncodedVaporSplit<'a> {
-    pub statics: Vec<String>,
-    pub slots: Vec<Term<'a>>,
-    pub bindings: Vec<EncodedSplitBinding<'a>>,
-    pub templates: Vec<String>,
-    pub element_template_map: Vec<(usize, usize)>,
-}
-#[derive(Clone, Debug, rustler::NifMap)]
 pub struct ParseCssOpts {
     pub filename: String,
     pub custom_media: bool,
@@ -236,4 +317,8 @@ pub struct ScopeIdOpts {
     pub root: String,
     pub production: bool,
     pub source: String,
+}
+#[derive(Clone, Debug, rustler::NifMap)]
+pub struct SplitTemplateOpts {
+    pub root_attrs: bool,
 }

@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Breaking changes
+
+- `Vize.vapor_split/1` is replaced by `Vize.split_template/2`, which works from Vize's L2 semantic IR, the representation Vize's SSR compiler builds on, instead of scanning Vapor's template HTML. The split no longer has to locate elements in generated HTML, so whole classes of bugs are gone: slots dropped after text nodes, components placed before their siblings, a root `v-if` rendered twice, and implicit default slot content lost beside a named slot. The slots have a new shape, documented in [Splitting templates](guides/features/templates-and-ssr.md#splitting-templates):
+  - Expressions are source strings, and every slot has a `:position`.
+  - An `:attr` slot is a whole attribute, so a renderer can leave it out, as Vue does for `null` and false boolean attributes; a static attribute of the same name comes with it.
+  - Components carry their props, events, and the content of each slot; `<slot>` outlets are slots too.
+  - `v-show`, `v-model` on `<input>` and `<textarea>`, `v-html`, `v-text`, `v-bind` objects and dynamic attribute names are slots.
+  - Events and `v-model`s are `:on` and `:model` bindings.
+- Errors from `split_template/2` are `Vize.Error`s with a `Vize.Diagnostic` and position for each problem, such as an expression that doesn't parse; it used to return a list of strings.
+
+### Added
+
+- `split_template/2` takes `root_attrs: true` for a component's template: the attributes of a single root element come back as one `:root_attrs` slot, so a caller can merge the [fallthrough attributes](https://vuejs.org/guide/components/attrs.html) a parent passes.
+- Warnings, such as a custom directive that doesn't run on the server, come back in the split's `:diagnostics`.
+- `Vize.Diagnostic` has a `:severity`, and `Vize.Diagnostic.to_code_diagnostic/2` converts one to Elixir's `t:Code.diagnostic/1` shape, positioned in the file a template came from.
+- `Vize.Error` messages list their diagnostics with positions.
+
 ## 0.16.1 - 2026-10-03
 
 ### Fixed

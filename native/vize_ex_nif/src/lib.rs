@@ -26,7 +26,6 @@ use vize_atelier_vapor::{
 };
 use vize_carton::{line_index::LineIndex, Allocator};
 
-mod html_inject;
 mod ir_encoding;
 
 mod ir_encoders {
@@ -48,8 +47,8 @@ mod sfc_encoders {
 
     include!("generated_sfc_encoders.rs");
 }
+mod template_split;
 mod term_encoding;
-mod vapor_split;
 
 use crate::term_encoding::{
     decode_json_value, error_term, ok_term, EncodedBinding, EncodedBundleCssResult,
@@ -59,13 +58,13 @@ use crate::term_encoding::{
     EncodedRange, EncodedSass, EncodedSfcAnalysis, EncodedSfcStats, EncodedSourceLocation,
     EncodedSsrCompileResult, EncodedTemplateAsset, EncodedTemplateCompileResult,
     EncodedTemplateExpression, EncodedUndefinedRef, EncodedVaporDiagnosticsOutput, EncodedVaporIr,
-    EncodedVaporOutput, EncodedVaporSplit,
+    EncodedVaporOutput,
 };
 use crate::term_encoding::{
     BrowserTargets, BundleCssOpts, CompileCssOpts, CompileSassOpts, CompileSfcOpts,
     CompileTemplateOpts, CompileVaporOpts, ParseCssOpts, PrintCssOpts, ScopeIdOpts,
+    SplitTemplateOpts,
 };
-use crate::vapor_split::process_block;
 
 include!("generated_atoms.rs");
 include!("generated_nifs.rs");
@@ -994,42 +993,15 @@ fn bundle_css_nif_impl<'a>(
     Ok(ok_term(env, EncodedBundleCssResult { result: &result }))
 }
 
-fn vapor_split_nif_impl<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
-    let allocator = Allocator::new();
-    let parser_opts = ParserOptions::default();
-    let (mut root, errors) = parse_with_options(&allocator, source, parser_opts);
-
-    if !errors.is_empty() {
-        let msgs: std::vec::Vec<std::string::String> =
-            errors.iter().map(|e| e.message.to_string()).collect();
-        return Ok(error_term(env, msgs));
+fn split_template_nif_impl<'a>(
+    env: Env<'a>,
+    source: &str,
+    opts: SplitTemplateOpts,
+) -> NifResult<Term<'a>> {
+    match template_split::split_template(env, source, opts.root_attrs) {
+        Ok(split) => Ok(ok_term(env, split)),
+        Err(diagnostics) => Ok(error_term(env, diagnostics)),
     }
-
-    let transform_opts = TransformOptions {
-        vapor: true,
-        ..Default::default()
-    };
-    transform(&allocator, &mut root, transform_opts, None);
-
-    let ir = transform_to_ir(&allocator, &root, source);
-
-    let (statics, slots, bindings) = match process_block(env, &ir.block, &ir, source) {
-        Ok(split) => split,
-        Err(message) => return Ok(error_term(env, vec![message])),
-    };
-
-    let split = EncodedVaporSplit {
-        statics,
-        slots,
-        bindings,
-        templates: ir.templates.iter().map(ToString::to_string).collect(),
-        element_template_map: ir
-            .element_template_map
-            .iter()
-            .map(|(&element, &template)| (element, template))
-            .collect(),
-    };
-    Ok(ok_term(env, split))
 }
 
 // ── Declaration .d.ts Generation ──

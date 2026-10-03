@@ -122,18 +122,20 @@ defmodule Vize.Codegen.NativeTypes do
           required(:element_template_map) => [{R.usize(), R.usize()}]
         }
 
-  @type encoded_vapor_split :: %{
+  ## split_template
+  #
+  # A template split into static HTML and the dynamic slots between them, the
+  # shape of `%Phoenix.LiveView.Rendered{}`. Expressions are JavaScript source
+  # strings. Every slot has a `position`, `{line, column}` in the template.
+
+  @type split_template_opts :: %{required(:root_attrs) => boolean()}
+
+  @type encoded_template_split :: %{
           required(:statics) => [String.t()],
           required(:slots) => [R.term()],
           required(:bindings) => [encoded_split_binding()],
-          required(:templates) => [String.t()],
-          required(:element_template_map) => [{R.usize(), R.usize()}]
+          required(:diagnostics) => [encoded_split_diagnostic()]
         }
-
-  ## vapor_split slots
-  #
-  # Each slot fills the hole between two statics. Expressions (`R.term()`) are
-  # a string, or `{:static, string}` for static values.
 
   @type encoded_split_block :: %{
           required(:statics) => [String.t()],
@@ -141,52 +143,146 @@ defmodule Vize.Codegen.NativeTypes do
           required(:bindings) => [encoded_split_binding()]
         }
 
-  # An event or v-model on an element, left for the caller to render. `at` is
-  # `{static_index, byte_offset}`: where that element's start tag ends.
+  # A problem with the template. Positions are 1-based; `end` is exclusive.
+  @type encoded_split_diagnostic :: %{
+          required(:severity) => :error | :warning,
+          required(:message) => String.t(),
+          required(:start) => encoded_position(),
+          required(:end) => encoded_position()
+        }
+
+  # An event or `v-model` on an element, left for the caller to render. `at` is
+  # `{static_index, byte_offset}`: where the element's start tag ends.
   @type encoded_split_binding :: %{
-          required(:kind) => :set_event | :directive,
-          required(:node) => R.term(),
-          required(:at) => {R.usize(), R.usize()}
+          required(:kind) => :on | :model,
+          required(:name) => String.t() | nil,
+          required(:modifiers) => [String.t()],
+          required(:value) => String.t() | nil,
+          required(:at) => {R.usize(), R.usize()},
+          required(:position) => {R.usize(), R.usize()}
         }
 
-  @type encoded_values_slot :: %{
-          required(:kind) => :set_prop | :set_text,
-          required(:values) => [R.term()]
+  # Escaped text from an interpolation.
+  @type encoded_text_slot :: %{
+          required(:kind) => :text,
+          required(:value) => String.t(),
+          required(:position) => {R.usize(), R.usize()}
         }
 
-  @type encoded_value_slot :: %{
-          required(:kind) => :v_show | :v_model | :set_html,
-          required(:value) => R.term()
+  # Unescaped HTML, from `v-html`.
+  @type encoded_html_slot :: %{
+          required(:kind) => :html,
+          required(:value) => String.t(),
+          required(:position) => {R.usize(), R.usize()}
         }
 
-  # `negative` is a split block, a nested if slot, or nil.
+  # One attribute, rendered whole with its leading space so a caller can leave
+  # it out. `name_value` is the expression of a dynamic `:[name]`. `static` is
+  # a static attribute of the same name, such as `class="a"` beside
+  # `:class="b"`, and `show` the `v-show` expression a `style` combines with.
+  @type encoded_attr_slot :: %{
+          required(:kind) => :attr,
+          required(:name) => String.t() | nil,
+          required(:name_value) => String.t() | nil,
+          required(:static) => String.t() | nil,
+          required(:value) => String.t() | nil,
+          required(:show) => String.t() | nil,
+          required(:position) => {R.usize(), R.usize()}
+        }
+
+  # The attributes of an object, from `v-bind="attrs"`.
+  @type encoded_spread_slot :: %{
+          required(:kind) => :spread,
+          required(:value) => String.t(),
+          required(:position) => {R.usize(), R.usize()}
+        }
+
+  # A `v-model` on a form element: the `value`, `checked` state, or text it
+  # renders. `type` and `static_value` are the element's static `type` and
+  # `value` attributes, which decide that for checkboxes and radios.
+  @type encoded_model_slot :: %{
+          required(:kind) => :model,
+          required(:tag) => String.t(),
+          required(:type) => String.t() | nil,
+          required(:static_value) => String.t() | nil,
+          required(:value) => String.t(),
+          required(:position) => {R.usize(), R.usize()}
+        }
+
   @type encoded_if_slot :: %{
-          required(:kind) => :if_node,
-          required(:condition) => R.term(),
-          required(:positive) => encoded_split_block(),
-          required(:negative) => R.term() | nil
+          required(:kind) => :if,
+          required(:branches) => [encoded_if_branch()],
+          required(:position) => {R.usize(), R.usize()}
+        }
+
+  # `condition` is nil for `v-else`.
+  @type encoded_if_branch :: %{
+          required(:condition) => String.t() | nil,
+          required(:block) => encoded_split_block()
         }
 
   @type encoded_for_slot :: %{
-          required(:kind) => :for_node,
-          required(:source) => R.term(),
-          required(:value) => R.term() | nil,
-          required(:key_prop) => R.term() | nil,
-          required(:render) => encoded_split_block()
+          required(:kind) => :for,
+          required(:source) => String.t(),
+          required(:value) => String.t(),
+          required(:key) => String.t() | nil,
+          required(:index) => String.t() | nil,
+          required(:key_prop) => String.t() | nil,
+          required(:block) => encoded_split_block(),
+          required(:position) => {R.usize(), R.usize()}
+        }
+
+  # A prop, attribute or `v-bind` object passed to a component or outlet, or
+  # one of a root element's attributes. A spread has neither name.
+  @type encoded_prop :: %{
+          required(:name) => String.t() | nil,
+          required(:name_value) => String.t() | nil,
+          required(:static) => String.t() | nil,
+          required(:value) => String.t() | nil
+        }
+
+  @type encoded_event :: %{
+          required(:name) => String.t() | nil,
+          required(:modifiers) => [String.t()],
+          required(:value) => String.t() | nil
         }
 
   @type encoded_component_slot :: %{
-          required(:kind) => :create_component,
-          required(:tag) => String.t(),
-          required(:props) => [R.term()],
-          required(:value) =>
-            :regular
-            | :teleport
-            | :keep_alive
-            | :suspense
-            | :transition
-            | :transition_group
-            | :dynamic
+          required(:kind) => :component,
+          required(:name) => String.t(),
+          required(:props) => [encoded_prop()],
+          required(:events) => [encoded_event()],
+          required(:slots) => [encoded_slot_content()],
+          required(:position) => {R.usize(), R.usize()}
+        }
+
+  # Content passed to one of a component's slots. `params` is the slot props
+  # pattern, such as `{ item }`.
+  @type encoded_slot_content :: %{
+          required(:name) => String.t() | nil,
+          required(:name_value) => String.t() | nil,
+          required(:params) => String.t() | nil,
+          required(:block) => encoded_split_block()
+        }
+
+  # A `<slot>` outlet, where the parent's slot content renders.
+  @type encoded_slot_outlet :: %{
+          required(:kind) => :slot,
+          required(:name) => String.t() | nil,
+          required(:name_value) => String.t() | nil,
+          required(:props) => [encoded_prop()],
+          required(:fallback) => encoded_split_block() | nil,
+          required(:position) => {R.usize(), R.usize()}
+        }
+
+  # With `root_attrs: true`, every attribute of the template's single root
+  # element, in authored order, so a caller can merge a component's
+  # fallthrough attributes in.
+  @type encoded_root_attrs_slot :: %{
+          required(:kind) => :root_attrs,
+          required(:props) => [encoded_prop()],
+          required(:show) => String.t() | nil,
+          required(:position) => {R.usize(), R.usize()}
         }
 
   ## SFC

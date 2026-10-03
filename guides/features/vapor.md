@@ -55,24 +55,4 @@ Every node has a `:kind`:
 
 Expressions are strings; static values are `{:static_, "value"}` tuples.
 
-## Splitting templates
-
-`Vize.vapor_split/1` turns a template into static HTML strings and the dynamic slots between them, the shape of `%Phoenix.LiveView.Rendered{}`. `v-if` and `v-for` blocks are split recursively.
-
-```elixir
-{:ok, split} = Vize.vapor_split(~s(<div :class="cls"><p>{{ msg }}</p></div>))
-
-split.statics  # ["<div class=\"", "\"><p>", "</p></div>"]
-split.slots    # [%{kind: :set_prop, values: ["cls"]}, %{kind: :set_text, values: ["msg"]}]
-```
-
-Events and `v-model`s are not rendered. They are reported as bindings, with the IR node and the position where their element's start tag ends, so a caller can add whatever attributes its runtime needs:
-
-```elixir
-{:ok, split} = Vize.vapor_split(~s(<button @click="save">{{ label }}</button>))
-
-split.statics   # ["<button>", "</button>"]
-split.bindings  # [%{kind: :set_event, node: %{key: {:static_, "click"}, value: "save", ...}, at: {0, 7}}]
-```
-
-`at: {0, 7}` is byte 7 of the first static, just before the `>`. [PhoenixVapor](https://github.com/elixir-volt/phoenix_vapor) uses it to add `phx-click="save"` there.
+To render a template on a server without JavaScript, see [Splitting templates](templates-and-ssr.md#splitting-templates).

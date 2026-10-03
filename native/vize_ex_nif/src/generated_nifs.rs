@@ -120,8 +120,12 @@ fn bundle_css_nif<'a>(
     bundle_css_nif_impl(env, entry_path, opts)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
-fn vapor_split_nif<'a>(env: Env<'a>, source: &str) -> NifResult<Term<'a>> {
-    vapor_split_nif_impl(env, source)
+fn split_template_nif<'a>(
+    env: Env<'a>,
+    source: &str,
+    opts: SplitTemplateOpts,
+) -> NifResult<Term<'a>> {
+    split_template_nif_impl(env, source, opts)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
 fn generate_dts_nif<'a>(

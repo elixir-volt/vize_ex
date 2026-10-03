@@ -36,7 +36,7 @@ defmodule Vize.Native do
 
   @spec vapor_ir_nif(String.t()) :: {:ok, map()} | {:error, list()}
 
-  @spec vapor_split_nif(String.t()) :: {:ok, map()} | {:error, list()}
+  @spec split_template_nif(String.t(), map()) :: {:ok, map()} | {:error, list()}
 
   @spec lint_nif(String.t(), String.t()) :: {:ok, list()}
 

@@ -144,7 +144,7 @@ nifs = [
   compile_sass_nif: [],
   compile_css_nif: [attrs: [A.attr(:allow, [A.path([:clippy, :too_many_arguments])])]],
   bundle_css_nif: [],
-  vapor_split_nif: [],
+  split_template_nif: [],
   generate_dts_nif: []
 ]
 
@@ -161,7 +161,16 @@ source_atoms =
 
 atoms =
   (source_atoms ++ encoder_atoms ++ Vize.Codegen.Sfc.atoms() ++ Vize.Codegen.VaporIR.atoms())
-  |> Enum.uniq()
+  # A raw identifier such as `atoms::r#for()` names the atom `for`, which
+  # other sources declare as `{:for, "for"}`.
+  |> Enum.map(fn
+    "r#" <> name -> {"r#" <> name, name}
+    atom -> atom
+  end)
+  |> Enum.uniq_by(fn
+    {_ident, name} -> to_string(name)
+    name -> name
+  end)
   |> Enum.sort()
   |> Enum.map(fn
     "end_" -> {"end_", "end"}
