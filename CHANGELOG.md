@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.16.1 - 2026-10-03
+
 ### Fixed
 
 - `vapor_split/1` no longer drops slots when a text node comes before an element. Vapor counts text nodes when it navigates the template, so in `<li>a<ul><li>{{ b }}</li></ul></li>` the split looked for the wrong element and silently left `{{ b }}` out. Elements are now located by their DOM node position.
