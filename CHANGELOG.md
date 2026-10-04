@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.17.1 - 2026-10-04
+
 ### Changed
 
 - Build on Vize 0.431.0, which fixes three bugs found through vize_ex:
