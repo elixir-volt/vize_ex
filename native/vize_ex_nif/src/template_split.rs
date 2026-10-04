@@ -10,14 +10,14 @@ use std::collections::HashMap;
 use rustler::{Encoder, Env, Term};
 use vize_carton::line_index::LineIndex;
 use vize_carton::{is_void_tag, Allocator};
-use vize_davinci::diagnostic::{Diagnostic, Severity};
+use vize_l0::diag::{Diagnostic, Severity};
 use vize_l1_to_l2::decode_ssr_static_text;
 use vize_l1_to_l2::emit::decode_html_attribute_entities;
 use vize_l1_to_l2::lower::TextPart;
 use vize_l2::expr::{ExprRef, OpaqueReason};
 use vize_l2::op::{
-    Attribute, BindOp, BindingOp, ComponentOp, DynamicName, ElementOp, ForOp, IfOp, ModelOp, Op,
-    Region, SlotOp,
+    Attribute, BindOp, BindingOp, ComponentOp, DynamicName, ElementOp, ForOp, IfOp, ModelOp,
+    OnHandlerRef, Op, Region, SlotOp,
 };
 
 use crate::atoms;
@@ -196,6 +196,13 @@ impl<'s, 'a> Splitter<'s, 'a> {
                 let slot = self.slot_outlet(outlet);
                 block.slot(slot);
             }
+            Op::OriginalFor(for_op) => {
+                self.error(
+                    for_op.span.start,
+                    for_op.span.end,
+                    "this v-for isn't supported on the server",
+                );
+            }
         }
     }
 
@@ -255,7 +262,9 @@ impl<'s, 'a> Splitter<'s, 'a> {
                         kind: atoms::on(),
                         name: on.name.and_then(static_name),
                         modifiers: on.modifiers.iter().map(ToString::to_string).collect(),
-                        value: on.handler.map(|handler| self.expression(handler)),
+                        value: on
+                            .handler
+                            .and_then(|handler| self.handler(handler, on.span)),
                         at: block.at(),
                         position: self.position(on.span.start),
                     };
@@ -512,7 +521,9 @@ impl<'s, 'a> Splitter<'s, 'a> {
                 BindingOp::On(on) => events.push(EncodedEvent {
                     name: on.name.and_then(static_name),
                     modifiers: on.modifiers.iter().map(ToString::to_string).collect(),
-                    value: on.handler.map(|handler| self.expression(handler)),
+                    value: on
+                        .handler
+                        .and_then(|handler| self.handler(handler, on.span)),
                 }),
                 // `v-model` on a component is a prop and its update event.
                 BindingOp::Model(model) => {
@@ -703,6 +714,22 @@ impl<'s, 'a> Splitter<'s, 'a> {
             position: self.position(for_op.span.start),
         }
         .encode(self.env)
+    }
+
+    /// An event handler's source. Every template handler is an expression; a
+    /// handler body that lives outside the template has no source here.
+    fn handler(&mut self, handler: OnHandlerRef<'_>, span: vize_carton::Span) -> Option<String> {
+        match handler.expression() {
+            Some(expression) => Some(self.expression(expression)),
+            None => {
+                self.error(
+                    span.start,
+                    span.end,
+                    "this event handler isn't supported on the server",
+                );
+                None
+            }
+        }
     }
 
     /// The expression's source. One Vize couldn't parse is reported, and its

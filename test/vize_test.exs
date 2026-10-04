@@ -300,6 +300,25 @@ defmodule VizeTest do
     end
   end
 
+  describe "Vize 0.431 fixes" do
+    test "static attribute values are decoded once" do
+      assert Vize.compile_vapor!(~S|<div title="a &amp;lt; b">x</div>|).templates ==
+               [~S|<div title="a &amp;lt; b">x</div>|]
+    end
+
+    test "implicit default slot content stays beside a named slot" do
+      assert Vize.compile_vapor!(~S|<Card><p>{{ x }}</p><template #footer>F</template></Card>|).code =~
+               ~s("default")
+    end
+
+    test "vapor_ir keeps a static style merged with :style" do
+      ir = Vize.vapor_ir!(~S|<div style="color: red" :style="s">x</div>|)
+
+      assert [[{:static_, "color: red"}, "s"]] =
+               ir.block.effects |> List.flatten() |> Enum.map(& &1.value.values)
+    end
+  end
+
   describe "vapor_ir/1" do
     test "returns IR with templates" do
       {:ok, ir} = Vize.vapor_ir("<div>hello</div>")

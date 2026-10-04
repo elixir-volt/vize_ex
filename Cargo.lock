@@ -167,12 +167,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "byteorder"
-version = "1.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
-
-[[package]]
 name = "bytes"
 version = "1.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -320,9 +314,9 @@ dependencies = [
 
 [[package]]
 name = "corsa_lsp"
-version = "1.14.2"
+version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c29b42affe811a611edf26f4139a62e13ca45fa32db2a03ba5a67c766ecc6897"
+checksum = "c5223d92bf4e87bee6e4aae2c85948894fb7a92618fc5264d7f8ce7c599212f8"
 dependencies = [
  "corsa_core",
  "corsa_jsonrpc",
@@ -334,9 +328,9 @@ dependencies = [
 
 [[package]]
 name = "corsa_orchestrator"
-version = "1.14.2"
+version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "264c942f415c1492f85ff92a2ba501bb7f0e0d9ca47a68503b54ef2415cc9cc8"
+checksum = "870bf975c5e7bce2be4df321cec1aa8a51193a0e09e560a023d9989215f686af"
 dependencies = [
  "corsa_client",
  "corsa_core",
@@ -493,6 +487,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "dirs"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3e8aa94d75141228480295a7d0e7feb620b1a5ad9f12bc40be62411e38cce4e"
+dependencies = [
+ "dirs-sys",
+]
+
+[[package]]
+name = "dirs-sys"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e01a3366d27ee9890022452ee61b2b63a67e6f13f58900b651ff5665f0bb1fab"
+dependencies = [
+ "libc",
+ "option-ext",
+ "redox_users",
+ "windows-sys",
+]
+
+[[package]]
 name = "dragonbox_ecma"
 version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -581,10 +596,69 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6d5a32815ae3f33302d95fdcb2ce17862f8c65363dcfd29360480ba1001fc9c"
 
 [[package]]
+name = "futures"
+version = "0.3.32"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b147ee9d1f6d097cef9ce628cd2ee62288d963e16fb287bd9286455b241382d"
+dependencies = [
+ "futures-channel",
+ "futures-core",
+ "futures-executor",
+ "futures-io",
+ "futures-sink",
+ "futures-task",
+ "futures-util",
+]
+
+[[package]]
+name = "futures-channel"
+version = "0.3.34"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1f9e3d69d39e4862ffed03ed071a76f9a13ba1d9109d355b0f0aa6b15e393c4"
+dependencies = [
+ "futures-core",
+ "futures-sink",
+]
+
+[[package]]
 name = "futures-core"
 version = "0.3.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "92d699e522242e69e3003b94ecc1f960f3a5e015aa7c5d7486e65ad01dd94f5e"
+
+[[package]]
+name = "futures-executor"
+version = "0.3.34"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "031b47cf1a3c6cc8bc2fc76cd437f521619387907d469316e7c0bc278f1f5432"
+dependencies = [
+ "futures-core",
+ "futures-task",
+ "futures-util",
+]
+
+[[package]]
+name = "futures-io"
+version = "0.3.34"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "53c0fa8157de1303bfffdaa1cc2a673bfffb60102f76b0ef4441659124373fed"
+
+[[package]]
+name = "futures-macro"
+version = "0.3.34"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9fb9654ba8355388abeb8dcb4fc62f511300867002afc858860463bdd9fe0c44"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.3",
+]
+
+[[package]]
+name = "futures-sink"
+version = "0.3.34"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1944426bf7d03f1d14f708785e4b33efd750b36d48a157b836b3efc15ede8e1d"
 
 [[package]]
 name = "futures-task"
@@ -598,8 +672,13 @@ version = "0.3.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d50a92467f8ba5dd6e3ee5d4bd04d73ab2e4e1c44474a0674821dfce14b79bc"
 dependencies = [
+ "futures-channel",
  "futures-core",
+ "futures-io",
+ "futures-macro",
+ "futures-sink",
  "futures-task",
+ "memchr",
  "pin-project-lite",
  "slab",
 ]
@@ -847,6 +926,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "libredox"
+version = "0.1.25"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "61ff90caf6077a803a240f62fdbe88645a890bbca49ef8174c3cb0404362171d"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "lightningcss"
 version = "1.0.0-alpha.72"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -999,6 +1087,12 @@ name = "once_cell"
 version = "1.21.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
+
+[[package]]
+name = "option-ext"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
 
 [[package]]
 name = "outref"
@@ -1196,30 +1290,6 @@ checksum = "191884bee6c3744909a51acc7d78d4ae370d817b25875b10642f632327b6296e"
 dependencies = [
  "nonmax",
  "serde",
-]
-
-[[package]]
-name = "oxc_parser"
-version = "0.142.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ff65aedf1d4364457427d461b827cc43544c5275f2693144a4fdb5fe5c26fbd9"
-dependencies = [
- "bitflags 2.13.1",
- "cow-utils",
- "memchr",
- "num-bigint",
- "num-traits",
- "oxc_allocator",
- "oxc_ast",
- "oxc_data_structures",
- "oxc_diagnostics",
- "oxc_ecmascript",
- "oxc_regular_expression",
- "oxc_span",
- "oxc_str",
- "oxc_syntax",
- "rustc-hash",
- "seq-macro",
 ]
 
 [[package]]
@@ -1598,32 +1668,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
 
 [[package]]
-name = "pklrust"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1df97a6d402450bc33cd60d3ade512cb17cfac9f8c99d244daa8661d880a0fb4"
-dependencies = [
- "byteorder",
- "pklrust-derive",
- "rmp-serde",
- "rmpv",
- "serde",
- "serde_json",
- "thiserror",
-]
-
-[[package]]
-name = "pklrust-derive"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "249ee2f18cfc814e6a1d36472f64eb79a85dcb279b95b4b5c92f5b3824c5e863"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.117",
-]
-
-[[package]]
 name = "postcard"
 version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1824,6 +1868,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "redox_users"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "60dc65c0ff1a7ae1294b0c67b9f14baf70b644404010370171787bfac1038fc0"
+dependencies = [
+ "libredox",
+ "thiserror",
+]
+
+[[package]]
 name = "regex"
 version = "1.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1894,36 +1948,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "rmp"
-version = "0.8.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ba8be72d372b2c9b35542551678538b562e7cf86c3315773cae48dfbfe7790c"
-dependencies = [
- "num-traits",
-]
-
-[[package]]
-name = "rmp-serde"
-version = "1.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72f81bee8c8ef9b577d1681a70ebbc962c232461e397b22c208c43c04b67a155"
-dependencies = [
- "rmp",
- "serde",
-]
-
-[[package]]
-name = "rmpv"
-version = "1.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a4e1d4b9b938a26d2996af33229f0ca0956c652c1375067f0b45291c1df8417"
-dependencies = [
- "rmp",
- "serde",
- "serde_bytes",
 ]
 
 [[package]]
@@ -2009,6 +2033,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "same-file"
+version = "1.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502"
+dependencies = [
+ "winapi-util",
+]
+
+[[package]]
 name = "scopeguard"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2049,16 +2082,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3753ca04f350fa92d00b6146a3555e63c55388c9ef2e11e09bce2ff1c0b509c6"
 dependencies = [
  "serde",
-]
-
-[[package]]
-name = "serde_bytes"
-version = "0.11.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a5d440709e79d88e51ac01c4b72fc6cb7314017bb7da9eeff678aa94c10e3ea8"
-dependencies = [
- "serde",
- "serde_core",
 ]
 
 [[package]]
@@ -2406,28 +2429,29 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "vize_armature"
-version = "0.429.1"
+version = "0.431.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02d15d4b3a3d1bd8c8ed4d15679955327e00c2cc2072a93e83fe6f5854d613a5"
+checksum = "7f4abc45f4e55eb27ebd28525cf4e9cfc7e51726d4bc55f818b55f74ee2ba2e3"
 dependencies = [
  "compact_str",
  "htmlize",
  "oxc_allocator",
  "oxc_ast",
- "oxc_parser",
  "oxc_span",
  "oxc_syntax",
  "serde",
  "thiserror",
- "vize_carton",
+ "vize_l0",
+ "vize_l1",
+ "vize_oxc_parser",
  "vize_relief",
 ]
 
 [[package]]
 name = "vize_atelier_core"
-version = "0.429.1"
+version = "0.431.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3387d944fbcc51950bbd0a4fda0b529c5db512fd3ad567b3cb961ca8b955cdd2"
+checksum = "c1cab5968c99fd83b84ebeb11984af4526cfb87177beaaca3fec0bb2de0d2fac"
 dependencies = [
  "compact_str",
  "memoffset",
@@ -2436,7 +2460,6 @@ dependencies = [
  "oxc_ast_visit",
  "oxc_codegen",
  "oxc_diagnostics",
- "oxc_parser",
  "oxc_semantic",
  "oxc_span",
  "oxc_syntax",
@@ -2445,37 +2468,37 @@ dependencies = [
  "serde_json",
  "thiserror",
  "vize_armature",
- "vize_carton",
  "vize_croquis",
+ "vize_l0",
+ "vize_oxc_parser",
  "vize_relief",
 ]
 
 [[package]]
 name = "vize_atelier_dom"
-version = "0.429.1"
+version = "0.431.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6cfeb8fe2f25d6ca4f65ba0453f47b3321ac4cc37a4bd9b64b8ebab093d561b"
+checksum = "7ede4a33fe77fdbde9e4dab92960cb2d1784cc23b850aac8752db1feec5cea2d"
 dependencies = [
  "phf 0.13.1",
  "serde",
  "thiserror",
  "vize_atelier_core",
- "vize_carton",
  "vize_croquis",
+ "vize_l0",
  "vize_l1_to_l2",
 ]
 
 [[package]]
 name = "vize_atelier_jsx"
-version = "0.429.1"
+version = "0.431.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09c2b3da510985a4e206a7528aa05fc8b9dd648b13150cf1348e57c1b2720e7d"
+checksum = "230f75b6104c8f559985846c6bd1cf06b35efdcc8e9ddd6b995b8e5adb394dc1"
 dependencies = [
  "oxc_allocator",
  "oxc_ast",
  "oxc_ast_visit",
  "oxc_diagnostics",
- "oxc_parser",
  "oxc_semantic",
  "oxc_sourcemap",
  "oxc_span",
@@ -2484,19 +2507,19 @@ dependencies = [
  "vize_atelier_sfc",
  "vize_atelier_ssr",
  "vize_atelier_vapor",
- "vize_carton",
  "vize_croquis",
- "vize_davinci",
+ "vize_l0",
  "vize_l1_to_l2",
  "vize_l2",
+ "vize_oxc_parser",
  "vize_relief",
 ]
 
 [[package]]
 name = "vize_atelier_sfc"
-version = "0.429.1"
+version = "0.431.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60bdf307caf21ad368c7960a14cdb647638a35a388b701793891ea3e17d40756"
+checksum = "403b3bc42d1ea55a030a0d94c64a3a7a9ed457b7254866b0e73b524db6d40fb9"
 dependencies = [
  "lightningcss",
  "memchr",
@@ -2504,7 +2527,6 @@ dependencies = [
  "oxc_ast",
  "oxc_ast_visit",
  "oxc_codegen",
- "oxc_parser",
  "oxc_semantic",
  "oxc_sourcemap",
  "oxc_span",
@@ -2516,45 +2538,49 @@ dependencies = [
  "serde_json",
  "sha2",
  "thiserror",
+ "vize_armature",
  "vize_atelier_core",
  "vize_atelier_dom",
  "vize_atelier_ssr",
  "vize_atelier_vapor",
- "vize_carton",
  "vize_croquis",
+ "vize_l0",
+ "vize_l1",
  "vize_l1_to_l2",
+ "vize_l2",
+ "vize_l3",
+ "vize_l4",
+ "vize_oxc_parser",
 ]
 
 [[package]]
 name = "vize_atelier_ssr"
-version = "0.429.1"
+version = "0.431.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83a2d09ae5dfca4b4aecc5b3ffeb2bd7af83d90ccd3ae534b8a092514af0005f"
+checksum = "897b90b763689c7b06b3444819fab6f7db8d1bc0c0d43582df90d964ff70ca21"
 dependencies = [
  "serde",
  "vize_armature",
  "vize_atelier_core",
- "vize_carton",
  "vize_croquis",
- "vize_davinci",
- "vize_impeto",
+ "vize_l0",
  "vize_l1",
  "vize_l1_to_l2",
  "vize_l2",
  "vize_l2_to_l3",
+ "vize_l3",
  "vize_relief",
 ]
 
 [[package]]
 name = "vize_atelier_vapor"
-version = "0.429.1"
+version = "0.431.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6800135436ad872963e3219793f3392bfb288cd7088da7fc4eeac81a2659e524"
+checksum = "54d8d9a29da9cf2bdd1c36981c794be3f848a865bbd6a9d1ccbc83f23aaaf90a"
 dependencies = [
  "oxc_allocator",
  "oxc_ast",
  "oxc_ast_visit",
- "oxc_parser",
  "oxc_span",
  "oxc_syntax",
  "serde",
@@ -2562,35 +2588,43 @@ dependencies = [
  "vize_atelier_core",
  "vize_carton",
  "vize_croquis",
- "vize_impeto",
+ "vize_l0",
  "vize_l1",
  "vize_l1_to_l2",
  "vize_l2",
  "vize_l2_to_l3",
+ "vize_l3",
+ "vize_oxc_parser",
 ]
 
 [[package]]
 name = "vize_canon"
-version = "0.429.1"
+version = "0.431.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bec1ccdb32f7d0dd68835c2994098850069f397c8f568b48b88e4567f3c85625"
+checksum = "581d0dc7825da9518cd827e40566f83aea0413db457a924b37ac5fdbeaaa6b42"
 dependencies = [
+ "corsa",
+ "corsa_lsp",
  "dashmap 6.2.1",
+ "dirs",
+ "futures",
  "glob",
  "junction",
  "libc",
+ "lsp-types",
  "oxc_allocator",
  "oxc_ast",
  "oxc_ast_visit",
  "oxc_diagnostics",
- "oxc_parser",
  "oxc_semantic",
+ "oxc_sourcemap",
  "oxc_span",
  "oxc_syntax",
  "rayon",
  "serde",
  "serde_json",
  "sha2",
+ "tempfile",
  "thiserror",
  "tracing",
  "vize_armature",
@@ -2599,39 +2633,35 @@ dependencies = [
  "vize_atelier_sfc",
  "vize_carton",
  "vize_croquis",
- "vize_davinci",
+ "vize_l0",
+ "vize_l1",
+ "vize_l1_to_l2",
+ "vize_l2",
+ "vize_l4",
+ "vize_oxc_parser",
  "vize_relief",
+ "walkdir",
 ]
 
 [[package]]
 name = "vize_carton"
-version = "0.429.1"
+version = "0.431.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6aa358d0d76c8953d849f159e8bcd330e341cfe3f712183ca861cf967007f46"
+checksum = "ad6d5dacb23cb9c21b21e0ad45cb14a4e3295473da8c478cf70ff95ba957ec1c"
 dependencies = [
- "bitflags 2.13.1",
- "compact_str",
- "memchr",
  "once_cell",
- "oxc_allocator",
- "oxc_syntax",
- "phf 0.13.1",
- "pklrust",
  "rustc-hash",
  "serde",
  "serde_json",
- "simdutf8",
- "smallvec",
- "stacker",
+ "vize_l0",
  "which",
- "xxhash-rust",
 ]
 
 [[package]]
 name = "vize_croquis"
-version = "0.429.1"
+version = "0.431.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ceb9b937b49a2adea28b696d6957361cb50208675986d4fe8ace43946325a34"
+checksum = "7af16a90ac3581c1d927ed7065b1c6cb117d1aaacd2d291bf4803cd5ae605109"
 dependencies = [
  "dashmap 6.2.1",
  "index_vec",
@@ -2640,7 +2670,6 @@ dependencies = [
  "oxc_allocator",
  "oxc_ast",
  "oxc_ast_visit",
- "oxc_parser",
  "oxc_semantic",
  "oxc_span",
  "oxc_syntax",
@@ -2652,31 +2681,11 @@ dependencies = [
  "thin-vec",
  "vize_armature",
  "vize_carton",
- "vize_davinci",
- "vize_impeto",
+ "vize_l0",
+ "vize_l2",
+ "vize_l3",
+ "vize_oxc_parser",
  "vize_relief",
-]
-
-[[package]]
-name = "vize_davinci"
-version = "0.429.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1edc9c9c5f21d63be35f8c2e85668079fa975ee29dd027d84d947cf98dfd6f29"
-dependencies = [
- "unicode-width",
- "vize_carton",
- "vize_davinci_derive",
-]
-
-[[package]]
-name = "vize_davinci_derive"
-version = "0.429.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e874f36b3fafdc8d2a048d221b800bd2d15af127a7718dd0d21e8f54a1a8aba2"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.117",
 ]
 
 [[package]]
@@ -2699,7 +2708,7 @@ dependencies = [
  "vize_atelier_vapor",
  "vize_carton",
  "vize_croquis",
- "vize_davinci",
+ "vize_l0",
  "vize_l1",
  "vize_l1_to_l2",
  "vize_l2",
@@ -2708,81 +2717,158 @@ dependencies = [
 ]
 
 [[package]]
-name = "vize_impeto"
-version = "0.429.1"
+name = "vize_l0"
+version = "0.431.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f985c0b92f113107476734a5e8a40ca9f9860249cc84cceee1f6e1c89b1a2a66"
+checksum = "d87b3f656c79a1df13fa6a224cc2f3d451054b4840b49efccf8ba047f251197e"
 dependencies = [
+ "bitflags 2.13.1",
+ "compact_str",
+ "memchr",
+ "once_cell",
+ "oxc_allocator",
+ "oxc_syntax",
+ "phf 0.13.1",
+ "rustc-hash",
+ "serde",
  "serde_json",
- "vize_carton",
- "vize_davinci",
+ "simdutf8",
+ "smallvec",
+ "stacker",
+ "vize_l0_derive",
+ "xxhash-rust",
+]
+
+[[package]]
+name = "vize_l0_derive"
+version = "0.431.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2021732707fa4a310d0c3a8562733b3461ed8e9e2d24a9786f8e84f8528164d7"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
 ]
 
 [[package]]
 name = "vize_l1"
-version = "0.429.1"
+version = "0.431.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0a204f1aa630af7cf84304051a398b5274a0deb52692b87cf05e5703dc1c4e7"
+checksum = "dd4246499b2662dabd67fc64512c135d4be5d56f654f4be8c1ff7057796d572a"
 dependencies = [
- "vize_armature",
- "vize_carton",
- "vize_relief",
+ "cssparser",
+ "htmlize",
+ "oxc_ast",
+ "oxc_ast_visit",
+ "oxc_diagnostics",
+ "oxc_span",
+ "vize_l0",
+ "vize_oxc_parser",
 ]
 
 [[package]]
 name = "vize_l1_to_l2"
-version = "0.429.1"
+version = "0.431.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "796f3eaf7325ef6d07b1407813b3626934616deea4570dfe1598577c60abafe7"
+checksum = "1de114614c7b3b6d889571f3b79de777bd4d5f871424f237b427e063bc38fc4a"
 dependencies = [
  "htmlize",
  "oxc_ast",
  "oxc_ast_visit",
  "oxc_codegen",
- "oxc_parser",
  "oxc_semantic",
  "oxc_span",
  "oxc_syntax",
  "oxc_transformer",
  "smallvec",
- "vize_carton",
- "vize_davinci",
- "vize_impeto",
+ "vize_l0",
  "vize_l1",
  "vize_l2",
- "vize_relief",
+ "vize_l3",
+ "vize_oxc_parser",
 ]
 
 [[package]]
 name = "vize_l2"
-version = "0.429.1"
+version = "0.431.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c927e945389b108a0911636c960afac3305ffb0d918d1e97a6f0913fdffa2c50"
+checksum = "753bae18f49230f053fb2de64e3a8a0f41cf84345f4e660db922d52d9ceeba92"
 dependencies = [
  "oxc_ast",
- "oxc_parser",
  "oxc_span",
- "vize_carton",
- "vize_davinci",
+ "vize_l0",
+ "vize_l1",
+ "vize_oxc_parser",
 ]
 
 [[package]]
 name = "vize_l2_to_l3"
-version = "0.429.1"
+version = "0.431.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "409daaf118ed7be331e58082ddacf2fc66968d4fa26feed2474147e669a42004"
+checksum = "2e590b574125a6387a3f77c12575cf74fa8fc53f88e7b8ccb45a365046024c3e"
 dependencies = [
- "vize_carton",
- "vize_davinci",
- "vize_impeto",
+ "vize_l0",
+ "vize_l2",
+ "vize_l3",
+]
+
+[[package]]
+name = "vize_l3"
+version = "0.431.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6a56c6d65609472a9451aec4042e906d0f38d5b83cae4780e8e72042ff4707d9"
+dependencies = [
+ "oxc_ast",
+ "serde_json",
+ "vize_l0",
  "vize_l2",
 ]
 
 [[package]]
-name = "vize_patina"
-version = "0.429.1"
+name = "vize_l4"
+version = "0.431.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a12543eba6a7acc53abf079984ff8297c21e5486ea8b7dce46eec0d367c1d5d"
+checksum = "e9257e66b4c8aad892a8062636d6a8777d173a2753d58036f5ef1e50e04eb43b"
+dependencies = [
+ "oxc_syntax",
+ "serde_json",
+ "vize_l0",
+ "vize_l1_to_l2",
+ "vize_l2",
+ "vize_l3",
+]
+
+[[package]]
+name = "vize_oxc_parser"
+version = "0.431.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5e8c929913405a042eb7b00a16921f2a5cf09907fe89d1849d9f0ca5dc57be05"
+dependencies = [
+ "bitflags 2.13.1",
+ "compact_str",
+ "cow-utils",
+ "memchr",
+ "num-bigint",
+ "num-traits",
+ "oxc_allocator",
+ "oxc_ast",
+ "oxc_ast_visit",
+ "oxc_data_structures",
+ "oxc_diagnostics",
+ "oxc_ecmascript",
+ "oxc_regular_expression",
+ "oxc_span",
+ "oxc_str",
+ "oxc_syntax",
+ "rustc-hash",
+ "seq-macro",
+]
+
+[[package]]
+name = "vize_patina"
+version = "0.431.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e800fe484a6fd0991bd2b05c42e2f9b0ea1536dfd9e150748268573710c668b3"
 dependencies = [
  "corsa",
  "libc",
@@ -2792,7 +2878,6 @@ dependencies = [
  "oxc_ast",
  "oxc_ast_visit",
  "oxc_diagnostics",
- "oxc_parser",
  "oxc_semantic",
  "oxc_span",
  "oxc_syntax",
@@ -2805,18 +2890,19 @@ dependencies = [
  "vize_canon",
  "vize_carton",
  "vize_croquis",
- "vize_davinci",
+ "vize_l0",
  "vize_l1",
  "vize_l1_to_l2",
  "vize_l2",
+ "vize_oxc_parser",
  "vize_relief",
 ]
 
 [[package]]
 name = "vize_relief"
-version = "0.429.1"
+version = "0.431.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "117af1d4984727e6b0d8a0a4b641f5c1b80c476e3d46253060854aa1946113d3"
+checksum = "2f72d6d1e169e64964fa6e04f4dbcb1ef0ed8c47aed38499ef3dd12f427609a8"
 dependencies = [
  "oxc_ast",
  "oxc_ast_visit",
@@ -2824,7 +2910,7 @@ dependencies = [
  "serde",
  "thiserror",
  "vize_carton",
- "vize_davinci",
+ "vize_l0",
 ]
 
 [[package]]
@@ -2846,6 +2932,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09ac3b126d3914f9849036f826e054cbabdc8519970b8998ddaf3b5bd3c65f11"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "walkdir"
+version = "2.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "29790946404f91d9c5d06f9874efddea1dc06c5efe94541a7d6863108e3a5e4b"
+dependencies = [
+ "same-file",
+ "winapi-util",
 ]
 
 [[package]]
@@ -2915,6 +3011,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f3ef584124b911bcc3875c2f1472e80f24361ceb789bd1c62b3e9a3df9ff43c"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "winapi-util"
+version = "0.1.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
+dependencies = [
+ "windows-sys",
 ]
 
 [[package]]

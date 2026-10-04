@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Changed
+
+- Build on Vize 0.431.0, which fixes three bugs found through vize_ex:
+  - Static attribute values are decoded once in Vapor templates ([vize#7502](https://github.com/ubugeeei-prod/vize/issues/7502)). `&amp;lt;` used to become `<`.
+  - Implicit default slot content is kept beside a named `<template #name>` in `compile_vapor` ([vize#7570](https://github.com/ubugeeei-prod/vize/issues/7570)).
+  - `vapor_ir/1` keeps a static `style` merged with `:style` ([vize#7600](https://github.com/ubugeeei-prod/vize/issues/7600)).
+
 ## 0.17.0 - 2026-10-03
 
 ### Breaking changes

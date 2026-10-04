@@ -18,20 +18,20 @@ lightningcss = { version = "=1.0.0-alpha.72", features = ["visitor"] }
 grass = { version = "0.13.4", default-features = false }
 
 # Keep every Vize crate on one published release so their internal APIs stay in sync.
-vize_carton = "=0.429.1"
-vize_relief = "=0.429.1"
-vize_armature = "=0.429.1"
-vize_atelier_core = "=0.429.1"
-vize_atelier_dom = "=0.429.1"
-vize_atelier_vapor = "=0.429.1"
-vize_atelier_ssr = "=0.429.1"
-vize_atelier_sfc = { version = "=0.429.1", features = ["native"] }
-vize_patina = "=0.429.1"
-vize_croquis = "=0.429.1"
-vize_davinci = "=0.429.1"
-vize_l1 = "=0.429.1"
-vize_l1_to_l2 = "=0.429.1"
-vize_l2 = "=0.429.1"
+vize_carton = "=0.431.0"
+vize_relief = "=0.431.0"
+vize_armature = "=0.431.0"
+vize_atelier_core = "=0.431.0"
+vize_atelier_dom = "=0.431.0"
+vize_atelier_vapor = "=0.431.0"
+vize_atelier_ssr = "=0.431.0"
+vize_atelier_sfc = { version = "=0.431.0", features = ["native"] }
+vize_patina = "=0.431.0"
+vize_croquis = "=0.431.0"
+vize_l0 = "=0.431.0"
+vize_l1 = "=0.431.0"
+vize_l1_to_l2 = "=0.431.0"
+vize_l2 = "=0.431.0"
 
 [dev-dependencies]
 proptest = "1.6"
