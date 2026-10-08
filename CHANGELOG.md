@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.17.2 - 2026-10-09
+
 ### Fixed
 
 - `split_template/2` rendered a static `ref` or `key` as an attribute, and passed `ref` and `key` to a component as props. Vue reserves both and never renders them; now neither does the split, static or bound.
