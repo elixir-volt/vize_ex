@@ -78,6 +78,21 @@ defmodule Vize.SplitTemplateTest do
     test ":key isn't rendered" do
       assert split(~S|<p :key="id">x</p>|).slots == []
     end
+
+    test "ref and key, which Vue reserves, aren't rendered, static or bound" do
+      result = split(~S|<div><input ref="search" key="k" :ref="el" class="a"></div>|)
+
+      assert result.statics == [~S|<div><input class="a"></div>|]
+      assert result.slots == []
+    end
+
+    test "nor are they a root element's attributes or a component's props" do
+      assert [%{kind: :root_attrs, props: [%{name: "class", static: "a"}]}] =
+               split(~S|<input ref="search" key="k" class="a">|, root_attrs: true).slots
+
+      assert [%{kind: :component, props: [%{name: "title", static: "x"}]}] =
+               split(~S|<MyThing ref="t" key="k" title="x" />|).slots
+    end
   end
 
   describe "bindings" do
@@ -97,6 +112,28 @@ defmodule Vize.SplitTemplateTest do
 
       assert [%{kind: :model, tag: "input", type: "checkbox", static_value: "a", value: "picked"}] =
                result.slots
+    end
+
+    test "v-model on a select selects its options, by value, bound value or text" do
+      result =
+        split(
+          ~S|<select v-model="c"><option value="a">A</option><optgroup label="g"><option>B</option></optgroup><option v-for="o in opts" :value="o.id">{{ o.name }}</option></select>|
+        )
+
+      assert result.diagnostics == []
+
+      assert [
+               %{kind: :model, tag: "option", value: "c", static_value: "a", option_value: nil},
+               %{kind: :model, tag: "option", value: "c", static_value: "B", option_value: nil},
+               %{kind: :for, block: %{slots: [%{kind: :attr, name: "value"}, option | _text]}}
+             ] = result.slots
+
+      assert %{kind: :model, tag: "option", static_value: nil, option_value: "o.id"} = option
+      assert hd(result.statics) == ~S|<select><option value="a"|
+    end
+
+    test "an option outside a select v-model has no slot" do
+      assert split(~S|<select><option value="a">A</option></select>|).slots == []
     end
 
     test "v-model on a textarea renders its content" do

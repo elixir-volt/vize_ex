@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Fixed
+
+- `split_template/2` rendered a static `ref` or `key` as an attribute, and passed `ref` and `key` to a component as props. Vue reserves both and never renders them; now neither does the split, static or bound.
+- A `<select v-model>` rendered no selected option, with a warning. Each `<option>` inside it now has a `:model` slot in its start tag, with the select's value and the option's own: its bound `:value`, its `value` attribute, or its text, so a renderer can mark the selected one, as Vue's server renderer does. The slot's new `:option_value` holds a bound `:value`.
+
 ## 0.17.1 - 2026-10-04
 
 ### Changed

@@ -136,6 +136,7 @@ pub struct EncodedModelSlot {
     pub tag: String,
     pub r#type: Option<String>,
     pub static_value: Option<String>,
+    pub option_value: Option<String>,
     pub value: String,
     pub position: (usize, usize),
 }

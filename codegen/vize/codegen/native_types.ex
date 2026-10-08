@@ -205,6 +205,7 @@ defmodule Vize.Codegen.NativeTypes do
           required(:tag) => String.t(),
           required(:type) => String.t() | nil,
           required(:static_value) => String.t() | nil,
+          required(:option_value) => String.t() | nil,
           required(:value) => String.t(),
           required(:position) => {R.usize(), R.usize()}
         }

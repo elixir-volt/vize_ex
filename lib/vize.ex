@@ -391,7 +391,11 @@ defmodule Vize do
         beside `:class="b"`, and `:show` for the `v-show` a `style` combines with
       * `:spread` — the attributes of an object, from `v-bind="attrs"` (`:value`)
       * `:model` — what a `v-model` renders on an `<input>` or `<textarea>`:
-        `:value`, the element's `:tag`, and its static `:type` and `:static_value`
+        `:value`, the element's `:tag`, and its static `:type` and
+        `:static_value`. Each `<option>` inside a `<select v-model>` has one
+        in its start tag, with the select's `:value`, `:tag` `"option"`, and the
+        option's own value: its bound `:option_value`, or else its
+        `:static_value`, from its `value` attribute or else its text
       * `:if` — `:branches`, each a `:condition` (nil for `v-else`) and a `:block`
       * `:for` — `:source`, `:value`, `:key`, `:index`, the repeated element's
         `:key_prop`, and its `:block`

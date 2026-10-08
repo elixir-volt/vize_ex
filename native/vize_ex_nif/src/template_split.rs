@@ -58,6 +58,7 @@ pub(crate) fn split_template<'a>(
             .iter()
             .filter_map(|diagnostic| lowering_diagnostic(diagnostic, source))
             .collect(),
+        select: None,
     };
 
     let mut block = Block::default();
@@ -155,6 +156,8 @@ struct Splitter<'s, 'a> {
     /// Merged text runs such as `Hello {{ name }}!`, by where they start.
     texts: HashMap<u32, &'s [TextPart]>,
     diagnostics: Vec<EncodedSplitDiagnostic>,
+    /// The `v-model` of the `<select>` being split, which selects its options.
+    select: Option<String>,
 }
 
 impl<'s, 'a> Splitter<'s, 'a> {
@@ -254,6 +257,7 @@ impl<'s, 'a> Splitter<'s, 'a> {
         }
 
         let mut content = None;
+        let mut select = None;
 
         for binding in element.bindings.iter() {
             match binding {
@@ -281,13 +285,15 @@ impl<'s, 'a> Splitter<'s, 'a> {
                         position: self.position(model.span.start),
                     });
 
-                    let slot = self.model_slot(element, model);
                     if element.tag.eq_ignore_ascii_case("textarea") {
-                        content = Some(slot);
+                        content = Some(self.model_slot(element, model));
                     } else if element.tag.eq_ignore_ascii_case("input") {
+                        let slot = self.model_slot(element, model);
                         block.slot(slot);
+                    } else if element.tag.eq_ignore_ascii_case("select") {
+                        select = Some(self.expression(model.contract.read));
                     } else {
-                        self.warning(model.span.start, model.span.end, "v-model only renders its value on <input> and <textarea> on the server");
+                        self.warning(model.span.start, model.span.end, "v-model only renders its value on <input>, <select> and <textarea> on the server");
                     }
                 }
                 BindingOp::VueHtml(html) => {
@@ -336,11 +342,21 @@ impl<'s, 'a> Splitter<'s, 'a> {
             }
         }
 
+        if element.tag.eq_ignore_ascii_case("option") {
+            if let Some(select) = self.select.clone() {
+                let slot = self.option_slot(element, select);
+                block.slot(slot);
+            }
+        }
+
         block.push(">");
 
         if is_void_tag(element.tag) {
             return;
         }
+
+        // A `<select v-model>` selects the options inside it, in groups too.
+        let enclosing = select.map(|select| self.select.replace(select));
 
         match content {
             Some(slot) => block.slot(slot),
@@ -349,6 +365,10 @@ impl<'s, 'a> Splitter<'s, 'a> {
                     self.op(block, op);
                 }
             }
+        }
+
+        if let Some(previous) = enclosing {
+            self.select = previous;
         }
 
         block.push("</");
@@ -371,7 +391,7 @@ impl<'s, 'a> Splitter<'s, 'a> {
         for attribute in element.attributes.iter() {
             let merged =
                 bound.contains(&attribute.name) || (attribute.name == "style" && show.is_some());
-            if !merged {
+            if !merged && !reserved(attribute.name) {
                 block.push(&static_attribute(attribute));
             }
         }
@@ -382,7 +402,7 @@ impl<'s, 'a> Splitter<'s, 'a> {
             };
 
             let slot = match bind.name {
-                Some(DynamicName::Static("key")) => continue,
+                Some(DynamicName::Static(name)) if reserved(name) => continue,
                 Some(DynamicName::Static(name)) => self.attr_slot(
                     Some(name),
                     None,
@@ -463,13 +483,15 @@ impl<'s, 'a> Splitter<'s, 'a> {
 
         let statics = attributes
             .iter()
-            .filter(|attribute| !bound.contains(&attribute.name))
+            .filter(|attribute| !bound.contains(&attribute.name) && !reserved(attribute.name))
             .map(|attribute| (attribute.span.start, static_prop(attribute)));
 
         let binds: Vec<_> = bindings
             .iter()
             .filter_map(|binding| match binding {
-                BindingOp::Bind(bind) if !matches!(bind.name, Some(DynamicName::Static("key"))) => {
+                BindingOp::Bind(bind)
+                    if !matches!(bind.name, Some(DynamicName::Static(name)) if reserved(name)) =>
+                {
                     Some(bind)
                 }
                 _ => None,
@@ -505,8 +527,38 @@ impl<'s, 'a> Splitter<'s, 'a> {
             tag: element.tag.to_string(),
             r#type: static_value(&element.attributes, "type"),
             static_value: static_value(&element.attributes, "value"),
+            option_value: None,
             value: self.expression(model.contract.read),
             position: self.position(model.span.start),
+        }
+        .encode(self.env)
+    }
+
+    /// An `<option>` inside a `<select v-model>`: selected when its value,
+    /// its bound `:value`, its static `value`, or else its text, is the
+    /// select's.
+    fn option_slot(&mut self, element: &ElementOp<'_>, select: String) -> Term<'a> {
+        let bound = element.bindings.iter().find_map(|binding| match binding {
+            BindingOp::Bind(bind) if matches!(bind.name, Some(DynamicName::Static("value"))) => {
+                bind.value
+            }
+            _ => None,
+        });
+
+        let static_value = match bound {
+            Some(_) => None,
+            None => static_value(&element.attributes, "value")
+                .or_else(|| static_text(&element.children)),
+        };
+
+        EncodedModelSlot {
+            kind: atoms::model(),
+            tag: "option".to_string(),
+            r#type: None,
+            static_value,
+            option_value: bound.map(|value| self.expression(value)),
+            value: select,
+            position: self.position(element.span.start),
         }
         .encode(self.env)
     }
@@ -835,6 +887,25 @@ fn static_prop(attribute: &Attribute<'_>) -> EncodedProp {
         r#static: Some(decode_html_attribute_entities(attribute.value.unwrap_or("")).to_string()),
         value: None,
     }
+}
+
+/// Attributes Vue reserves for itself, which never render: a template ref
+/// and a key.
+fn reserved(name: &str) -> bool {
+    matches!(name, "ref" | "key")
+}
+
+/// An element's text, when its children are only text, as an `<option>`
+/// without a `value` is valued by it.
+fn static_text(children: &Region<'_>) -> Option<String> {
+    let mut text = String::new();
+    for op in children.ops.iter() {
+        match op {
+            Op::Text(part) => text.push_str(part.content),
+            _ => return None,
+        }
+    }
+    Some(text.trim().to_string())
 }
 
 fn static_attribute(attribute: &Attribute<'_>) -> String {
